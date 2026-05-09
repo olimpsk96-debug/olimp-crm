@@ -1,0 +1,590 @@
+/* ═══════════════════════════════════════════════════════════════════
+   ОЛИМП ERP — Theme System
+   Apple-style light/dark theme
+   Использует data-theme атрибут на <html>
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── DARK (default) ─── */
+:root,
+:root[data-theme="dark"] {
+  /* Backgrounds */
+  --bg-base: #0A0A0B;
+  --bg-elevated: #131316;
+  --bg-card: #18181C;
+  --bg-card-hover: #1E1E23;
+  --bg-card-elevated: #1A1A1F;
+  --bg-row-hover: rgba(255, 255, 255, 0.025);
+  --bg-row-edit: rgba(249, 115, 22, 0.05);
+  --bg-row-section: rgba(255, 255, 255, 0.03);
+  --bg-overlay: rgba(10, 10, 11, 0.85);
+
+  /* Borders */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --border-focus: rgba(249, 115, 22, 0.5);
+
+  /* Text */
+  --text-primary: #F4F4F5;
+  --text-secondary: #A1A1AA;
+  --text-tertiary: #71717A;
+  --text-on-accent: #FFFFFF;
+
+  /* Semantic */
+  --accent: #F97316;
+  --accent-soft: rgba(249, 115, 22, 0.1);
+  --accent-strong: #EA580C;
+  --success: #34D399;
+  --success-soft: rgba(52, 211, 153, 0.1);
+  --danger: #F87171;
+  --danger-soft: rgba(248, 113, 113, 0.1);
+  --warning: #FBBF24;
+  --warning-soft: rgba(251, 191, 36, 0.1);
+  --info: #818CF8;
+  --info-soft: rgba(99, 102, 241, 0.1);
+
+  /* Background atmosphere (radial gradients) */
+  --atmo-1: rgba(249, 115, 22, 0.08);
+  --atmo-2: rgba(99, 102, 241, 0.04);
+  --atmo-warning: rgba(251, 191, 36, 0.06);
+  --atmo-danger: rgba(248, 113, 113, 0.04);
+
+  /* Scrollbar */
+  --scrollbar-thumb: rgba(255, 255, 255, 0.06);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.12);
+
+  /* Shadows */
+  --shadow-card: 0 1px 0 rgba(255,255,255,0.04) inset, 0 20px 40px -20px rgba(0,0,0,0.8);
+  --shadow-hover: 0 8px 20px -8px rgba(0,0,0,0.5);
+  --shadow-elevated: 0 12px 40px rgba(0,0,0,0.5);
+
+  /* Grid backgrounds for tables/gantt */
+  --grid-stripe: rgba(255,255,255,0.02);
+
+  color-scheme: dark;
+}
+
+/* ─── LIGHT ─── */
+:root[data-theme="light"] {
+  /* Backgrounds — мягкий тёплый off-white, не чисто-белый */
+  --bg-base: #FAF9F7;
+  --bg-elevated: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #FAF9F7;
+  --bg-card-elevated: #FFFFFF;
+  --bg-row-hover: rgba(0, 0, 0, 0.02);
+  --bg-row-edit: rgba(249, 115, 22, 0.05);
+  --bg-row-section: rgba(0, 0, 0, 0.025);
+  --bg-overlay: rgba(250, 249, 247, 0.85);
+
+  /* Borders — мягкие, не чёрные */
+  --border-subtle: rgba(15, 23, 42, 0.06);
+  --border-strong: rgba(15, 23, 42, 0.12);
+  --border-focus: rgba(249, 115, 22, 0.5);
+
+  /* Text — темно-серые тона */
+  --text-primary: #18181B;
+  --text-secondary: #52525B;
+  --text-tertiary: #A1A1AA;
+  --text-on-accent: #FFFFFF;
+
+  /* Semantic — слегка тёмнее для контраста на белом */
+  --accent: #EA580C;
+  --accent-soft: rgba(234, 88, 12, 0.08);
+  --accent-strong: #C2410C;
+  --success: #059669;
+  --success-soft: rgba(5, 150, 105, 0.08);
+  --danger: #DC2626;
+  --danger-soft: rgba(220, 38, 38, 0.07);
+  --warning: #D97706;
+  --warning-soft: rgba(217, 119, 6, 0.08);
+  --info: #6366F1;
+  --info-soft: rgba(99, 102, 241, 0.07);
+
+  /* Background atmosphere — нежнее */
+  --atmo-1: rgba(249, 115, 22, 0.04);
+  --atmo-2: rgba(99, 102, 241, 0.025);
+  --atmo-warning: rgba(217, 119, 6, 0.03);
+  --atmo-danger: rgba(220, 38, 38, 0.025);
+
+  /* Scrollbar */
+  --scrollbar-thumb: rgba(0, 0, 0, 0.08);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.15);
+
+  /* Shadows — мягче для светлой темы */
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -12px rgba(15, 23, 42, 0.08);
+  --shadow-hover: 0 4px 12px -4px rgba(15, 23, 42, 0.1);
+  --shadow-elevated: 0 12px 40px rgba(15, 23, 42, 0.12);
+
+  /* Grid */
+  --grid-stripe: rgba(0,0,0,0.02);
+
+  color-scheme: light;
+}
+
+/* ─── AUTO mode (follows OS) ─── */
+@media (prefers-color-scheme: light) {
+  :root[data-theme="auto"] {
+    --bg-base: #FAF9F7;
+    --bg-elevated: #FFFFFF;
+    --bg-card: #FFFFFF;
+    --bg-card-hover: #FAF9F7;
+    --bg-card-elevated: #FFFFFF;
+    --bg-row-hover: rgba(0, 0, 0, 0.02);
+    --bg-row-edit: rgba(249, 115, 22, 0.05);
+    --bg-row-section: rgba(0, 0, 0, 0.025);
+    --bg-overlay: rgba(250, 249, 247, 0.85);
+
+    --border-subtle: rgba(15, 23, 42, 0.06);
+    --border-strong: rgba(15, 23, 42, 0.12);
+
+    --text-primary: #18181B;
+    --text-secondary: #52525B;
+    --text-tertiary: #A1A1AA;
+
+    --accent: #EA580C;
+    --accent-soft: rgba(234, 88, 12, 0.08);
+    --accent-strong: #C2410C;
+    --success: #059669;
+    --success-soft: rgba(5, 150, 105, 0.08);
+    --danger: #DC2626;
+    --danger-soft: rgba(220, 38, 38, 0.07);
+    --warning: #D97706;
+    --warning-soft: rgba(217, 119, 6, 0.08);
+    --info: #6366F1;
+    --info-soft: rgba(99, 102, 241, 0.07);
+
+    --atmo-1: rgba(249, 115, 22, 0.04);
+    --atmo-2: rgba(99, 102, 241, 0.025);
+    --atmo-warning: rgba(217, 119, 6, 0.03);
+    --atmo-danger: rgba(220, 38, 38, 0.025);
+
+    --scrollbar-thumb: rgba(0, 0, 0, 0.08);
+    --scrollbar-thumb-hover: rgba(0, 0, 0, 0.15);
+
+    --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -12px rgba(15, 23, 42, 0.08);
+    --shadow-hover: 0 4px 12px -4px rgba(15, 23, 42, 0.1);
+    --shadow-elevated: 0 12px 40px rgba(15, 23, 42, 0.12);
+
+    --grid-stripe: rgba(0,0,0,0.02);
+
+    color-scheme: light;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   THEME SWITCHER WIDGET
+   Добавляется в правый верхний угол любого экрана
+   ═══════════════════════════════════════════════════════════ */
+.theme-switcher {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 100;
+  background: var(--bg-card-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 4px;
+  display: flex;
+  gap: 2px;
+  box-shadow: var(--shadow-card);
+  font-family: 'Inter Tight', sans-serif;
+}
+.theme-switcher button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 0;
+}
+.theme-switcher button:hover {
+  color: var(--text-primary);
+  background: var(--bg-card-hover);
+}
+.theme-switcher button.active {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.theme-switcher svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   GLOBAL FIXES — common patterns
+   ═══════════════════════════════════════════════════════════ */
+
+/* Smooth transitions on theme change */
+html {
+  transition: background-color 0.3s ease;
+}
+body, .card, .card-elevated, .kpi-card, .tender-card,
+.gantt-tasks, .gantt-task-row, .gantt-bar,
+.est-table, .est-item-row, .resource-panel,
+header, aside, main {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Selection color */
+::selection {
+  background: var(--accent-soft);
+  color: var(--text-primary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LIGHT THEME — специфичные перекрытия hardcoded styles
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"] body::before,
+:root[data-theme="auto"] body::before {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, var(--atmo-1), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, var(--atmo-2), transparent 50%) !important;
+}
+
+/* Header / sticky navbar — needs solid bg in light */
+:root[data-theme="light"] header[class*="sticky"],
+@media (prefers-color-scheme: light) {
+  :root[data-theme="auto"] header[class*="sticky"] {
+    background: rgba(250, 249, 247, 0.85) !important;
+  }
+}
+
+/* Tailwind utility overrides — text colors */
+:root[data-theme="light"] .text-white,
+:root[data-theme="auto"] .text-white {
+  /* Keep white only on accent backgrounds */
+}
+
+/* Cards / kpi-cards — переопределяем фон через переменные */
+:root[data-theme="light"] .card,
+:root[data-theme="light"] .card-elevated,
+:root[data-theme="light"] .kpi-card,
+:root[data-theme="light"] .tender-card {
+  background: var(--bg-card) !important;
+  border-color: var(--border-subtle) !important;
+}
+:root[data-theme="light"] .card-elevated {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FAF9F7 100%) !important;
+  box-shadow: var(--shadow-card) !important;
+}
+
+/* Card hover */
+:root[data-theme="light"] .card:hover,
+:root[data-theme="light"] .tender-card:hover {
+  background: var(--bg-card-hover) !important;
+  border-color: var(--border-strong) !important;
+}
+
+/* Light theme: progress bars, pills, accents */
+:root[data-theme="light"] .progress-bar {
+  background: rgba(15, 23, 42, 0.06) !important;
+}
+
+/* Light theme: avatars and gradient elements stay vivid */
+/* (Avatars use inline gradient, fine for both themes) */
+
+/* Table-like rows */
+:root[data-theme="light"] .est-table {
+  background: var(--bg-card-elevated) !important;
+}
+:root[data-theme="light"] .est-header-row,
+:root[data-theme="light"] .est-section-row {
+  background: var(--bg-row-section) !important;
+}
+:root[data-theme="light"] .est-section-row:hover {
+  background: rgba(0,0,0,0.04) !important;
+}
+
+/* Gantt — task list bg */
+:root[data-theme="light"] .gantt-tasks,
+:root[data-theme="light"] .gantt-container {
+  background: var(--bg-card-elevated) !important;
+}
+:root[data-theme="light"] .gantt-tasks-header,
+:root[data-theme="light"] .gantt-timeline-header {
+  background: var(--bg-row-section) !important;
+}
+:root[data-theme="light"] .gantt-task-row.section,
+:root[data-theme="light"] .gantt-timeline-row.section {
+  background: rgba(0,0,0,0.03) !important;
+}
+
+/* Light theme: weekend stripes in gantt */
+:root[data-theme="light"] .gantt-day-cell.weekend {
+  background: rgba(0,0,0,0.025) !important;
+}
+
+/* Light theme: estimate editor — editable cells */
+:root[data-theme="light"] .est-item-cell.editable:hover {
+  background: rgba(0,0,0,0.03) !important;
+  border-color: var(--border-subtle) !important;
+}
+:root[data-theme="light"] .est-item-cell.editing {
+  background: rgba(234, 88, 12, 0.08) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--accent) !important;
+}
+
+/* Light theme: modal/dropdown backgrounds */
+:root[data-theme="light"] .ai-suggest,
+:root[data-theme="light"] .tab-more-menu {
+  background: var(--bg-card-elevated) !important;
+  box-shadow: var(--shadow-elevated) !important;
+}
+
+/* Light theme: deviation row backgrounds (более выраженные) */
+:root[data-theme="light"] .est-item-row.deviation-positive {
+  background: rgba(5, 150, 105, 0.05) !important;
+}
+:root[data-theme="light"] .est-item-row.deviation-negative {
+  background: rgba(220, 38, 38, 0.05) !important;
+}
+
+/* Light theme: timeline today line надпись */
+:root[data-theme="light"] .gantt-today-line::before {
+  background: var(--accent) !important;
+  color: white !important;
+}
+
+/* Light theme: tab dropdown menu */
+:root[data-theme="light"] .ai-recommendation {
+  background: rgba(255,255,255,0.6) !important;
+}
+:root[data-theme="light"] .ai-recommendation:hover {
+  background: rgba(255,255,255,0.9) !important;
+}
+
+/* Light theme: kanban col header */
+:root[data-theme="light"] .col-header {
+  background: var(--bg-elevated) !important;
+}
+
+/* Light theme: gantt bars stay vivid (inline colors) — но текст внутри pill корректный */
+:root[data-theme="light"] .gantt-bar.future {
+  background: rgba(0,0,0,0.05) !important;
+  color: var(--text-secondary) !important;
+  border-color: var(--border-strong) !important;
+}
+
+/* Light theme: rooms нужно светлее тон у завершённых */
+:root[data-theme="light"] .gantt-bar.completed {
+  background: #34D399 !important;
+  color: #042C1F !important;
+}
+
+/* Light theme: status icons should have soft bg */
+:root[data-theme="light"] .task-progress-icon {
+  background: rgba(0,0,0,0.04) !important;
+}
+
+/* Light theme: photo placeholders */
+:root[data-theme="light"] .photo-large,
+:root[data-theme="light"] .photo {
+  background: linear-gradient(135deg, #E5E5E5, #F5F5F5) !important;
+}
+
+/* Light theme: KS-2 stage row "future" — opacity немного больше */
+:root[data-theme="light"] .stage-row.future {
+  opacity: 0.7 !important;
+}
+
+/* Light theme: fix rail-item active state */
+:root[data-theme="light"] .rail-item.active {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+}
+
+/* Light theme: timeline-dot inner backgrounds */
+:root[data-theme="light"] .timeline-dot {
+  background: var(--bg-card) !important;
+}
+
+/* Light theme: chip/filter buttons */
+:root[data-theme="light"] .chip {
+  background: rgba(0,0,0,0.04) !important;
+  color: var(--text-secondary) !important;
+  border-color: var(--border-subtle) !important;
+}
+:root[data-theme="light"] .chip:hover {
+  background: rgba(0,0,0,0.06) !important;
+  color: var(--text-primary) !important;
+}
+:root[data-theme="light"] .chip.active {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+  border-color: rgba(234, 88, 12, 0.2) !important;
+}
+
+/* Light theme: toolbar buttons */
+:root[data-theme="light"] .toolbar-btn:hover {
+  background: rgba(0,0,0,0.04) !important;
+  color: var(--text-primary) !important;
+}
+:root[data-theme="light"] .toolbar-btn.active {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+}
+:root[data-theme="light"] .toolbar-btn.primary {
+  background: var(--accent) !important;
+  color: white !important;
+}
+:root[data-theme="light"] .toolbar-btn.primary:hover {
+  background: var(--accent-strong) !important;
+}
+
+/* Light theme: KBD */
+:root[data-theme="light"] kbd {
+  background: rgba(0,0,0,0.05) !important;
+  color: var(--text-secondary) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+/* Light theme: tab active */
+:root[data-theme="light"] .tab.active {
+  color: var(--text-primary) !important;
+  border-bottom-color: var(--accent) !important;
+}
+
+/* Light theme: tab-count */
+:root[data-theme="light"] .tab-count {
+  background: rgba(0,0,0,0.05) !important;
+  color: var(--text-secondary) !important;
+}
+
+/* Light theme: pill backgrounds with soft variants */
+:root[data-theme="light"] .pill[style*="background: rgba(255,255,255,0.04)"],
+:root[data-theme="light"] .pill[style*="background: rgba(255,255,255"] {
+  background: rgba(0,0,0,0.05) !important;
+  color: var(--text-secondary) !important;
+}
+
+/* Resource panel — sticky panel in estimate */
+:root[data-theme="light"] .resource-panel {
+  background: var(--bg-card-elevated) !important;
+}
+:root[data-theme="light"] .resource-row:hover {
+  background: rgba(0,0,0,0.03) !important;
+}
+
+/* Light theme: AI insight blocks */
+:root[data-theme="light"] .ai-insight {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(234, 88, 12, 0.03) 100%) !important;
+  border-color: rgba(99, 102, 241, 0.15) !important;
+}
+
+/* Light theme: section-row in estimate */
+:root[data-theme="light"] .gantt-task-row:hover {
+  background: rgba(0,0,0,0.025) !important;
+}
+
+/* Light theme: project-row hover (dashboard) */
+:root[data-theme="light"] .project-row:hover {
+  background: rgba(0,0,0,0.03) !important;
+}
+
+/* Light theme: tender-cards in 03 (правильный фон) */
+:root[data-theme="light"] .tender-card {
+  background: var(--bg-card) !important;
+}
+:root[data-theme="light"] .tender-card:hover {
+  background: var(--bg-card-hover) !important;
+}
+
+/* Light theme: empty state */
+:root[data-theme="light"] .empty-state {
+  border-color: var(--border-subtle) !important;
+  color: var(--text-tertiary) !important;
+}
+
+/* Light theme: loss-card */
+:root[data-theme="light"] .loss-card {
+  background: var(--bg-card) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+/* Light theme: Money rows in project card */
+:root[data-theme="light"] .money-row {
+  border-color: var(--border-subtle) !important;
+}
+
+/* Light theme: stage-row hover */
+:root[data-theme="light"] .stage-row:hover {
+  background: rgba(0,0,0,0.03) !important;
+}
+
+/* Light theme: team member rows */
+:root[data-theme="light"] .team-member:hover {
+  background: rgba(0,0,0,0.03) !important;
+}
+
+/* Light theme: deadline-bar background */
+:root[data-theme="light"] .deadline-bar,
+:root[data-theme="light"] .checklist-step:not(.done):not(.current) {
+  background: rgba(0,0,0,0.06) !important;
+}
+
+/* Light theme: AI suggest dropdown */
+:root[data-theme="light"] .ai-suggest {
+  border-color: var(--border-strong) !important;
+}
+
+/* Sidebar in dashboard */
+:root[data-theme="light"] aside {
+  background: var(--bg-elevated) !important;
+}
+
+/* Light theme: search box in sidebar */
+:root[data-theme="light"] aside [class*="rounded-lg"][style*="rgba(255"] {
+  background: rgba(0,0,0,0.03) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+/* Light theme: dividers */
+:root[data-theme="light"] .divider {
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.06), transparent) !important;
+}
+
+/* Light theme: timeline-line */
+:root[data-theme="light"] .timeline-line {
+  background: rgba(0,0,0,0.08) !important;
+}
+
+/* Light theme: grain effect should not appear */
+:root[data-theme="light"] .grain::after {
+  opacity: 0.012 !important;
+  mix-blend-mode: multiply !important;
+}
+
+/* Light theme: photo grid placeholders с тёмным content */
+:root[data-theme="light"] .photo-grid .photo {
+  background: linear-gradient(135deg, #E5E5E5, #F5F5F5) !important;
+}
+
+/* Light theme: sticky header opacity */
+:root[data-theme="light"] header[style*="backdrop-filter"] {
+  background: rgba(250, 249, 247, 0.85) !important;
+}
+
+/* Light theme: kanban col body для kanban */
+:root[data-theme="light"] .kanban-col-body .tender-card {
+  background: var(--bg-card) !important;
+}
+

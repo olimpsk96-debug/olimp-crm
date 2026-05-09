@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Техника · Олимп</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Inter+Tight:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="theme.css">
+<script src="theme-switcher.js" defer></script>
+<style>
+  :root {
+    --bg-base: #0A0A0B;
+    --bg-elevated: #131316;
+    --bg-card: #18181C;
+    --bg-card-hover: #1E1E23;
+    --bg-card-elevated: #1A1A1F;
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-strong: rgba(255, 255, 255, 0.12);
+    --text-primary: #F4F4F5;
+    --text-secondary: #A1A1AA;
+    --text-tertiary: #71717A;
+    --accent: #F97316;
+    --accent-soft: rgba(249, 115, 22, 0.1);
+    --success: #34D399;
+    --success-soft: rgba(52, 211, 153, 0.1);
+    --danger: #F87171;
+    --danger-soft: rgba(248, 113, 113, 0.1);
+    --warning: #FBBF24;
+    --warning-soft: rgba(251, 191, 36, 0.1);
+    --info: #818CF8;
+    --info-soft: rgba(99, 102, 241, 0.1);
+  }
+  * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; box-sizing: border-box; }
+  html, body {
+    background: var(--bg-base); color: var(--text-primary);
+    font-family: 'Inter Tight', -apple-system, sans-serif;
+    letter-spacing: -0.011em;
+  }
+  .display-font { font-family: 'Fraunces', Georgia, serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; font-feature-settings: 'tnum'; }
+  .num { font-feature-settings: 'tnum', 'ss01'; letter-spacing: -0.04em; }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse 60% 40% at 50% -20%, rgba(168, 85, 247, 0.04), transparent 60%);
+    pointer-events: none; z-index: 0;
+  }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 9px; border-radius: 999px;
+    font-size: 11px; font-weight: 500;
+  }
+
+  .toolbar-btn {
+    padding: 6px 11px;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex; align-items: center; gap: 6px;
+    font-weight: 500;
+    white-space: nowrap;
+    border: 1px solid transparent;
+  }
+  .toolbar-btn:hover { background: rgba(255,255,255,0.04); color: var(--text-primary); }
+  .toolbar-btn.active {
+    background: var(--accent-soft); color: var(--accent);
+    border-color: rgba(249, 115, 22, 0.2);
+  }
+  .toolbar-btn.primary {
+    background: var(--accent); color: white;
+  }
+  .toolbar-btn.primary:hover { background: #EA580C; }
+
+  /* ─── KPI cards ─── */
+  .kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 14px 16px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .kpi-card:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
+  }
+
+  /* ─── Alert strip ─── */
+  .alert-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--bg-card);
+    border-radius: 10px;
+    border: 1px solid var(--border-subtle);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .alert-card:hover {
+    background: var(--bg-card-hover);
+    transform: translateX(2px);
+  }
+  .alert-card.danger {
+    background: linear-gradient(135deg, rgba(248,113,113,0.06), var(--bg-card));
+    border-color: rgba(248, 113, 113, 0.2);
+  }
+  .alert-card.warning {
+    background: linear-gradient(135deg, rgba(251,191,36,0.05), var(--bg-card));
+    border-color: rgba(251, 191, 36, 0.2);
+  }
+  .alert-card.info {
+    background: linear-gradient(135deg, rgba(99,102,241,0.05), var(--bg-card));
+    border-color: rgba(99, 102, 241, 0.2);
+  }
+
+  /* ─── Equipment cards ─── */
+  .eq-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+  }
+  .eq-card:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px -8px rgba(0,0,0,0.5);
+  }
+
+  /* Photo placeholder */
+  .eq-photo {
+    aspect-ratio: 16/10;
+    background:
+      linear-gradient(135deg, #2A2A30, #18181C),
+      radial-gradient(ellipse at top right, rgba(255,255,255,0.04), transparent 70%);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .eq-photo svg { color: rgba(255,255,255,0.15); width: 48px; height: 48px; }
+  .eq-photo .eq-status-pill {
+    position: absolute;
+    top: 10px; left: 10px;
+    z-index: 2;
+    backdrop-filter: blur(8px);
+  }
+  .eq-photo .eq-code {
+    position: absolute;
+    top: 10px; right: 10px;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: rgba(255,255,255,0.4);
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(8px);
+    padding: 2px 6px;
+    border-radius: 5px;
+  }
+
+  /* Category icon */
+  .cat-icon {
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* Filter chips */
+  .chip {
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border-subtle);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .chip:hover { background: rgba(255,255,255,0.06); color: var(--text-primary); }
+  .chip.active {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-color: rgba(249, 115, 22, 0.3);
+  }
+  .chip-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    opacity: 0.6;
+  }
+
+  /* Card body */
+  .eq-body {
+    padding: 14px 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .info-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 12px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .info-row:last-child { border-bottom: none; }
+  .info-row .label { color: var(--text-tertiary); }
+  .info-row .value { font-weight: 500; color: var(--text-primary); }
+
+  /* Bar chart */
+  .tco-bar {
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.06);
+    overflow: hidden;
+  }
+  .tco-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #6366F1, #818CF8);
+  }
+
+  /* Stagger */
+  .stagger > * {
+    opacity: 0;
+    transform: translateY(8px);
+    animation: rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .stagger > *:nth-child(1) { animation-delay: 0.05s; }
+  .stagger > *:nth-child(2) { animation-delay: 0.1s; }
+  .stagger > *:nth-child(3) { animation-delay: 0.15s; }
+  .stagger > *:nth-child(4) { animation-delay: 0.2s; }
+  .stagger > *:nth-child(5) { animation-delay: 0.25s; }
+  .stagger > *:nth-child(6) { animation-delay: 0.3s; }
+  @keyframes rise { to { opacity: 1; transform: translateY(0); } }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); }
+
+  kbd {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; padding: 2px 6px;
+    border-radius: 5px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+  }
+
+  @media (max-width: 768px) {
+    .px-10 { padding-left: 14px !important; padding-right: 14px !important; }
+    .display-font.text-\[28px\] { font-size: 22px !important; }
+    .grid-cols-5 { grid-template-columns: repeat(2, 1fr) !important; }
+    .grid-cols-3 { grid-template-columns: 1fr !important; }
+    .grid-cols-4 { grid-template-columns: 1fr !important; }
+    .hide-mobile { display: none !important; }
+  }
+</style>
+</head>
+<body class="min-h-screen relative">
+
+<div class="relative" style="z-index: 1;">
+
+  <!-- ═════════════════════════════════════════════════════════════════
+       Top toolbar
+       ═════════════════════════════════════════════════════════════ -->
+  <header class="sticky top-0 z-30 px-10 py-3" style="background: rgba(10,10,11,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-subtle);">
+    <div class="flex items-center justify-between gap-4">
+      <div class="flex items-center gap-2 text-[13px] flex-1 min-w-0">
+        <a class="cursor-pointer" style="color: var(--text-tertiary);">Главная</a>
+        <span style="color: var(--text-tertiary);">/</span>
+        <span style="color: var(--text-primary); font-weight: 500;">Техника и активы</span>
+        <kbd class="ml-3 hide-mobile">⌘ T</kbd>
+      </div>
+
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <button class="toolbar-btn">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M11 11l3 3"/></svg>
+          <span class="hide-mobile">Поиск</span>
+        </button>
+        <button class="toolbar-btn">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 3v10M8 13l-3-3M8 13l3-3"/></svg>
+          <span class="hide-mobile">Экспорт</span>
+        </button>
+        <button class="toolbar-btn primary">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v12M2 8h12"/></svg>
+          Добавить технику
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="px-10 py-6">
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         Hero
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="mb-5 stagger">
+      <div class="flex items-center gap-2 mb-1.5">
+        <span class="text-[11px] mono uppercase tracking-wider" style="color: var(--text-tertiary);">12 единиц · обновлено 14:38</span>
+      </div>
+      <h1 class="display-font text-[28px] font-light tracking-tight leading-[1.1]">
+        Техника и активы
+      </h1>
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[13px]" style="color: var(--text-secondary);">
+        <span>Балансовая стоимость <span class="num font-medium" style="color: var(--text-primary);">14,8 млн ₽</span></span>
+        <span style="color: var(--text-tertiary);">·</span>
+        <span>Стоимость владения за май <span class="num font-medium" style="color: var(--text-primary);">285 тыс ₽</span></span>
+        <span style="color: var(--text-tertiary);">·</span>
+        <span style="color: var(--warning);">3 алерта требуют внимания</span>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         KPI strip
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="grid grid-cols-5 gap-3 mb-6 stagger">
+      <div class="kpi-card">
+        <div class="text-[10.5px] mono uppercase tracking-wider mb-1.5" style="color: var(--text-tertiary);">Всего единиц</div>
+        <div class="num text-[24px] font-light">12</div>
+        <div class="text-[10.5px] mt-1" style="color: var(--text-tertiary);">14,8 млн балансовая</div>
+      </div>
+      <div class="kpi-card" style="background: linear-gradient(135deg, rgba(52,211,153,0.06), var(--bg-card)); border-color: rgba(52,211,153,0.15);">
+        <div class="text-[10.5px] mono uppercase tracking-wider mb-1.5" style="color: var(--text-tertiary);">В работе</div>
+        <div class="num text-[24px] font-light" style="color: var(--success);">8</div>
+        <div class="text-[10.5px] mt-1 mono" style="color: var(--success);">67% загрузка</div>
+      </div>
+      <div class="kpi-card" style="background: linear-gradient(135deg, rgba(251,191,36,0.05), var(--bg-card)); border-color: rgba(251,191,36,0.15);">
+        <div class="text-[10.5px] mono uppercase tracking-wider mb-1.5" style="color: var(--text-tertiary);">На ТО / ремонте</div>
+        <div class="num text-[24px] font-light" style="color: var(--warning);">3</div>
+        <div class="text-[10.5px] mt-1" style="color: var(--text-tertiary);">срок возврата 12.05</div>
+      </div>
+      <div class="kpi-card" style="background: linear-gradient(135deg, rgba(99,102,241,0.05), var(--bg-card)); border-color: rgba(99,102,241,0.15);">
+        <div class="text-[10.5px] mono uppercase tracking-wider mb-1.5" style="color: var(--text-tertiary);">Простаивает</div>
+        <div class="num text-[24px] font-light" style="color: var(--info);">1</div>
+        <div class="text-[10.5px] mt-1" style="color: var(--text-tertiary);">9 дней без работы</div>
+      </div>
+      <div class="kpi-card">
+        <div class="text-[10.5px] mono uppercase tracking-wider mb-1.5" style="color: var(--text-tertiary);">Расход ГСМ май</div>
+        <div class="num text-[24px] font-light">142 <span class="text-[12px]" style="color: var(--text-secondary);">тыс ₽</span></div>
+        <div class="text-[10.5px] mt-1 mono" style="color: var(--success);">↘ −8% к апрелю</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         Alerts (что горит)
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="mb-6">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h2 class="display-font text-[18px] font-medium tracking-tight">Требует внимания</h2>
+          <p class="text-[11.5px] mt-0.5" style="color: var(--text-tertiary);">3 алерта · отсортировано по срочности</p>
+        </div>
+        <button class="toolbar-btn">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+          История алертов
+        </button>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3 stagger">
+        <!-- Critical alert -->
+        <div class="alert-card danger">
+          <div class="cat-icon" style="background: var(--danger-soft); color: var(--danger);">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 1l7 13H1z"/><path d="M8 6v3M8 11v.01"/></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[12.5px] font-medium truncate" style="color: var(--text-primary);">СРО истекает через 4 дня</div>
+            <div class="text-[11px]" style="color: var(--text-tertiary);">Подъёмник Genie Z-45 · до 13.05</div>
+          </div>
+          <div class="flex-shrink-0">
+            <button class="text-[11px] mono px-2.5 py-1 rounded font-medium" style="background: var(--danger); color: white;">срочно</button>
+          </div>
+        </div>
+
+        <!-- Warning -->
+        <div class="alert-card warning">
+          <div class="cat-icon" style="background: var(--warning-soft); color: var(--warning);">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><path d="M8 4v4l2 2"/></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[12.5px] font-medium truncate">Поверка промальп оборудования</div>
+            <div class="text-[11px]" style="color: var(--text-tertiary);">12 верёвок и обвязок · до 28.05 (19 дн)</div>
+          </div>
+          <div class="flex-shrink-0">
+            <button class="text-[11px] mono px-2.5 py-1 rounded font-medium" style="background: var(--warning-soft); color: var(--warning);">19 дней</button>
+          </div>
+        </div>
+
+        <!-- Info -->
+        <div class="alert-card info">
+          <div class="cat-icon" style="background: var(--info-soft); color: var(--info);">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 13l3-7 3 4 2-3 4 6"/></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[12.5px] font-medium truncate">Простой 9 дней — упускаем прибыль</div>
+            <div class="text-[11px]" style="color: var(--text-tertiary);">Краскопульт Graco · ~52 тыс упущено</div>
+          </div>
+          <div class="flex-shrink-0">
+            <button class="text-[11px] mono px-2.5 py-1 rounded font-medium" style="background: var(--info-soft); color: var(--info);">найти проект</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         Filter chips
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="flex items-center gap-3 mb-4 overflow-x-auto pb-1" style="scrollbar-width: none;">
+      <span class="text-[11px] mono uppercase tracking-wider flex-shrink-0" style="color: var(--text-tertiary);">Категория:</span>
+      <div class="chip active">
+        Вся техника <span class="chip-count">12</span>
+      </div>
+      <div class="chip">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="9" width="10" height="5" rx="0.5"/><path d="M5 9V6h6v3M7 4h2"/></svg>
+        Подъёмники <span class="chip-count">3</span>
+      </div>
+      <div class="chip">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 13l4-9 2 1-4 9zM10 8l3-3 1 1-3 3z"/></svg>
+        АКЗ оборудование <span class="chip-count">2</span>
+      </div>
+      <div class="chip">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="5"/><path d="M8 5v3l2 2"/></svg>
+        Бетонные работы <span class="chip-count">2</span>
+      </div>
+      <div class="chip">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 8l3-3M13 8l-3-3M5 5l3 6 3-6"/></svg>
+        Сварка <span class="chip-count">2</span>
+      </div>
+      <div class="chip">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 1l4 6h-3v7H7V7H4z"/></svg>
+        Промальп <span class="chip-count">12</span>
+      </div>
+      <div class="chip">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="5" cy="11" r="2"/><circle cx="12" cy="11" r="2"/><path d="M3 11V7l4-2h5l2 4v2"/></svg>
+        Грузовая <span class="chip-count">2</span>
+      </div>
+
+      <div class="w-px h-6 mx-2 flex-shrink-0" style="background: var(--border-subtle);"></div>
+
+      <span class="text-[11px] mono uppercase tracking-wider flex-shrink-0" style="color: var(--text-tertiary);">Статус:</span>
+      <div class="chip">В работе <span class="chip-count">8</span></div>
+      <div class="chip">На ТО <span class="chip-count">3</span></div>
+      <div class="chip">Простаивает <span class="chip-count">1</span></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         Equipment grid
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="grid grid-cols-3 gap-4 mb-6 stagger">
+
+      <!-- ═══ Card 1: Подъёмник Genie Z-45 (КРИТИЧНО — СРО) ═══ -->
+      <div class="eq-card">
+        <div class="eq-photo" style="background: linear-gradient(135deg, #2A2D40, #1A1D2E);">
+          <span class="eq-status-pill pill" style="background: rgba(248, 113, 113, 0.85); color: white;">СРО ⚠ 4 дн</span>
+          <span class="eq-code">EQ-0014</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="14" width="18" height="6" rx="1"/><path d="M7 14V8h10v6M9 5h6M11 2h2"/></svg>
+        </div>
+        <div class="eq-body">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="cat-icon" style="background: rgba(168, 85, 247, 0.15); color: #C084FC;">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="9" width="10" height="5" rx="0.5"/><path d="M5 9V6h6v3M7 4h2"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-[14px] font-medium truncate">Подъёмник Genie Z-45</div>
+              <div class="text-[11px]" style="color: var(--text-tertiary);">Телескопический · 2018</div>
+            </div>
+          </div>
+
+          <div class="space-y-1 mt-2 mb-3">
+            <div class="info-row">
+              <span class="label">📍 Объект</span>
+              <span class="value">Marins Park</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Ответственный</span>
+              <span class="value">Иванов А.С.</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Моточасы</span>
+              <span class="value num">3 248 ч</span>
+            </div>
+            <div class="info-row">
+              <span class="label">ТО следующее</span>
+              <span class="value" style="color: var(--warning);">через 5 дней</span>
+            </div>
+            <div class="info-row">
+              <span class="label">СРО до</span>
+              <span class="value" style="color: var(--danger); font-weight: 600;">13.05.2026</span>
+            </div>
+          </div>
+
+          <div class="mt-auto pt-3" style="border-top: 1px solid var(--border-subtle);">
+            <div class="flex items-baseline justify-between mb-1">
+              <span class="text-[10.5px] mono uppercase tracking-wider" style="color: var(--text-tertiary);">TCO 2025</span>
+              <span class="num text-[14px] font-medium">485 200 ₽</span>
+            </div>
+            <div class="text-[10.5px] mono" style="color: var(--text-tertiary);">2 637 ₽/раб.день · 184 дня загрузка</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ Card 2: Genie GS-2632 ═══ -->
+      <div class="eq-card">
+        <div class="eq-photo" style="background: linear-gradient(135deg, #2D2A40, #1D1A2E);">
+          <span class="eq-status-pill pill" style="background: rgba(52, 211, 153, 0.85); color: #042C1F;">в работе</span>
+          <span class="eq-code">EQ-0015</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="4" y="14" width="16" height="6" rx="1"/><path d="M8 14v-3h8v3"/><path d="M9 11V8h6v3"/></svg>
+        </div>
+        <div class="eq-body">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="cat-icon" style="background: rgba(168, 85, 247, 0.15); color: #C084FC;">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="9" width="10" height="5" rx="0.5"/><path d="M5 9V6h6v3M7 4h2"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-[14px] font-medium truncate">Genie GS-2632</div>
+              <div class="text-[11px]" style="color: var(--text-tertiary);">Ножничный · 2020</div>
+            </div>
+          </div>
+
+          <div class="space-y-1 mt-2 mb-3">
+            <div class="info-row">
+              <span class="label">📍 Объект</span>
+              <span class="value">EVRAZ НТМК</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Ответственный</span>
+              <span class="value">Петров В.М.</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Моточасы</span>
+              <span class="value num">1 856 ч</span>
+            </div>
+            <div class="info-row">
+              <span class="label">ТО следующее</span>
+              <span class="value" style="color: var(--success);">04.07 (54 дня)</span>
+            </div>
+          </div>
+
+          <div class="mt-auto pt-3" style="border-top: 1px solid var(--border-subtle);">
+            <div class="flex items-baseline justify-between mb-1">
+              <span class="text-[10.5px] mono uppercase tracking-wider" style="color: var(--text-tertiary);">TCO 2025</span>
+              <span class="num text-[14px] font-medium">312 800 ₽</span>
+            </div>
+            <div class="text-[10.5px] mono" style="color: var(--text-tertiary);">1 698 ₽/раб.день · эффективная</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ Card 3: Краскопульт Graco (ПРОСТОЙ!) ═══ -->
+      <div class="eq-card" style="border-color: rgba(99, 102, 241, 0.2);">
+        <div class="eq-photo" style="background: linear-gradient(135deg, #1E2540, #18162E);">
+          <span class="eq-status-pill pill" style="background: rgba(99, 102, 241, 0.85); color: white;">⏸ простой 9 дн</span>
+          <span class="eq-code">EQ-0023</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M6 22V8M6 8l-2-2v-4h4v4l-2 2M9 12h2v8H9zM13 6l4-2v6l-4-2zM17 4l3-1v8l-3-1"/></svg>
+        </div>
+        <div class="eq-body">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="cat-icon" style="background: rgba(249, 115, 22, 0.15); color: var(--accent);">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 13l4-9 2 1-4 9z"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-[14px] font-medium truncate">Краскопульт Graco 695</div>
+              <div class="text-[11px]" style="color: var(--text-tertiary);">Безвоздушный · 2022</div>
+            </div>
+          </div>
+
+          <div class="space-y-1 mt-2 mb-3">
+            <div class="info-row">
+              <span class="label">📍 Местоположение</span>
+              <span class="value">Центральный склад</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Простой</span>
+              <span class="value" style="color: var(--info);">9 дней</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Ставка аренды</span>
+              <span class="value num">3 800 ₽/день</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Упущено</span>
+              <span class="value num" style="color: var(--info);">~52 тыс ₽</span>
+            </div>
+          </div>
+
+          <div class="mt-auto pt-3 flex gap-2" style="border-top: 1px solid var(--border-subtle);">
+            <button class="flex-1 text-[11.5px] py-1.5 rounded-md font-medium" style="background: var(--info); color: white;">найти проект</button>
+            <button class="flex-1 text-[11.5px] py-1.5 rounded-md font-medium" style="background: rgba(255,255,255,0.06); color: var(--text-secondary);">сдать в аренду</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ Card 4: Сварочный Кедр (НА ТО) ═══ -->
+      <div class="eq-card">
+        <div class="eq-photo" style="background: linear-gradient(135deg, #2D2D2D, #1A1A1A);">
+          <span class="eq-status-pill pill" style="background: rgba(251, 191, 36, 0.85); color: #412402;">🔧 на ТО</span>
+          <span class="eq-code">EQ-0008</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 8l3-3M13 8l-3-3M5 5l3 6 3-6M14 16l4 4M14 20l4-4"/></svg>
+        </div>
+        <div class="eq-body">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="cat-icon" style="background: rgba(14, 165, 233, 0.15); color: #38BDF8;">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 8l3-3M13 8l-3-3M5 5l3 6 3-6"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-[14px] font-medium truncate">Сварочный Кедр MIG</div>
+              <div class="text-[11px]" style="color: var(--text-tertiary);">Полуавтомат · 2021</div>
+            </div>
+          </div>
+
+          <div class="space-y-1 mt-2 mb-3">
+            <div class="info-row">
+              <span class="label">📍 Сервис</span>
+              <span class="value">ИП Петров</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Тип ремонта</span>
+              <span class="value">Замена платы</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Стоимость</span>
+              <span class="value num">18 400 ₽</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Возврат</span>
+              <span class="value" style="color: var(--warning);">12.05 (3 дня)</span>
+            </div>
+          </div>
+
+          <div class="mt-auto pt-3" style="border-top: 1px solid var(--border-subtle);">
+            <div class="flex items-baseline justify-between mb-1">
+              <span class="text-[10.5px] mono uppercase tracking-wider" style="color: var(--text-tertiary);">TCO 2025</span>
+              <span class="num text-[14px] font-medium">82 600 ₽</span>
+            </div>
+            <div class="text-[10.5px] mono" style="color: var(--text-tertiary);">3-й ремонт за год — повышенный износ</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ Card 5: Промальп комплект ═══ -->
+      <div class="eq-card">
+        <div class="eq-photo" style="background: linear-gradient(135deg, #2A1F1A, #1A140F);">
+          <span class="eq-status-pill pill" style="background: rgba(52, 211, 153, 0.85); color: #042C1F;">в работе</span>
+          <span class="eq-code">EQ-0019</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M12 2v8M8 5l4-3 4 3M8 13a4 4 0 008 0v-3M10 17v5M14 17v5M9 22h6"/></svg>
+        </div>
+        <div class="eq-body">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="cat-icon" style="background: rgba(52, 211, 153, 0.15); color: var(--success);">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 1l4 6h-3v7H7V7H4z"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-[14px] font-medium truncate">Промальп. комплект №1</div>
+              <div class="text-[11px]" style="color: var(--text-tertiary);">12 верёвок + обвязки</div>
+            </div>
+          </div>
+
+          <div class="space-y-1 mt-2 mb-3">
+            <div class="info-row">
+              <span class="label">📍 Объект</span>
+              <span class="value">EVRAZ НТМК</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Ответственный</span>
+              <span class="value">Петров В.М.</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Сертификация до</span>
+              <span class="value" style="color: var(--warning);">28.05 (19 дн)</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Состав</span>
+              <span class="value">12/12 в порядке</span>
+            </div>
+          </div>
+
+          <div class="mt-auto pt-3" style="border-top: 1px solid var(--border-subtle);">
+            <div class="flex items-baseline justify-between mb-1">
+              <span class="text-[10.5px] mono uppercase tracking-wider" style="color: var(--text-tertiary);">Балансовая</span>
+              <span class="num text-[14px] font-medium">340 000 ₽</span>
+            </div>
+            <div class="text-[10.5px] mono" style="color: var(--text-tertiary);">⚠ запланировать поверку</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ Card 6: КАМАЗ 6520 ═══ -->
+      <div class="eq-card">
+        <div class="eq-photo" style="background: linear-gradient(135deg, #1F2D1F, #0F1A0F);">
+          <span class="eq-status-pill pill" style="background: rgba(52, 211, 153, 0.85); color: #042C1F;">в работе</span>
+          <span class="eq-code">EQ-0002</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="6" cy="17" r="2"/><circle cx="18" cy="17" r="2"/><path d="M2 17V9l4-3h7v11M13 6l4 4v7M2 12h11M17 13h3"/></svg>
+        </div>
+        <div class="eq-body">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="cat-icon" style="background: rgba(14, 165, 233, 0.15); color: #38BDF8;">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="5" cy="11" r="2"/><circle cx="12" cy="11" r="2"/><path d="M3 11V7l4-2h5l2 4v2"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-[14px] font-medium truncate">КАМАЗ 6520</div>
+              <div class="text-[11px]" style="color: var(--text-tertiary);">Самосвал · Е738КУ196</div>
+            </div>
+          </div>
+
+          <div class="space-y-1 mt-2 mb-3">
+            <div class="info-row">
+              <span class="label">📍 Маршрут</span>
+              <span class="value">Ленина 2с</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Водитель</span>
+              <span class="value">Морозов Д.А.</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Пробег</span>
+              <span class="value num">186 240 км</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Расход май</span>
+              <span class="value num">38 240 ₽</span>
+            </div>
+            <div class="info-row">
+              <span class="label">ОСАГО до</span>
+              <span class="value" style="color: var(--success);">11.09.2026</span>
+            </div>
+          </div>
+
+          <div class="mt-auto pt-3" style="border-top: 1px solid var(--border-subtle);">
+            <div class="flex items-baseline justify-between mb-1">
+              <span class="text-[10.5px] mono uppercase tracking-wider" style="color: var(--text-tertiary);">TCO 2025</span>
+              <span class="num text-[14px] font-medium">624 100 ₽</span>
+            </div>
+            <div class="text-[10.5px] mono" style="color: var(--text-tertiary);">31,4 л/100км · норма</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         Bottom: AI insight + TCO chart
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="grid grid-cols-3 gap-5">
+
+      <!-- AI insight (новое! как на других экранах) -->
+      <div class="kpi-card col-span-1" style="background: linear-gradient(135deg, var(--info-soft), var(--bg-card)); border-color: rgba(99,102,241,0.15); padding: 18px 20px;">
+        <div class="flex items-center gap-2 mb-3">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--info);"><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+          <span class="text-[10.5px] mono uppercase tracking-wider" style="color: var(--info);">AI-анализ</span>
+        </div>
+        <p class="text-[13px] leading-relaxed mb-3" style="color: var(--text-secondary);">
+          <strong style="color: var(--text-primary);">Краскопульт Graco</strong> простаивает 9 дней на центральном складе. На объекте <strong style="color: var(--text-primary);">RUSAL Каменск-Уральский</strong> в смете запланированы АКЗ-работы с 12.05 — это идеальный кандидат для использования.
+        </p>
+        <p class="text-[12px] leading-relaxed mb-3" style="color: var(--text-secondary);">
+          Альтернатива: <strong style="color: var(--text-primary);">сдать в аренду</strong> на 2 недели (~53 тыс ₽).
+        </p>
+        <button class="text-[11.5px] mt-1 px-2.5 py-1.5 rounded-md font-medium flex items-center gap-1.5" style="background: var(--info); color: white;">
+          назначить на RUSAL
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4l4 4-4 4"/></svg>
+        </button>
+      </div>
+
+      <!-- TCO chart -->
+      <div class="kpi-card col-span-2" style="padding: 18px 20px;">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="display-font text-[16px] font-medium tracking-tight">Стоимость владения · топ-5 за 2025</h3>
+            <p class="text-[11.5px] mt-0.5" style="color: var(--text-tertiary);">амортизация + ТО + ГСМ + страховка</p>
+          </div>
+          <button class="toolbar-btn">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 13l3-7 3 4 2-3 4 6"/></svg>
+            Полный отчёт
+          </button>
+        </div>
+
+        <div class="space-y-3">
+          <!-- KAMAZ -->
+          <div>
+            <div class="flex items-center justify-between text-[12px] mb-1.5">
+              <span class="flex items-center gap-2">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="color: #38BDF8;"><circle cx="5" cy="11" r="2"/><circle cx="12" cy="11" r="2"/><path d="M3 11V7l4-2h5l2 4v2"/></svg>
+                <span>КАМАЗ 6520</span>
+                <span class="text-[10.5px] mono" style="color: var(--text-tertiary);">EQ-0002 · 247 раб.дней</span>
+              </span>
+              <span class="num font-medium">624 100 ₽</span>
+            </div>
+            <div class="tco-bar"><div class="tco-bar-fill" style="width: 100%;"></div></div>
+          </div>
+
+          <!-- Genie Z-45 -->
+          <div>
+            <div class="flex items-center justify-between text-[12px] mb-1.5">
+              <span class="flex items-center gap-2">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="color: #C084FC;"><rect x="3" y="9" width="10" height="5" rx="0.5"/><path d="M5 9V6h6v3M7 4h2"/></svg>
+                <span>Подъёмник Genie Z-45</span>
+                <span class="text-[10.5px] mono" style="color: var(--text-tertiary);">EQ-0014 · 184 раб.дня</span>
+              </span>
+              <span class="num font-medium">485 200 ₽</span>
+            </div>
+            <div class="tco-bar"><div class="tco-bar-fill" style="width: 78%; background: linear-gradient(90deg, #C084FC, #DDD6FE);"></div></div>
+          </div>
+
+          <!-- Compressor -->
+          <div>
+            <div class="flex items-center justify-between text-[12px] mb-1.5">
+              <span class="flex items-center gap-2">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="color: #34D399;"><circle cx="8" cy="8" r="5"/><path d="M3 13l-1 1M14 14l-1-1"/></svg>
+                <span>Компрессор Atlas Copco</span>
+                <span class="text-[10.5px] mono" style="color: var(--text-tertiary);">EQ-0007 · 162 раб.дня</span>
+              </span>
+              <span class="num font-medium">348 600 ₽</span>
+            </div>
+            <div class="tco-bar"><div class="tco-bar-fill" style="width: 56%; background: linear-gradient(90deg, #34D399, #6EE7B7);"></div></div>
+          </div>
+
+          <!-- Genie GS-2632 -->
+          <div>
+            <div class="flex items-center justify-between text-[12px] mb-1.5">
+              <span class="flex items-center gap-2">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="color: #C084FC;"><rect x="3" y="9" width="10" height="5" rx="0.5"/><path d="M5 9V6h6v3M7 4h2"/></svg>
+                <span>Genie GS-2632</span>
+                <span class="text-[10.5px] mono" style="color: var(--text-tertiary);">EQ-0015 · 172 раб.дня</span>
+              </span>
+              <span class="num font-medium">312 800 ₽</span>
+            </div>
+            <div class="tco-bar"><div class="tco-bar-fill" style="width: 50%; background: linear-gradient(90deg, #C084FC, #DDD6FE);"></div></div>
+          </div>
+
+          <!-- Graco -->
+          <div>
+            <div class="flex items-center justify-between text-[12px] mb-1.5">
+              <span class="flex items-center gap-2">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="color: var(--accent);"><path d="M3 13l4-9 2 1-4 9z"/></svg>
+                <span>Краскопульт Graco</span>
+                <span class="text-[10.5px] mono" style="color: var(--info);">EQ-0023 · 47 раб.дней ⚠</span>
+              </span>
+              <span class="num font-medium">218 400 ₽</span>
+            </div>
+            <div class="tco-bar"><div class="tco-bar-fill" style="width: 35%; background: linear-gradient(90deg, var(--accent), #FB923C);"></div></div>
+            <div class="text-[10.5px] mono mt-1" style="color: var(--info);">↑ упущено ~158 тыс при низкой загрузке</div>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-4 flex items-center justify-between" style="border-top: 1px solid var(--border-subtle);">
+          <div class="text-[11px]" style="color: var(--text-tertiary);">
+            Итого по топ-5: <span class="num font-medium" style="color: var(--text-primary);">1 989 100 ₽</span>
+          </div>
+          <div class="text-[11px] mono" style="color: var(--text-tertiary);">
+            45% всех расходов на технику в 2025
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

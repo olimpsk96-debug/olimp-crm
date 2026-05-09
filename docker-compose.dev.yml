@@ -1,0 +1,291 @@
+# docker-compose.dev.yml — локальная разработка на WSL2
+# Запуск: docker compose -f docker-compose.dev.yml up -d
+#
+# Порты:
+#   ERPNext:     http://localhost:8080
+#   MinIO API:   http://localhost:9000
+#   MinIO UI:    http://localhost:9001
+#   n8n:         http://localhost:5678
+#   Qdrant:      http://localhost:6333
+#   Next.js:     npm run dev → http://localhost:3000 (запускать отдельно)
+
+networks:
+  olimp_net:
+    driver: bridge
+
+volumes:
+  mariadb_data:
+  redis_cache:
+  redis_queue:
+  erpnext_sites:
+  erpnext_logs:
+  minio_data:
+  n8n_data:
+  n8n_pgdata:
+
+services:
+
+  # ── База данных ──────────────────────────────────────────────────────────
+  mariadb:
+    image: mariadb:10.11
+    container_name: olimp_mariadb
+    restart: unless-stopped
+    networks: [olimp_net]
+    ports:
+      - "3306:3306"
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-character-set-client-handshake
+      - --skip-innodb-read-only-compressed
+      - --max-allowed-packet=256M
+      - --innodb-buffer-pool-size=1G
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${ERPNEXT_DB_NAME}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MARIADB_ROOT_PASSWORD}"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ── Redis ─────────────────────────────────────────────────────────────────
+  redis-cache:
+    image: redis:7-alpine
+    container_name: olimp_redis_cache
+    restart: unless-stopped
+    networks: [olimp_net]
+    volumes:
+      - redis_cache:/data
+    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
+
+  redis-queue:
+    image: redis:7-alpine
+    container_name: olimp_redis_queue
+    restart: unless-stopped
+    networks: [olimp_net]
+    volumes:
+      - redis_queue:/data
+
+  # ── ERPNext ───────────────────────────────────────────────────────────────
+  configurator:
+    image: frappe/erpnext:v15
+    container_name: olimp_configurator
+    networks: [olimp_net]
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    entrypoint: ["bash", "-c"]
+    command:
+      - >
+        ls -1 apps > sites/apps.txt;
+        bench set-config -g db_host $$DB_HOST;
+        bench set-config -gp db_port $$DB_PORT;
+        bench set-config -g redis_cache "redis://redis-cache:6379";
+        bench set-config -g redis_queue "redis://redis-queue:6379";
+        bench set-config -g redis_socketio "redis://redis-queue:6379";
+        bench set-config -gp socketio_port $$SOCKETIO_PORT;
+    environment:
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      SOCKETIO_PORT: 9000
+    volumes:
+      - erpnext_sites:/home/frappe/frappe-bench/sites
+      - erpnext_logs:/home/frappe/frappe-bench/logs
+
+  create-site:
+    image: frappe/erpnext:v15
+    container_name: olimp_create_site
+    networks: [olimp_net]
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+    entrypoint: ["bash", "-c"]
+    command:
+      - >
+        wait-for-it -t 120 mariadb:3306;
+        wait-for-it -t 120 redis-cache:6379;
+        wait-for-it -t 120 redis-queue:6379;
+        export SITE=olimp.localhost;
+        if [ ! -d sites/$$SITE ]; then
+          bench new-site
+            --mariadb-user-host-login-scope='%'
+            --admin-password=$$ADMIN_PASSWORD
+            --db-root-username=root
+            --db-root-password=$$MARIADB_ROOT_PASSWORD
+            --install-app erpnext
+            --set-default $$SITE;
+        else
+          echo "Site $$SITE already exists, skipping.";
+        fi
+    environment:
+      ADMIN_PASSWORD: ${ERPNEXT_ADMIN_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+    volumes:
+      - erpnext_sites:/home/frappe/frappe-bench/sites
+      - erpnext_logs:/home/frappe/frappe-bench/logs
+
+  backend:
+    image: frappe/erpnext:v15
+    container_name: olimp_backend
+    restart: unless-stopped
+    networks: [olimp_net]
+    ports:
+      - "8080:8000"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis-cache:
+        condition: service_started
+      redis-queue:
+        condition: service_started
+    environment:
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      REDIS_CACHE: redis://redis-cache:6379
+      REDIS_QUEUE: redis://redis-queue:6379
+      SOCKETIO_PORT: 9000
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+    volumes:
+      - erpnext_sites:/home/frappe/frappe-bench/sites
+      - erpnext_logs:/home/frappe/frappe-bench/logs
+
+  websocket:
+    image: frappe/erpnext:v15
+    container_name: olimp_websocket
+    restart: unless-stopped
+    networks: [olimp_net]
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+    command: ["node", "/home/frappe/frappe-bench/apps/frappe/socketio.js"]
+    volumes:
+      - erpnext_sites:/home/frappe/frappe-bench/sites
+      - erpnext_logs:/home/frappe/frappe-bench/logs
+
+  queue-short:
+    image: frappe/erpnext:v15
+    container_name: olimp_queue_short
+    restart: unless-stopped
+    networks: [olimp_net]
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+    command: ["bench", "worker", "--queue", "short,default"]
+    volumes:
+      - erpnext_sites:/home/frappe/frappe-bench/sites
+      - erpnext_logs:/home/frappe/frappe-bench/logs
+
+  queue-long:
+    image: frappe/erpnext:v15
+    container_name: olimp_queue_long
+    restart: unless-stopped
+    networks: [olimp_net]
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+    command: ["bench", "worker", "--queue", "long,default,short"]
+    volumes:
+      - erpnext_sites:/home/frappe/frappe-bench/sites
+      - erpnext_logs:/home/frappe/frappe-bench/logs
+
+  scheduler:
+    image: frappe/erpnext:v15
+    container_name: olimp_scheduler
+    restart: unless-stopped
+    networks: [olimp_net]
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+    command: ["bench", "schedule"]
+    volumes:
+      - erpnext_sites:/home/frappe/frappe-bench/sites
+      - erpnext_logs:/home/frappe/frappe-bench/logs
+
+  # ── MinIO ─────────────────────────────────────────────────────────────────
+  minio:
+    image: minio/minio:latest
+    container_name: olimp_minio
+    restart: unless-stopped
+    networks: [olimp_net]
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+
+  # ── Gotenberg (PDF) ───────────────────────────────────────────────────────
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    container_name: olimp_gotenberg
+    restart: unless-stopped
+    networks: [olimp_net]
+    command:
+      - gotenberg
+      - --api-timeout=60s
+      - --chromium-disable-web-security
+
+  # ── n8n ───────────────────────────────────────────────────────────────────
+  n8n_db:
+    image: postgres:16-alpine
+    container_name: olimp_n8n_db
+    restart: unless-stopped
+    networks: [olimp_net]
+    environment:
+      POSTGRES_DB: n8n
+      POSTGRES_USER: n8n
+      POSTGRES_PASSWORD: ${N8N_DB_PASSWORD}
+    volumes:
+      - n8n_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U n8n"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: olimp_n8n
+    restart: unless-stopped
+    networks: [olimp_net]
+    ports:
+      - "5678:5678"
+    environment:
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      WEBHOOK_URL: http://localhost:5678/
+      GENERIC_TIMEZONE: Asia/Yekaterinburg
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: ${N8N_USER}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_PASSWORD}
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: n8n_db
+      DB_POSTGRESDB_DATABASE: n8n
+      DB_POSTGRESDB_USER: n8n
+      DB_POSTGRESDB_PASSWORD: ${N8N_DB_PASSWORD}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n/workflows:/home/node/.n8n/workflows:ro
+    depends_on:
+      n8n_db:
+        condition: service_healthy
+
+  # ── Qdrant (vector DB) ────────────────────────────────────────────────────
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: olimp_qdrant
+    restart: unless-stopped
+    networks: [olimp_net]
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - ./qdrant/storage:/qdrant/storage

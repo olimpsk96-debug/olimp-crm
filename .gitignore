@@ -1,0 +1,52 @@
+# Секреты — НИКОГДА не коммитить
+.env
+.env.local
+.env.*.local
+
+# Docker volumes (данные, не код)
+n8n_pgdata/
+qdrant/storage/
+backups/
+certbot/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+
+# Данные
+*.db
+*.sqlite
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/settings.json
+*.swp
+*.swo
+
+# Логи
+*.log
+
+# Windows Zone.Identifier (артефакты загрузки)
+*:Zone.Identifier
+
+# Архивы
+*.zip
+*.tar.gz

@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marins Park Hotel · Объект</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Inter+Tight:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root {
+    --bg-base: #0A0A0B;
+    --bg-elevated: #131316;
+    --bg-card: #18181C;
+    --bg-card-hover: #1E1E23;
+    --bg-card-elevated: #1A1A1F;
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-strong: rgba(255, 255, 255, 0.12);
+    --border-focus: rgba(249, 115, 22, 0.4);
+    --text-primary: #F4F4F5;
+    --text-secondary: #A1A1AA;
+    --text-tertiary: #71717A;
+    --accent: #F97316;
+    --accent-soft: rgba(249, 115, 22, 0.1);
+    --success: #34D399;
+    --success-soft: rgba(52, 211, 153, 0.1);
+    --danger: #F87171;
+    --danger-soft: rgba(248, 113, 113, 0.1);
+    --warning: #FBBF24;
+    --warning-soft: rgba(251, 191, 36, 0.1);
+    --info: #818CF8;
+    --info-soft: rgba(99, 102, 241, 0.1);
+  }
+  * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  html, body {
+    background: var(--bg-base); color: var(--text-primary);
+    font-family: 'Inter Tight', -apple-system, sans-serif;
+    letter-spacing: -0.011em;
+  }
+  .display-font { font-family: 'Fraunces', Georgia, serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; font-feature-settings: 'tnum'; }
+  .num { font-feature-settings: 'tnum', 'ss01'; letter-spacing: -0.04em; }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 50% -20%, rgba(99, 102, 241, 0.05), transparent 60%),
+      radial-gradient(ellipse 60% 40% at 100% 100%, rgba(249, 115, 22, 0.04), transparent 60%);
+    pointer-events: none; z-index: 0;
+  }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .card:hover { border-color: var(--border-strong); }
+  .card-elevated {
+    background: linear-gradient(180deg, var(--bg-card-elevated) 0%, #15151A 100%);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 20px 40px -20px rgba(0,0,0,0.8);
+  }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 999px;
+    font-size: 11.5px; font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  kbd {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; padding: 2px 6px;
+    border-radius: 5px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+  }
+
+  /* ─── Tabs ──────────────────────── */
+  .tab {
+    padding: 10px 16px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-weight: 500;
+    white-space: nowrap;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tab:hover { color: var(--text-primary); }
+  .tab.active {
+    color: var(--text-primary);
+    border-bottom-color: var(--accent);
+  }
+  .tab-count {
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.06);
+    color: var(--text-secondary);
+  }
+
+  /* ─── Progress ──────────────────────── */
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #FB923C);
+    border-radius: 999px;
+    transform-origin: left;
+    animation: fill 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transform: scaleX(0);
+  }
+  @keyframes fill { to { transform: scaleX(var(--progress)); } }
+
+  /* ─── Stagger entrance ───────────── */
+  .stagger > * {
+    opacity: 0;
+    transform: translateY(8px);
+    animation: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .stagger > *:nth-child(1) { animation-delay: 0.05s; }
+  .stagger > *:nth-child(2) { animation-delay: 0.1s; }
+  .stagger > *:nth-child(3) { animation-delay: 0.15s; }
+  .stagger > *:nth-child(4) { animation-delay: 0.2s; }
+  .stagger > *:nth-child(5) { animation-delay: 0.25s; }
+  .stagger > *:nth-child(6) { animation-delay: 0.3s; }
+  @keyframes rise { to { opacity: 1; transform: translateY(0); } }
+
+  /* ─── AI Insight (главное новшество) ───── */
+  .ai-insight {
+    background:
+      linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(249, 115, 22, 0.05) 100%),
+      var(--bg-card-elevated);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    border-radius: 20px;
+    padding: 24px 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .ai-insight::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.1), transparent 50%);
+    pointer-events: none;
+  }
+  .ai-insight-glow {
+    position: absolute;
+    width: 200px; height: 200px;
+    right: -40px; top: -40px;
+    background: radial-gradient(circle, rgba(249, 115, 22, 0.15), transparent 70%);
+    border-radius: 50%;
+    filter: blur(20px);
+    pointer-events: none;
+  }
+  .ai-recommendation {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .ai-recommendation:hover {
+    background: rgba(255,255,255,0.05);
+    border-color: var(--border-strong);
+    transform: translateX(2px);
+  }
+
+  /* ─── Money block ───────────────── */
+  .money-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .money-row:last-child { border-bottom: none; }
+
+  /* ─── Margin breakdown (интерактивная) ───── */
+  .margin-segment {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+  .margin-segment:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+  .margin-detail {
+    display: none;
+    margin-top: 16px;
+    padding: 16px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 12px;
+    border: 1px solid var(--border-subtle);
+    animation: rise 0.3s ease;
+  }
+  .margin-segment.active + .margin-detail { display: block; }
+
+  /* ─── Photo grid (улучшенная 3x2) ─────── */
+  .photo-grid-large {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .photo-large {
+    aspect-ratio: 4/3;
+    border-radius: 10px;
+    background:
+      linear-gradient(135deg, #2D2D33, #1E1E23),
+      radial-gradient(circle at 30% 30%, rgba(255,255,255,0.05), transparent 70%);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .photo-large:hover { transform: scale(1.02); }
+  .photo-large::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.05), transparent 70%);
+  }
+  .photo-large::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 50%;
+    background: linear-gradient(180deg, transparent, rgba(0,0,0,0.6));
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .photo-large:hover::after { opacity: 1; }
+  .photo-icon {
+    position: absolute;
+    inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-tertiary);
+  }
+  .photo-meta {
+    position: absolute;
+    bottom: 8px; left: 8px;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: rgba(255,255,255,0.7);
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .photo-large:hover .photo-meta { opacity: 1; }
+
+  /* ─── Team roster ────────────────── */
+  .team-member {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .team-member:hover { background: rgba(255,255,255,0.03); }
+
+  /* ─── Stage timeline ───────────────── */
+  .stage-row {
+    display: flex; align-items: center; gap: 16px;
+    padding: 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .stage-row:hover { background: rgba(255,255,255,0.03); }
+  .stage-row.active {
+    background: var(--accent-soft);
+    border: 1px solid rgba(249, 115, 22, 0.2);
+  }
+  .stage-row.future { opacity: 0.5; }
+  .stage-circle {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* ─── Activity timeline ─────────────── */
+  .timeline-line {
+    position: absolute;
+    left: 19px; top: 12px; bottom: 12px;
+    width: 1px;
+    background: var(--border-subtle);
+  }
+  .timeline-item {
+    position: relative;
+    padding-left: 48px;
+    padding-bottom: 16px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .timeline-item:hover .timeline-content {
+    background: rgba(255,255,255,0.03);
+  }
+  .timeline-content {
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: background 0.15s ease;
+  }
+  .timeline-dot {
+    position: absolute;
+    left: 12px; top: 12px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: 2px solid;
+    z-index: 1;
+  }
+
+  /* ─── Scrollbar ────────────────── */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); }
+
+  /* ─── Tab dropdown ────────────────── */
+  .tab-more {
+    position: relative;
+  }
+  .tab-more-menu {
+    display: none;
+    position: absolute;
+    top: 100%; right: 0;
+    background: var(--bg-card-elevated);
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    padding: 6px;
+    min-width: 200px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+    z-index: 50;
+    margin-top: 4px;
+  }
+  .tab-more:hover .tab-more-menu { display: block; }
+  .tab-more-item {
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    transition: all 0.1s ease;
+  }
+  .tab-more-item:hover {
+    background: rgba(255,255,255,0.04);
+    color: var(--text-primary);
+  }
+
+  /* ─── Mobile adaptation ───────────── */
+  @media (max-width: 768px) {
+    .px-10 { padding-left: 16px !important; padding-right: 16px !important; }
+    .py-8 { padding-top: 16px !important; padding-bottom: 16px !important; }
+    .display-font.text-\[40px\] { font-size: 28px !important; }
+    .grid-cols-3 { grid-template-columns: 1fr !important; }
+    .grid-cols-5 { grid-template-columns: repeat(2, 1fr) !important; }
+    .col-span-2 { grid-column: span 1 !important; }
+    .max-w-\[1400px\] { max-width: 100% !important; }
+    .photo-grid-large { grid-template-columns: repeat(2, 1fr) !important; }
+    .ai-insight { padding: 16px 18px !important; }
+    .hide-mobile { display: none !important; }
+    .tab { padding: 10px 12px !important; font-size: 12.5px !important; }
+    .stage-circle { width: 32px !important; height: 32px !important; }
+  }
+
+  /* ─── Focus states (accessibility) ────────── */
+  button:focus-visible, .clickable:focus-visible {
+    outline: 2px solid var(--border-focus);
+    outline-offset: 2px;
+  }
+</style>
+  <link rel="stylesheet" href="theme.css">
+  <script src="theme-switcher.js" defer></script>
+</head>
+<body class="min-h-screen relative">
+
+<div class="relative" style="z-index: 1;">
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Sticky breadcrumb
+       ═══════════════════════════════════════════════════════════════ -->
+  <header class="sticky top-0 z-30 px-10 py-4" style="background: rgba(10,10,11,0.7); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-subtle);">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2 text-[13px]">
+        <a class="cursor-pointer" style="color: var(--text-tertiary);">Объекты</a>
+        <span style="color: var(--text-tertiary);">/</span>
+        <span style="color: var(--text-primary); font-weight: 500;">Marins Park Hotel</span>
+        <kbd class="ml-3 hide-mobile">⌘ ↑↓ переключение</kbd>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="text-[12.5px] px-3 py-1.5 rounded-lg flex items-center gap-2 hide-mobile" style="background: rgba(255,255,255,0.04); color: var(--text-secondary); border: 1px solid var(--border-subtle);">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+          Поделиться
+        </button>
+        <button class="text-[12.5px] px-3 py-1.5 rounded-lg flex items-center gap-2" style="background: var(--accent); color: white;">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v12M2 8h12"/></svg>
+          Создать КС-2
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="px-10 py-8 max-w-[1400px] mx-auto stagger">
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         HERO BLOCK
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="mb-6 grid grid-cols-3 gap-5">
+      <div class="col-span-2">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-[11.5px] mono uppercase tracking-wider" style="color: var(--text-tertiary);">PR-2026-04-12 · Кровельные работы</span>
+          <span class="pill" style="background: var(--success-soft); color: var(--success);">Активный</span>
+          <span class="pill hide-mobile" style="background: rgba(255,255,255,0.04); color: var(--text-tertiary);">опережение +5 дней</span>
+        </div>
+        <h1 class="display-font text-[40px] font-light tracking-tight leading-[1.1]" style="color: var(--text-primary);">
+          Кровля Marins Park Hotel
+        </h1>
+        <div class="flex items-center flex-wrap gap-x-4 gap-y-1 mt-3 text-[13px]" style="color: var(--text-secondary);">
+          <span class="flex items-center gap-1.5">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="6" r="2"/><path d="M8 14c-3-3-5-5.5-5-8a5 5 0 0110 0c0 2.5-2 5-5 8z"/></svg>
+            ул. Куйбышева, 44
+          </span>
+          <span style="color: var(--text-tertiary);">·</span>
+          <span>1 540 м²</span>
+          <span style="color: var(--text-tertiary);">·</span>
+          <span class="mono">Договор №204746 · 12.04.2026</span>
+        </div>
+      </div>
+
+      <!-- Right: countdown card -->
+      <div class="card p-5">
+        <div class="flex items-baseline justify-between">
+          <div>
+            <div class="text-[11px] mono uppercase tracking-wider" style="color: var(--text-tertiary);">До завершения</div>
+            <div class="num text-[32px] font-light leading-none mt-1" style="color: var(--text-primary);">47 <span class="text-[14px]" style="color: var(--text-secondary);">дней</span></div>
+            <div class="text-[12px] mt-1" style="color: var(--text-tertiary);">сдача 25 июня 2026</div>
+          </div>
+          <div class="flex flex-col items-end">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="color: var(--success);"><path d="M3 8l3 3 7-7"/></svg>
+            <div class="text-[10.5px] mono mt-1" style="color: var(--success);">в графике</div>
+          </div>
+        </div>
+        <div class="mt-3 progress-bar" style="--progress: 0.84;"><div class="progress-fill"></div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         AI INSIGHT BLOCK (новое! — поднято наверх)
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="ai-insight mb-6">
+      <div class="ai-insight-glow"></div>
+      <div class="flex items-start gap-4 mb-4 relative">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, #6366F1, #8B5CF6);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">
+            <path d="M12 2v4M12 18v4M2 12h4M18 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-[11px] mono uppercase tracking-wider" style="color: #818CF8;">AI-анализ объекта</span>
+            <span class="pill" style="background: var(--info-soft); color: var(--info);">обновлено 14:30</span>
+          </div>
+          <h2 class="text-[20px] font-medium leading-tight" style="color: var(--text-primary);">
+            Объект опережает план. Рекомендую <span style="color: var(--accent);">сегодня закрыть КС-2 №3</span> — это разгонит cashflow.
+          </h2>
+        </div>
+      </div>
+
+      <p class="text-[14px] leading-relaxed mb-5 relative" style="color: var(--text-secondary);">
+        Этап 3 (утеплитель и стяжка) технически готов с 06.05, но КС-2 ещё не создан. Закрытие даст <span class="num" style="color: var(--text-primary);">+2,1 млн ₽</span> к ожидаемому поступлению на следующей неделе. Это критично — <span style="color: var(--warning);">на 16.05 прогнозируется кассовый разрыв −2,1 млн ₽</span>.
+      </p>
+
+      <div class="grid grid-cols-3 gap-3 relative">
+        <div class="ai-recommendation">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background: var(--accent-soft); color: var(--accent);">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 5h10M3 8h10M3 11h7"/></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[12px] font-medium" style="color: var(--text-primary);">Создать КС-2 №3</div>
+            <div class="text-[11px]" style="color: var(--text-tertiary);">→ +2,1 млн ₽ к 20.05</div>
+          </div>
+        </div>
+        <div class="ai-recommendation">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background: var(--warning-soft); color: var(--warning);">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="6"/><path d="M8 4v4l2 2"/></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[12px] font-medium" style="color: var(--text-primary);">Дебиторка 14 дней</div>
+            <div class="text-[11px]" style="color: var(--text-tertiary);">2,4 млн от Эдельвейса · напомнить</div>
+          </div>
+        </div>
+        <div class="ai-recommendation">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background: var(--success-soft); color: var(--success);">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 13l3-7 3 4 2-3 4 6"/></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[12px] font-medium" style="color: var(--text-primary);">Маржа +3,2пп</div>
+            <div class="text-[11px]" style="color: var(--text-tertiary);">экономия на материалах</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         KPI STRIP (5 cards)
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="grid grid-cols-5 gap-3 mb-6">
+      <div class="card p-4">
+        <div class="text-[10.5px] mono uppercase tracking-wider mb-1.5" style="color: var(--text-tertiary);">Бюджет</div>
+        <div class="num text-[22px] font-light" style="color: var(--text-primary);">8,9 <span class="text-[12px]" style="color: var(--text-secondary);">млн ₽</span></div>
+      </div>
+      <div class="card p-4">
+        <div class="text-[10.5px] mono uppercase tracking-wider mb-1.5" style="color: var(--text-tertiary);">Освоено</div>
+        <div class="num text-[22px] font-light" style="color: var(--text-primary);">7,3 <span class="text-[12px]" style="color: var(--text-secondary);">млн ₽</span></div>
+        <div class="text-[10.5px] mt-1 mono" style="color: var(--success);">↗ 82%</div>
+      </div>
+      <div class="card p-4">
+        <div class="text-[10.5px] mono uppercase tracking-wider mb-1.5" style="color: var(--text-tertiary);">Затраты факт</div>
+        <div class="num text-[22px] font-light" style="color: var(--text-primary);">4,3 <span class="text-[12px]" style="color: var(--text-secondary);">млн ₽</span></div>
+        <div class="text-[10.5px] mt-1" style="color: var(--text-tertiary);">из 5,1 план</div>
+      </div>
+      <div class="card p-4" style="background: linear-gradient(135deg, rgba(52,211,153,0.06), var(--bg-card)); border-color: rgba(52,211,153,0.15);">
+        <div class="text-[10.5px] mono uppercase tracking-wider mb-1.5" style="color: var(--text-tertiary);">Маржа факт</div>
+        <div class="num text-[22px] font-light" style="color: var(--success);">41,2<span class="text-[12px]">%</span></div>
+        <div class="text-[10.5px] mt-1 mono" style="color: var(--success);">+3,2пп к плану</div>
+      </div>
+      <div class="card p-4">
+        <div class="text-[10.5px] mono uppercase tracking-wider mb-1.5" style="color: var(--text-tertiary);">Готовность</div>
+        <div class="num text-[22px] font-light" style="color: var(--text-primary);">84<span class="text-[12px]">%</span></div>
+        <div class="mt-2 progress-bar" style="--progress: 0.84;"><div class="progress-fill"></div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         TABS (4 главных + Ещё ▼)
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="flex items-center gap-1 mb-6 overflow-x-auto" style="border-bottom: 1px solid var(--border-subtle);">
+      <div class="tab active">Обзор</div>
+      <div class="tab">Смета · план/факт</div>
+      <div class="tab">КС-2 / КС-3 <span class="tab-count">2/5</span></div>
+      <div class="tab">Документы <span class="tab-count">14</span></div>
+      <div class="tab tab-more ml-auto">
+        Ещё
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 6l3 3 3-3"/></svg>
+        <div class="tab-more-menu">
+          <div class="tab-more-item">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="5" r="2"/><path d="M2 14c0-3 2.5-4.5 6-4.5s6 1.5 6 4.5"/></svg>
+            Субподрядчики <span class="tab-count ml-auto">3</span>
+          </div>
+          <div class="tab-more-item">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="6" width="10" height="8" rx="1"/><circle cx="8" cy="10" r="2"/></svg>
+            Фотоотчёты <span class="tab-count ml-auto">84</span>
+          </div>
+          <div class="tab-more-item">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3h7l3 3v7a1 1 0 01-1 1H3z"/></svg>
+            Журнал прораба
+          </div>
+          <div class="tab-more-item">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7l3 3 7-7"/><path d="M14 8v5a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1h7"/></svg>
+            ОТ/ТБ
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         CONTENT GRID
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="grid grid-cols-3 gap-5">
+
+      <!-- ═══════ MAIN COLUMN ═══════ -->
+      <div class="col-span-2 space-y-5">
+
+        <!-- ═══ MONEY BLOCK (новый!) ═══ -->
+        <div class="card-elevated p-6">
+          <div class="flex items-center justify-between mb-5">
+            <div>
+              <h3 class="display-font text-[19px] font-medium tracking-tight">Деньги</h3>
+              <p class="text-[12.5px] mt-0.5" style="color: var(--text-tertiary);">движение по объекту</p>
+            </div>
+            <button class="text-[11.5px] mono flex items-center gap-1" style="color: var(--text-tertiary);">
+              детализация <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4l4 4-4 4"/></svg>
+            </button>
+          </div>
+
+          <div class="grid grid-cols-3 gap-4 mb-5">
+            <!-- Получено -->
+            <div class="p-4 rounded-xl" style="background: var(--success-soft); border: 1px solid rgba(52,211,153,0.15);">
+              <div class="flex items-center gap-2 mb-2">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" style="color: var(--success);"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+                <span class="text-[11px] mono uppercase tracking-wider" style="color: var(--text-tertiary);">Получено</span>
+              </div>
+              <div class="num text-[24px] font-light" style="color: var(--success);">4,1 <span class="text-[13px]" style="color: var(--text-secondary);">млн ₽</span></div>
+              <div class="text-[11px] mt-1" style="color: var(--text-tertiary);">2 поступления</div>
+            </div>
+
+            <!-- Дебиторка -->
+            <div class="p-4 rounded-xl" style="background: var(--warning-soft); border: 1px solid rgba(251,191,36,0.15);">
+              <div class="flex items-center gap-2 mb-2">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" style="color: var(--warning);"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+                <span class="text-[11px] mono uppercase tracking-wider" style="color: var(--text-tertiary);">Дебиторка</span>
+              </div>
+              <div class="num text-[24px] font-light" style="color: var(--warning);">2,4 <span class="text-[13px]" style="color: var(--text-secondary);">млн ₽</span></div>
+              <div class="text-[11px] mt-1" style="color: var(--text-tertiary);">14 дней просрочки</div>
+            </div>
+
+            <!-- Следующее поступление -->
+            <div class="p-4 rounded-xl" style="background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.15);">
+              <div class="flex items-center gap-2 mb-2">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" style="color: var(--info);"><rect x="2" y="3" width="12" height="11" rx="1"/><path d="M2 6h12M5 1v3M11 1v3"/></svg>
+                <span class="text-[11px] mono uppercase tracking-wider" style="color: var(--text-tertiary);">Ожидается</span>
+              </div>
+              <div class="num text-[24px] font-light" style="color: var(--info);">2,1 <span class="text-[13px]" style="color: var(--text-secondary);">млн ₽</span></div>
+              <div class="text-[11px] mt-1" style="color: var(--text-tertiary);">после КС-2 №3</div>
+            </div>
+          </div>
+
+          <!-- Money rows: history -->
+          <div>
+            <div class="text-[11px] mono uppercase tracking-wider mb-2" style="color: var(--text-tertiary);">История движений</div>
+            <div class="money-row">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-md flex items-center justify-center" style="background: var(--success-soft); color: var(--success);">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+                </div>
+                <div>
+                  <div class="text-[13px] font-medium">Поступление по КС-2 №1</div>
+                  <div class="text-[11px]" style="color: var(--text-tertiary);">28.04.2026 · авансом</div>
+                </div>
+              </div>
+              <div class="num text-[14px] font-medium" style="color: var(--success);">+1,2 <span class="text-[10.5px]" style="color: var(--text-tertiary);">млн ₽</span></div>
+            </div>
+            <div class="money-row">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-md flex items-center justify-center" style="background: var(--success-soft); color: var(--success);">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+                </div>
+                <div>
+                  <div class="text-[13px] font-medium">Поступление аванса</div>
+                  <div class="text-[11px]" style="color: var(--text-tertiary);">14.04.2026 · 30%</div>
+                </div>
+              </div>
+              <div class="num text-[14px] font-medium" style="color: var(--success);">+2,9 <span class="text-[10.5px]" style="color: var(--text-tertiary);">млн ₽</span></div>
+            </div>
+            <div class="money-row">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-md flex items-center justify-center" style="background: var(--warning-soft); color: var(--warning);">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+                </div>
+                <div>
+                  <div class="text-[13px] font-medium">КС-2 №2 ждёт оплату</div>
+                  <div class="text-[11px]" style="color: var(--text-tertiary);">подписан 12.05 · срок до 26.05</div>
+                </div>
+              </div>
+              <div class="num text-[14px] font-medium" style="color: var(--warning);">2,4 <span class="text-[10.5px]" style="color: var(--text-tertiary);">млн ₽</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ INTERACTIVE MARGIN BREAKDOWN ═══ -->
+        <div class="card-elevated p-6">
+          <div class="flex items-center justify-between mb-5">
+            <div>
+              <h3 class="display-font text-[19px] font-medium tracking-tight">Структура маржи</h3>
+              <p class="text-[12.5px] mt-0.5" style="color: var(--text-tertiary);">кликни сегмент для деталей</p>
+            </div>
+            <span class="text-[11.5px] mono" style="color: var(--text-tertiary);">факт. себестоимость 4,3 млн</span>
+          </div>
+
+          <!-- Stacked bar (clickable segments) -->
+          <div class="flex h-12 rounded-lg overflow-hidden mb-3 stagger" style="gap: 2px;">
+            <div class="margin-segment flex items-center justify-center text-[11.5px] font-medium text-white" style="width: 35%; background: linear-gradient(90deg, #C2410C, #F97316);" onclick="toggleMargin(this)">
+              Материалы 35%
+            </div>
+            <div class="margin-segment flex items-center justify-center text-[11.5px] font-medium text-white" style="width: 22%; background: linear-gradient(90deg, #6366F1, #818CF8);" onclick="toggleMargin(this)">
+              Субы 22%
+            </div>
+            <div class="margin-segment flex items-center justify-center text-[11px] font-medium text-white" style="width: 12%; background: linear-gradient(90deg, #4F46E5, #6366F1);" onclick="toggleMargin(this)">
+              ФОТ 12%
+            </div>
+            <div class="margin-segment flex items-center justify-center text-[10px] font-medium" style="width: 8%; background: linear-gradient(90deg, #1F2937, #374151); color: var(--text-secondary);" onclick="toggleMargin(this)">
+              Прочее 8%
+            </div>
+            <div class="margin-segment flex items-center justify-center text-[11.5px] font-medium text-white" style="width: 23%; background: linear-gradient(90deg, #059669, #34D399);" onclick="toggleMargin(this)">
+              Маржа 41,2%
+            </div>
+          </div>
+
+          <!-- Detail row that appears on click -->
+          <div id="margin-detail" class="margin-detail" style="display: block;">
+            <div class="flex items-center justify-between mb-3">
+              <div class="text-[13px] font-medium">Материалы · 2,55 млн ₽ из 2,67 план</div>
+              <span class="pill" style="background: var(--success-soft); color: var(--success);">экономия 4,5%</span>
+            </div>
+            <div class="space-y-2">
+              <div class="flex items-center justify-between text-[12.5px]">
+                <span style="color: var(--text-secondary);">Наплавляемая ТехноНИКОЛЬ Унифлекс ЭКП</span>
+                <span class="num">980к ₽</span>
+              </div>
+              <div class="flex items-center justify-between text-[12.5px]">
+                <span style="color: var(--text-secondary);">Утеплитель ROCKWOOL РУФ БАТТС 100мм</span>
+                <span class="num">620к ₽</span>
+              </div>
+              <div class="flex items-center justify-between text-[12.5px]">
+                <span style="color: var(--text-secondary);">Праймер битумный + мастика</span>
+                <span class="num">340к ₽</span>
+              </div>
+              <div class="flex items-center justify-between text-[12.5px]">
+                <span style="color: var(--text-secondary);">Стяжка цементно-песчаная М150 (раствор)</span>
+                <span class="num">280к ₽</span>
+              </div>
+              <div class="flex items-center justify-between text-[12.5px]">
+                <span style="color: var(--text-tertiary);">+ ещё 8 позиций</span>
+                <span class="num" style="color: var(--text-tertiary);">330к ₽</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-5 gap-3 mt-4">
+            <div>
+              <div class="flex items-center gap-1.5 mb-1">
+                <span class="w-2 h-2 rounded-full" style="background: #F97316;"></span>
+                <span class="text-[11px]" style="color: var(--text-tertiary);">Материалы</span>
+              </div>
+              <div class="num text-[15px] font-medium">2,55</div>
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5 mb-1">
+                <span class="w-2 h-2 rounded-full" style="background: #818CF8;"></span>
+                <span class="text-[11px]" style="color: var(--text-tertiary);">Субподряд</span>
+              </div>
+              <div class="num text-[15px] font-medium">1,61</div>
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5 mb-1">
+                <span class="w-2 h-2 rounded-full" style="background: #6366F1;"></span>
+                <span class="text-[11px]" style="color: var(--text-tertiary);">ФОТ + страх.</span>
+              </div>
+              <div class="num text-[15px] font-medium">0,87</div>
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5 mb-1">
+                <span class="w-2 h-2 rounded-full" style="background: #374151;"></span>
+                <span class="text-[11px]" style="color: var(--text-tertiary);">Накладные</span>
+              </div>
+              <div class="num text-[15px] font-medium">0,58</div>
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5 mb-1">
+                <span class="w-2 h-2 rounded-full" style="background: #34D399;"></span>
+                <span class="text-[11px]" style="color: var(--text-tertiary);">Маржа</span>
+              </div>
+              <div class="num text-[15px] font-medium" style="color: var(--success);">3,01</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ KS-2 STAGES TIMELINE ═══ -->
+        <div class="card-elevated p-6">
+          <div class="flex items-center justify-between mb-5">
+            <div>
+              <h3 class="display-font text-[19px] font-medium tracking-tight">Этапы закрытия</h3>
+              <p class="text-[12.5px] mt-0.5" style="color: var(--text-tertiary);">КС-2 / КС-3 по этапам</p>
+            </div>
+            <span class="text-[11.5px] mono" style="color: var(--text-tertiary);">2 из 5 подписаны</span>
+          </div>
+
+          <div class="space-y-2">
+            <!-- Stage 1 -->
+            <div class="stage-row">
+              <div class="stage-circle" style="background: var(--success-soft); color: var(--success);">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3 3 7-7"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[14px] font-medium">Этап 1 · Демонтаж старого покрытия</div>
+                <div class="text-[12px]" style="color: var(--text-tertiary);">КС-2 №1 от 28.04 · Оплачен 02.05</div>
+              </div>
+              <div class="text-right flex-shrink-0">
+                <div class="num text-[14px] font-medium">1,2 <span class="text-[10.5px]" style="color: var(--text-tertiary);">млн ₽</span></div>
+                <div class="text-[11px] mono" style="color: var(--success);">оплачен ✓</div>
+              </div>
+            </div>
+
+            <!-- Stage 2 -->
+            <div class="stage-row">
+              <div class="stage-circle" style="background: var(--success-soft); color: var(--success);">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3 3 7-7"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[14px] font-medium">Этап 2 · Гидро- и пароизоляция</div>
+                <div class="text-[12px]" style="color: var(--text-tertiary);">КС-2 №2 от 12.05 · ждёт оплату до 26.05</div>
+              </div>
+              <div class="text-right flex-shrink-0">
+                <div class="num text-[14px] font-medium">2,4 <span class="text-[10.5px]" style="color: var(--text-tertiary);">млн ₽</span></div>
+                <div class="text-[11px] mono" style="color: var(--warning);">ожидает</div>
+              </div>
+            </div>
+
+            <!-- Stage 3 — active -->
+            <div class="stage-row active">
+              <div class="stage-circle" style="background: var(--accent-soft); color: var(--accent);">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-[14px] font-medium">Этап 3 · Утеплитель и стяжка</span>
+                  <span class="pill" style="background: var(--accent-soft); color: var(--accent); font-size: 10px;">текущий</span>
+                </div>
+                <div class="text-[12px]" style="color: var(--text-tertiary);">Готов с 06.05 · нужен КС-2 №3</div>
+              </div>
+              <div class="text-right flex-shrink-0">
+                <div class="num text-[14px] font-medium">2,1 <span class="text-[10.5px]" style="color: var(--text-tertiary);">млн ₽</span></div>
+                <button class="text-[11px] mt-1 px-2.5 py-1 rounded mono font-medium" style="background: var(--accent); color: white;">создать</button>
+              </div>
+            </div>
+
+            <!-- Stage 4 — future -->
+            <div class="stage-row future">
+              <div class="stage-circle" style="background: rgba(255,255,255,0.04); color: var(--text-tertiary); border: 1px dashed var(--border-strong);">
+                <span class="text-[12px] mono">4</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[14px] font-medium">Этап 4 · Финишное покрытие</div>
+                <div class="text-[12px]" style="color: var(--text-tertiary);">Запланирован 02.06–15.06</div>
+              </div>
+              <div class="text-right flex-shrink-0">
+                <div class="num text-[14px] font-medium" style="color: var(--text-secondary);">2,2 <span class="text-[10.5px]" style="color: var(--text-tertiary);">млн ₽</span></div>
+              </div>
+            </div>
+
+            <!-- Stage 5 — future -->
+            <div class="stage-row future">
+              <div class="stage-circle" style="background: rgba(255,255,255,0.04); color: var(--text-tertiary); border: 1px dashed var(--border-strong);">
+                <span class="text-[12px] mono">5</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[14px] font-medium">Этап 5 · Парапеты, водостоки, сдача</div>
+                <div class="text-[12px]" style="color: var(--text-tertiary);">Запланирован 16.06–25.06</div>
+              </div>
+              <div class="text-right flex-shrink-0">
+                <div class="num text-[14px] font-medium" style="color: var(--text-secondary);">1,0 <span class="text-[10.5px]" style="color: var(--text-tertiary);">млн ₽</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ PHOTOS (улучшенный 3x2) ═══ -->
+        <div class="card-elevated p-6">
+          <div class="flex items-center justify-between mb-5">
+            <div>
+              <h3 class="display-font text-[19px] font-medium tracking-tight">Свежие фотоотчёты</h3>
+              <p class="text-[12.5px] mt-0.5" style="color: var(--text-tertiary);">Иванов А.С. · сегодня в 09:24 · 12 фото</p>
+            </div>
+            <button class="text-[11.5px] mono flex items-center gap-1" style="color: var(--text-tertiary);">
+              все 84 фото <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4l4 4-4 4"/></svg>
+            </button>
+          </div>
+          <div class="photo-grid-large">
+            <div class="photo-large">
+              <div class="photo-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M9 6l1.5-2h3L15 6"/></svg>
+              </div>
+              <div class="photo-meta">этап 3 · 09:18</div>
+            </div>
+            <div class="photo-large">
+              <div class="photo-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M9 6l1.5-2h3L15 6"/></svg></div>
+              <div class="photo-meta">утеплитель · 09:19</div>
+            </div>
+            <div class="photo-large">
+              <div class="photo-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M9 6l1.5-2h3L15 6"/></svg></div>
+              <div class="photo-meta">стяжка · 09:21</div>
+            </div>
+            <div class="photo-large">
+              <div class="photo-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M9 6l1.5-2h3L15 6"/></svg></div>
+              <div class="photo-meta">парапет · 09:22</div>
+            </div>
+            <div class="photo-large">
+              <div class="photo-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M9 6l1.5-2h3L15 6"/></svg></div>
+              <div class="photo-meta">бригада · 09:23</div>
+            </div>
+            <div class="photo-large flex items-center justify-center" style="background: rgba(255,255,255,0.03); cursor: pointer;">
+              <div class="text-center">
+                <div class="num text-[24px] font-light">+79</div>
+                <div class="text-[11px] mt-0.5" style="color: var(--text-tertiary);">показать все</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ═══════ RIGHT COLUMN ═══════ -->
+      <div class="space-y-5">
+
+        <!-- ═══ TEAM ON SITE (новый!) ═══ -->
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <div class="text-[11px] mono uppercase tracking-wider" style="color: var(--text-tertiary);">Команда на объекте</div>
+            <span class="text-[11px] mono" style="color: var(--text-tertiary);">5 человек</span>
+          </div>
+          <div class="space-y-1">
+            <div class="team-member">
+              <div class="w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-semibold" style="background: linear-gradient(135deg, #6366F1, #8B5CF6); color: white;">ИА</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[13px] font-medium truncate">Иванов А.С.</div>
+                <div class="text-[11px]" style="color: var(--text-tertiary);">Прораб · Telegram</div>
+              </div>
+              <span class="pill" style="background: var(--success-soft); color: var(--success); font-size: 10px;">на месте</span>
+            </div>
+            <div class="team-member">
+              <div class="w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-semibold" style="background: linear-gradient(135deg, #EC4899, #F97316); color: white;">ПВ</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[13px] font-medium truncate">Петров В.М.</div>
+                <div class="text-[11px]" style="color: var(--text-tertiary);">Бригадир · промальп</div>
+              </div>
+              <span class="pill" style="background: var(--success-soft); color: var(--success); font-size: 10px;">на месте</span>
+            </div>
+            <div class="team-member">
+              <div class="w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-semibold" style="background: linear-gradient(135deg, #10B981, #06B6D4); color: white;">СК</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[13px] font-medium truncate">Соколов К.Н.</div>
+                <div class="text-[11px]" style="color: var(--text-tertiary);">Кровельщик 5 разряд</div>
+              </div>
+              <span class="pill" style="background: var(--success-soft); color: var(--success); font-size: 10px;">на месте</span>
+            </div>
+            <div class="team-member">
+              <div class="w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-semibold" style="background: linear-gradient(135deg, #F59E0B, #EF4444); color: white;">МД</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[13px] font-medium truncate">Морозов Д.А.</div>
+                <div class="text-[11px]" style="color: var(--text-tertiary);">Кровельщик 4 разряд</div>
+              </div>
+              <span class="pill" style="background: var(--warning-soft); color: var(--warning); font-size: 10px;">опаздывает</span>
+            </div>
+            <div class="team-member">
+              <div class="w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-semibold" style="background: linear-gradient(135deg, #8B5CF6, #6366F1); color: white;">КТ</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[13px] font-medium truncate">Кравцов Т.И.</div>
+                <div class="text-[11px]" style="color: var(--text-tertiary);">Разнорабочий</div>
+              </div>
+              <span class="pill" style="background: var(--success-soft); color: var(--success); font-size: 10px;">на месте</span>
+            </div>
+          </div>
+          <div class="text-[11px] mt-3 pt-3 flex items-center gap-1.5" style="color: var(--text-tertiary); border-top: 1px solid var(--border-subtle);">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7l3 3 7-7"/></svg>
+            Все допуски ОТ/ТБ актуальны
+          </div>
+        </div>
+
+        <!-- ═══ CUSTOMER ═══ -->
+        <div class="card p-5">
+          <div class="text-[11px] mono uppercase tracking-wider mb-3" style="color: var(--text-tertiary);">Заказчик</div>
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center font-semibold" style="background: linear-gradient(135deg, #1E40AF, #3B82F6); color: white;">Э</div>
+            <div class="flex-1 min-w-0">
+              <div class="text-[14px] font-medium">ООО «Эдельвейс»</div>
+              <div class="text-[11.5px]" style="color: var(--text-tertiary);">ИНН 6671234567 · рейтинг B</div>
+            </div>
+          </div>
+          <div class="space-y-2 text-[12px]">
+            <div class="flex justify-between">
+              <span style="color: var(--text-tertiary);">Контакт</span>
+              <span>Сидоров П.А.</span>
+            </div>
+            <div class="flex justify-between">
+              <span style="color: var(--text-tertiary);">Договор</span>
+              <span class="mono">№204746</span>
+            </div>
+            <div class="flex justify-between">
+              <span style="color: var(--text-tertiary);">Сумма</span>
+              <span class="num font-medium">8 900 000 ₽</span>
+            </div>
+            <div class="flex justify-between" style="padding-top: 8px; border-top: 1px solid var(--border-subtle);">
+              <span style="color: var(--text-tertiary);">История с нами</span>
+              <span>3 объекта · 18,4 млн ₽</span>
+            </div>
+            <div class="flex justify-between">
+              <span style="color: var(--text-tertiary);">Средняя оплата</span>
+              <span style="color: var(--warning);">28 дней</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ SUBCONTRACTORS ═══ -->
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <div class="text-[11px] mono uppercase tracking-wider" style="color: var(--text-tertiary);">Субподрядчики</div>
+            <span class="text-[11px] mono" style="color: var(--text-tertiary);">3 · 1,61 млн</span>
+          </div>
+          <div class="space-y-3">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-semibold" style="background: rgba(255,255,255,0.04); color: var(--text-secondary);">КР</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[13px] font-medium truncate">«КровРесурс»</div>
+                <div class="text-[11px]" style="color: var(--text-tertiary);">Изоляция · 720к ₽</div>
+              </div>
+              <span class="pill" style="background: var(--success-soft); color: var(--success); font-size: 10px;">оплачен</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-semibold" style="background: rgba(255,255,255,0.04); color: var(--text-secondary);">МТ</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[13px] font-medium truncate">ИП Митрохин</div>
+                <div class="text-[11px]" style="color: var(--text-tertiary);">Стяжка · 540к ₽</div>
+              </div>
+              <span class="pill" style="background: var(--warning-soft); color: var(--warning); font-size: 10px;">аванс 50%</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-semibold" style="background: rgba(255,255,255,0.04); color: var(--text-secondary);">СВ</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[13px] font-medium truncate">«СтройВысота»</div>
+                <div class="text-[11px]" style="color: var(--text-tertiary);">Парапеты · 350к ₽</div>
+              </div>
+              <span class="pill" style="background: rgba(255,255,255,0.04); color: var(--text-tertiary); font-size: 10px;">план</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ ACTIVITY (расширенный) ═══ -->
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <div class="text-[11px] mono uppercase tracking-wider" style="color: var(--text-tertiary);">Журнал событий</div>
+            <button class="text-[11px] mono flex items-center gap-1" style="color: var(--text-tertiary);">
+              все <svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4l4 4-4 4"/></svg>
+            </button>
+          </div>
+          <div class="relative">
+            <div class="timeline-line"></div>
+            <div class="timeline-item">
+              <div class="timeline-dot" style="border-color: var(--success);"></div>
+              <div class="timeline-content">
+                <div class="text-[12.5px] font-medium">Поступление <span class="num" style="color: var(--success);">+1,2 млн</span></div>
+                <div class="text-[11px]" style="color: var(--text-tertiary);">Эдельвейс по КС-2 №1</div>
+                <div class="text-[10.5px] mono mt-1" style="color: var(--text-tertiary);">сегодня · 14:02</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot" style="border-color: var(--info);"></div>
+              <div class="timeline-content">
+                <div class="text-[12.5px] font-medium">КС-2 №2 на согласовании</div>
+                <div class="text-[11px]" style="color: var(--text-tertiary);">отправлено заказчику</div>
+                <div class="text-[10.5px] mono mt-1" style="color: var(--text-tertiary);">сегодня · 10:12</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot" style="border-color: var(--warning);"></div>
+              <div class="timeline-content">
+                <div class="text-[12.5px] font-medium">12 фотоотчётов</div>
+                <div class="text-[11px]" style="color: var(--text-tertiary);">Иванов А.С. · этап 3</div>
+                <div class="text-[10.5px] mono mt-1" style="color: var(--text-tertiary);">сегодня · 09:24</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot" style="border-color: var(--text-tertiary);"></div>
+              <div class="timeline-content">
+                <div class="text-[12.5px] font-medium">Завоз материала</div>
+                <div class="text-[11px]" style="color: var(--text-tertiary);">ТехноНИКОЛЬ · 980к ₽</div>
+                <div class="text-[10.5px] mono mt-1" style="color: var(--text-tertiary);">вчера · 14:30</div>
+              </div>
+            </div>
+            <div class="timeline-item" style="padding-bottom: 0;">
+              <div class="timeline-dot" style="border-color: var(--text-tertiary);"></div>
+              <div class="timeline-content">
+                <div class="text-[12.5px] font-medium">КС-2 №2 подписан</div>
+                <div class="text-[11px]" style="color: var(--text-tertiary);">этап 2 завершён</div>
+                <div class="text-[10.5px] mono mt-1" style="color: var(--text-tertiary);">12.05 · 16:50</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Margin segment toggle (simple demo)
+  function toggleMargin(el) {
+    document.querySelectorAll('.margin-segment').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+    // В продакшене — здесь бы менялся контент #margin-detail на основе data-segment
+  }
+</script>
+</body>
+</html>

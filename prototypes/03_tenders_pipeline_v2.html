@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Тендеры · Воронка</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Inter+Tight:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root {
+    --bg-base: #0A0A0B;
+    --bg-elevated: #131316;
+    --bg-card: #18181C;
+    --bg-card-hover: #1E1E23;
+    --bg-card-elevated: #1A1A1F;
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-strong: rgba(255, 255, 255, 0.12);
+    --text-primary: #F4F4F5;
+    --text-secondary: #A1A1AA;
+    --text-tertiary: #71717A;
+    --accent: #F97316;
+    --accent-soft: rgba(249, 115, 22, 0.1);
+    --success: #34D399;
+    --success-soft: rgba(52, 211, 153, 0.1);
+    --danger: #F87171;
+    --danger-soft: rgba(248, 113, 113, 0.1);
+    --warning: #FBBF24;
+    --warning-soft: rgba(251, 191, 36, 0.1);
+    --info: #818CF8;
+    --info-soft: rgba(99, 102, 241, 0.1);
+  }
+  * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  html, body {
+    background: var(--bg-base); color: var(--text-primary);
+    font-family: 'Inter Tight', sans-serif;
+    letter-spacing: -0.011em;
+  }
+  .display-font { font-family: 'Fraunces', Georgia, serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; font-feature-settings: 'tnum'; }
+  .num { font-feature-settings: 'tnum', 'ss01'; letter-spacing: -0.04em; }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(249, 115, 22, 0.05), transparent 60%);
+    pointer-events: none; z-index: 0;
+  }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 8px; border-radius: 999px;
+    font-size: 10.5px; font-weight: 500;
+    white-space: nowrap;
+  }
+
+  /* ─── Filter chips ───────────── */
+  .chip {
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border-subtle);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .chip:hover { background: rgba(255,255,255,0.06); color: var(--text-primary); }
+  .chip.active {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-color: rgba(249, 115, 22, 0.3);
+  }
+
+  /* ─── Kanban column header ─── */
+  .col-header {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    position: sticky; top: 0; z-index: 5;
+  }
+
+  /* ─── Kanban columns wrapper (equal height) ─── */
+  .kanban-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(220px, 1fr));
+    gap: 12px;
+    align-items: stretch;
+  }
+  .kanban-col {
+    display: flex;
+    flex-direction: column;
+    min-height: 600px;
+  }
+  .kanban-col-body {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 2px;
+  }
+
+  /* ─── Tender card ─── */
+  .tender-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 12px;
+    cursor: grab;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    margin-bottom: 8px;
+    position: relative;
+  }
+  .tender-card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px -8px rgba(0,0,0,0.5);
+  }
+  .tender-card:active { cursor: grabbing; }
+  .tender-card.urgent::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--danger);
+    border-radius: 12px 0 0 12px;
+  }
+
+  /* ─── Work type icon badge ─── */
+  .work-icon {
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .work-icon-akz { background: rgba(249, 115, 22, 0.15); color: var(--accent); }
+  .work-icon-roof { background: rgba(99, 102, 241, 0.15); color: var(--info); }
+  .work-icon-rope { background: rgba(52, 211, 153, 0.15); color: var(--success); }
+  .work-icon-mono { background: rgba(168, 85, 247, 0.15); color: #C084FC; }
+  .work-icon-fiber { background: rgba(236, 72, 153, 0.15); color: #F472B6; }
+  .work-icon-mk { background: rgba(14, 165, 233, 0.15); color: #38BDF8; }
+
+  /* ─── AI score ─── */
+  .ai-score {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: 10.5px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .ai-score-high { background: var(--success-soft); color: var(--success); }
+  .ai-score-mid { background: var(--warning-soft); color: var(--warning); }
+  .ai-score-low { background: rgba(255,255,255,0.04); color: var(--text-tertiary); }
+
+  /* ─── Deadline bar ─── */
+  .deadline-bar {
+    height: 3px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.06);
+    overflow: hidden;
+    margin-top: 8px;
+  }
+
+  /* ─── Avatar ─── */
+  .avatar {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9.5px;
+    font-weight: 600;
+    color: white;
+    flex-shrink: 0;
+  }
+  .avatar-dk { background: linear-gradient(135deg, #6366F1, #8B5CF6); }
+  .avatar-ns { background: linear-gradient(135deg, #EC4899, #F97316); }
+  .avatar-ap { background: linear-gradient(135deg, #10B981, #06B6D4); }
+  .avatar-sk { background: linear-gradient(135deg, #F59E0B, #EF4444); }
+
+  /* ─── Checklist mini ─── */
+  .checklist-mini {
+    display: flex;
+    gap: 3px;
+    margin-top: 8px;
+  }
+  .checklist-step {
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.06);
+  }
+  .checklist-step.done { background: var(--success); }
+  .checklist-step.current { background: var(--accent); }
+
+  /* ─── Stats strip ─── */
+  .stats-divider {
+    width: 1px;
+    height: 48px;
+    background: var(--border-subtle);
+  }
+
+  /* ─── Empty state ─── */
+  .empty-state {
+    padding: 24px 12px;
+    border-radius: 12px;
+    border: 1px dashed var(--border-subtle);
+    text-align: center;
+    color: var(--text-tertiary);
+  }
+
+  /* ─── Loss analytics ─── */
+  .loss-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  /* ─── Stagger ─── */
+  .stagger > * {
+    opacity: 0;
+    transform: translateY(8px);
+    animation: rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .stagger > *:nth-child(1) { animation-delay: 0.04s; }
+  .stagger > *:nth-child(2) { animation-delay: 0.08s; }
+  .stagger > *:nth-child(3) { animation-delay: 0.12s; }
+  .stagger > *:nth-child(4) { animation-delay: 0.16s; }
+  .stagger > *:nth-child(5) { animation-delay: 0.20s; }
+  .stagger > *:nth-child(6) { animation-delay: 0.24s; }
+  @keyframes rise { to { opacity: 1; transform: translateY(0); } }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); }
+
+  kbd {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; padding: 2px 6px;
+    border-radius: 5px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+  }
+
+  /* ─── Mobile ─── */
+  @media (max-width: 1024px) {
+    .kanban-grid {
+      grid-template-columns: repeat(6, 280px);
+      overflow-x: auto;
+      padding-bottom: 16px;
+    }
+    .kanban-col { min-height: 500px; }
+    .stats-strip { flex-wrap: wrap; gap: 16px !important; }
+    .stats-divider { display: none; }
+  }
+  @media (max-width: 768px) {
+    .px-10 { padding-left: 16px !important; padding-right: 16px !important; }
+    .display-font.text-\[24px\] { font-size: 20px !important; }
+    .hide-mobile { display: none !important; }
+  }
+</style>
+  <link rel="stylesheet" href="theme.css">
+  <script src="theme-switcher.js" defer></script>
+</head>
+<body class="min-h-screen relative">
+
+<div class="relative" style="z-index: 1;">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-30 px-10 py-4" style="background: rgba(10,10,11,0.7); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-subtle);">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <h1 class="display-font text-[24px] font-medium tracking-tight">Тендеры</h1>
+        <span class="text-[12px] mono hide-mobile" style="color: var(--text-tertiary);">/ воронка / 12 активных + 3 проиграно MTD</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg hide-mobile" style="background: rgba(255,255,255,0.04); border: 1px solid var(--border-subtle);">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--text-tertiary);"><circle cx="7" cy="7" r="5"/><path d="M11 11l3 3"/></svg>
+          <input type="text" placeholder="Поиск..." class="text-[13px] bg-transparent outline-none" style="color: var(--text-primary); width: 200px;">
+          <kbd>/</kbd>
+        </div>
+        <button class="text-[12.5px] px-3 py-1.5 rounded-lg flex items-center gap-2" style="background: var(--accent); color: white;">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v12M2 8h12"/></svg>
+          <span class="hide-mobile">Новый тендер</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="px-10 py-6">
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         STATS STRIP
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="stats-strip flex items-center gap-6 mb-5 pb-5" style="border-bottom: 1px solid var(--border-subtle);">
+      <div>
+        <div class="text-[11px] mono uppercase tracking-wider mb-1" style="color: var(--text-tertiary);">Потенциал</div>
+        <div class="num text-[26px] font-light" style="color: var(--text-primary);">186 <span class="text-[13px]" style="color: var(--text-secondary);">млн ₽</span></div>
+      </div>
+      <div class="stats-divider"></div>
+      <div>
+        <div class="text-[11px] mono uppercase tracking-wider mb-1" style="color: var(--text-tertiary);">Конверсия</div>
+        <div class="num text-[26px] font-light" style="color: var(--text-primary);">23<span class="text-[13px]" style="color: var(--text-secondary);">%</span></div>
+        <div class="text-[10.5px] mono mt-0.5" style="color: var(--success);">↗ +3,1пп / квартал</div>
+      </div>
+      <div class="stats-divider"></div>
+      <div>
+        <div class="text-[11px] mono uppercase tracking-wider mb-1" style="color: var(--text-tertiary);">Цикл (среднее)</div>
+        <div class="num text-[26px] font-light" style="color: var(--text-primary);">28 <span class="text-[13px]" style="color: var(--text-secondary);">дней</span></div>
+      </div>
+      <div class="stats-divider"></div>
+      <div>
+        <div class="text-[11px] mono uppercase tracking-wider mb-1" style="color: var(--text-tertiary);">Дедлайны &lt; 3 дней</div>
+        <div class="num text-[26px] font-light" style="color: var(--danger);">3</div>
+      </div>
+      <div class="stats-divider"></div>
+      <div>
+        <div class="text-[11px] mono uppercase tracking-wider mb-1" style="color: var(--text-tertiary);">Победы / Поражения MTD</div>
+        <div class="flex items-baseline gap-2">
+          <div class="num text-[26px] font-light" style="color: var(--success);">2</div>
+          <span class="text-[14px]" style="color: var(--text-tertiary);">/</span>
+          <div class="num text-[20px] font-light" style="color: var(--danger);">3</div>
+        </div>
+      </div>
+
+      <div class="ml-auto flex items-center gap-2 hide-mobile">
+        <button class="text-[12px] px-3 py-1.5 rounded-md font-medium flex items-center gap-1.5" style="background: rgba(255,255,255,0.06); color: var(--text-primary);">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="3" width="3" height="10" rx="0.5"/><rect x="6.5" y="3" width="3" height="10" rx="0.5"/><rect x="11" y="3" width="3" height="10" rx="0.5"/></svg>
+          Канбан
+        </button>
+        <button class="text-[12px] px-3 py-1.5 rounded-md flex items-center gap-1.5" style="color: var(--text-secondary);">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
+          Список
+        </button>
+        <button class="text-[12px] px-3 py-1.5 rounded-md flex items-center gap-1.5" style="color: var(--text-secondary);">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="3" width="12" height="11" rx="1"/><path d="M2 6h12M5 1v3M11 1v3"/></svg>
+          Календарь
+        </button>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         FILTERS (новое!)
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="mb-5 flex items-center gap-3 overflow-x-auto" style="scrollbar-width: none;">
+      <span class="text-[11px] mono uppercase tracking-wider flex-shrink-0" style="color: var(--text-tertiary);">Виды работ:</span>
+      <div class="chip active">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="6"/></svg>
+        Все 12
+      </div>
+      <div class="chip">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" class="work-icon-akz" style="background: transparent;"><path d="M3 13l2-3 4-7 2 1-4 7-2 3z"/><path d="M3 13l-1 1"/></svg>
+        АКЗ <span class="mono opacity-60">3</span>
+      </div>
+      <div class="chip">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 8L8 3l6 5v6H2V8z"/></svg>
+        Кровля <span class="mono opacity-60">3</span>
+      </div>
+      <div class="chip">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 14L6 4l3 6 2-3 3 7H2z"/></svg>
+        Промальп <span class="mono opacity-60">2</span>
+      </div>
+      <div class="chip">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="10" height="10" rx="0.5"/></svg>
+        Монолит <span class="mono opacity-60">1</span>
+      </div>
+      <div class="chip">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 5l5 5-5 0 0-5z M13 11l-5-5 5 0 0 5z"/></svg>
+        Усиление <span class="mono opacity-60">1</span>
+      </div>
+      <div class="chip">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h10M5 5l-2 3 2 3M11 5l2 3-2 3"/></svg>
+        Монтаж м/к <span class="mono opacity-60">2</span>
+      </div>
+
+      <div class="w-px h-6 flex-shrink-0" style="background: var(--border-subtle);"></div>
+
+      <span class="text-[11px] mono uppercase tracking-wider flex-shrink-0" style="color: var(--text-tertiary);">Сметчик:</span>
+      <div class="chip">
+        <span class="avatar avatar-ns" style="width: 16px; height: 16px; font-size: 8px;">НС</span>
+        Наталья
+      </div>
+      <div class="chip">
+        <span class="avatar avatar-ap" style="width: 16px; height: 16px; font-size: 8px;">АП</span>
+        Андрей
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         KANBAN (6 колонок: + ПРОИГРАНО)
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="kanban-grid stagger">
+
+      <!-- ═══ COL 1: Найдено ═══ -->
+      <div class="kanban-col">
+        <div class="col-header">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full" style="background: var(--info);"></span>
+              <span class="text-[12.5px] font-medium">Найдено</span>
+              <span class="text-[11px] mono px-1.5 rounded" style="background: rgba(255,255,255,0.06); color: var(--text-secondary);">4</span>
+            </div>
+            <button style="color: var(--text-tertiary);"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="3" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="8" cy="13" r="1"/></svg></button>
+          </div>
+          <div class="text-[11px] mt-1.5 mono" style="color: var(--text-tertiary);">~62 млн ₽</div>
+        </div>
+
+        <div class="kanban-col-body space-y-2">
+
+          <div class="tender-card urgent">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="work-icon work-icon-akz" title="АКЗ">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 13l2-3 4-7 2 1-4 7-2 3z"/></svg>
+              </div>
+              <span class="text-[10.5px] mono uppercase" style="color: var(--text-tertiary);">44-ФЗ</span>
+              <span class="ai-score ai-score-mid ml-auto">AI 64%</span>
+              <span class="pill" style="background: var(--danger-soft); color: var(--danger);">1,8д</span>
+            </div>
+            <h4 class="text-[13.5px] font-medium leading-tight mb-1">АКЗ металлоконструкций ТЭЦ-3</h4>
+            <p class="text-[11.5px]" style="color: var(--text-tertiary);">ПАО «Т Плюс» · Екатеринбург</p>
+            <div class="flex items-center justify-between mt-3">
+              <span class="num text-[14px] font-medium">8,2 <span class="text-[10px]" style="color: var(--text-tertiary);">млн</span></span>
+              <span class="text-[10.5px] mono" style="color: var(--text-tertiary);">15.05 18:00</span>
+            </div>
+            <div class="deadline-bar"><div style="width: 80%; height: 100%; background: linear-gradient(90deg, var(--danger), #FCA5A5); border-radius: 999px;"></div></div>
+            <div class="flex items-center justify-between mt-2">
+              <div class="flex items-center gap-1">
+                <span class="avatar avatar-dk">ДК</span>
+                <span class="text-[10.5px]" style="color: var(--text-tertiary);">Дима</span>
+              </div>
+              <span class="text-[10px] mono" style="color: var(--text-tertiary);">только что</span>
+            </div>
+          </div>
+
+          <div class="tender-card">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="work-icon work-icon-roof" title="Кровля">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 8L8 3l6 5v6H2V8z"/></svg>
+              </div>
+              <span class="text-[10.5px] mono uppercase" style="color: var(--text-tertiary);">223-ФЗ</span>
+              <span class="ai-score ai-score-high ml-auto">AI 81%</span>
+              <span class="pill" style="background: var(--warning-soft); color: var(--warning);">4д</span>
+            </div>
+            <h4 class="text-[13.5px] font-medium leading-tight mb-1">Ремонт кровли пром. блока</h4>
+            <p class="text-[11.5px]" style="color: var(--text-tertiary);">«Газпром добыча Уренгой»</p>
+            <div class="flex items-center justify-between mt-3">
+              <span class="num text-[14px] font-medium">14,7 <span class="text-[10px]" style="color: var(--text-tertiary);">млн</span></span>
+              <span class="text-[10.5px] mono" style="color: var(--text-tertiary);">17.05 12:00</span>
+            </div>
+            <div class="deadline-bar"><div style="width: 50%; height: 100%; background: var(--warning); border-radius: 999px;"></div></div>
+            <div class="flex items-center justify-between mt-2">
+              <div class="flex items-center gap-1">
+                <span class="avatar avatar-ns">НС</span>
+                <span class="text-[10.5px]" style="color: var(--text-tertiary);">Наталья</span>
+              </div>
+              <span class="text-[10px] mono" style="color: var(--text-tertiary);">2ч</span>
+            </div>
+          </div>
+
+          <div class="tender-card">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="work-icon work-icon-rope" title="Промальп">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 14L6 4l3 6 2-3 3 7H2z"/></svg>
+              </div>
+              <span class="text-[10.5px] mono uppercase" style="color: var(--text-tertiary);">223-ФЗ</span>
+              <span class="ai-score ai-score-high ml-auto">AI 89%</span>
+              <span class="pill" style="background: var(--info-soft); color: var(--info);">6д</span>
+            </div>
+            <h4 class="text-[13.5px] font-medium leading-tight mb-1">Промальп. работы на эстакаде</h4>
+            <p class="text-[11.5px]" style="color: var(--text-tertiary);">EVRAZ НТМК · Н.Тагил</p>
+            <div class="flex items-center justify-between mt-3">
+              <span class="num text-[14px] font-medium">6,1 <span class="text-[10px]" style="color: var(--text-tertiary);">млн</span></span>
+              <span class="text-[10.5px] mono" style="color: var(--text-tertiary);">19.05 16:00</span>
+            </div>
+            <div class="deadline-bar"><div style="width: 30%; height: 100%; background: var(--info); border-radius: 999px;"></div></div>
+            <div class="flex items-center justify-between mt-2">
+              <div class="flex items-center gap-1">
+                <span class="avatar avatar-ap">АП</span>
+                <span class="text-[10.5px]" style="color: var(--text-tertiary);">Андрей</span>
+              </div>
+              <span class="text-[10px] mono" style="color: var(--text-tertiary);">1д</span>
+            </div>
+          </div>
+
+          <div class="tender-card">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="work-icon work-icon-fiber" title="Усиление углеволокном">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 5h12M2 8h12M2 11h12M5 2v12M11 2v12"/></svg>
+              </div>
+              <span class="text-[10.5px] mono uppercase" style="color: var(--text-tertiary);">44-ФЗ</span>
+              <span class="ai-score ai-score-high ml-auto">AI 76%</span>
+              <span class="pill" style="background: var(--info-soft); color: var(--info);">9д</span>
+            </div>
+            <h4 class="text-[13.5px] font-medium leading-tight mb-1">Усиление колонн углеволокном</h4>
+            <p class="text-[11.5px]" style="color: var(--text-tertiary);">ПАО «РУСАЛ Урал»</p>
+            <div class="flex items-center justify-between mt-3">
+              <span class="num text-[14px] font-medium">12,4 <span class="text-[10px]" style="color: var(--text-tertiary);">млн</span></span>
+              <span class="text-[10.5px] mono" style="color: var(--text-tertiary);">22.05</span>
+            </div>
+            <div class="deadline-bar"><div style="width: 15%; height: 100%; background: var(--info); border-radius: 999px;"></div></div>
+            <div class="flex items-center justify-between mt-2">
+              <div class="flex items-center gap-1">
+                <span class="avatar avatar-dk">ДК</span>
+                <span class="text-[10.5px]" style="color: var(--text-tertiary);">Дима</span>
+              </div>
+              <span class="text-[10px] mono" style="color: var(--text-tertiary);">2д</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ COL 2: Анализ ═══ -->
+      <div class="kanban-col">
+        <div class="col-header">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full" style="background: var(--info);"></span>
+              <span class="text-[12.5px] font-medium">Анализ</span>
+              <span class="text-[11px] mono px-1.5 rounded" style="background: rgba(255,255,255,0.06); color: var(--text-secondary);">3</span>
+            </div>
+            <button style="color: var(--text-tertiary);"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="3" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="8" cy="13" r="1"/></svg></button>
+          </div>
+          <div class="text-[11px] mt-1.5 mono" style="color: var(--text-tertiary);">~38 млн ₽</div>
+        </div>
+
+        <div class="kanban-col-body space-y-2">
+
+          <div class="tender-card">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="work-icon work-icon-roof"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 8L8 3l6 5v6H2V8z"/></svg></div>
+              <span class="text-[10.5px] mono uppercase" style="color: var(--text-tertiary);">44-ФЗ</span>
+              <span class="ai-score ai-score-high ml-auto">AI 72%</span>
+            </div>
+            <h4 class="text-[13.5px] font-medium leading-tight mb-1">Капремонт кровли цеха</h4>
+            <p class="text-[11.5px]" style="color: var(--text-tertiary);">ПАО «ВИЗ-Сталь»</p>
+            <div class="flex items-center justify-between mt-3">
+              <span class="num text-[14px] font-medium">16,8 <span class="text-[10px]" style="color: var(--text-tertiary);">млн</span></span>
+              <div class="flex items-center gap-1 text-[10px]" style="color: var(--success);">
+                <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l3 3 7-7"/></svg>
+                есть опыт
+              </div>
+            </div>
+            <div class="mt-2.5 p-2 rounded-md text-[10.5px]" style="background: var(--info-soft); color: var(--text-secondary);">
+              <span style="color: var(--info);">AI:</span> Хорошо ложится, оценка успеха 68%
+            </div>
+            <div class="flex items-center justify-between mt-2">
+              <span class="avatar avatar-ns">НС</span>
+              <span class="text-[10px] mono" style="color: var(--text-tertiary);">3д на анализ</span>
+            </div>
+          </div>
+
+          <div class="tender-card">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="work-icon work-icon-mk"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h10M5 5l-2 3 2 3M11 5l2 3-2 3"/></svg></div>
+              <span class="text-[10.5px] mono uppercase" style="color: var(--text-tertiary);">223-ФЗ</span>
+              <span class="ai-score ai-score-mid ml-auto">AI 51%</span>
+              <span class="pill" style="background: var(--warning-soft); color: var(--warning);">риск</span>
+            </div>
+            <h4 class="text-[13.5px] font-medium leading-tight mb-1">Монтаж пром. вентиляции</h4>
+            <p class="text-[11.5px]" style="color: var(--text-tertiary);">«НОВАТЭК-Уренгой»</p>
+            <div class="flex items-center justify-between mt-3">
+              <span class="num text-[14px] font-medium">9,2 <span class="text-[10px]" style="color: var(--text-tertiary);">млн</span></span>
+            </div>
+            <div class="mt-2.5 p-2 rounded-md text-[10.5px]" style="background: var(--warning-soft); color: var(--text-secondary);">
+              <span style="color: var(--warning);">AI:</span> Узкий профиль вентиляции — мало опыта
+            </div>
+            <div class="flex items-center justify-between mt-2">
+              <span class="avatar avatar-ap">АП</span>
+              <span class="text-[10px] mono" style="color: var(--text-tertiary);">1д</span>
+            </div>
+          </div>
+
+          <div class="tender-card">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="work-icon work-icon-akz"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 13l2-3 4-7 2 1-4 7-2 3z"/></svg></div>
+              <span class="text-[10.5px] mono uppercase" style="color: var(--text-tertiary);">44-ФЗ</span>
+              <span class="ai-score ai-score-high ml-auto">AI 84%</span>
+            </div>
+            <h4 class="text-[13.5px] font-medium leading-tight mb-1">АКЗ ёмкостей хим. цеха</h4>
+            <p class="text-[11.5px]" style="color: var(--text-tertiary);">АО «ЕВРАЗ КГОК»</p>
+            <div class="flex items-center justify-between mt-3">
+              <span class="num text-[14px] font-medium">11,8 <span class="text-[10px]" style="color: var(--text-tertiary);">млн</span></span>
+            </div>
+            <div class="flex items-center justify-between mt-2">
+              <span class="avatar avatar-ns">НС</span>
+              <span class="text-[10px] mono" style="color: var(--text-tertiary);">только что</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ COL 3: Подготовка КП ═══ -->
+      <div class="kanban-col">
+        <div class="col-header" style="background: linear-gradient(135deg, rgba(249,115,22,0.06), var(--bg-elevated)); border-color: rgba(249,115,22,0.2);">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full" style="background: var(--accent);"></span>
+              <span class="text-[12.5px] font-medium">Подготовка КП</span>
+              <span class="text-[11px] mono px-1.5 rounded" style="background: rgba(249,115,22,0.15); color: var(--accent);">3</span>
+            </div>
+            <button style="color: var(--text-tertiary);"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="3" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="8" cy="13" r="1"/></svg></button>
+          </div>
+          <div class="text-[11px] mt-1.5 mono" style="color: var(--accent);">~31,4 млн ₽</div>
+        </div>
+
+        <div class="kanban-col-body space-y-2">
+
+          <div class="tender-card urgent" style="border-color: rgba(249,115,22,0.2);">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="work-icon work-icon-akz"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 13l2-3 4-7 2 1-4 7-2 3z"/></svg></div>
+              <span class="text-[10.5px] mono uppercase" style="color: var(--text-tertiary);">44-ФЗ</span>
+              <span class="ai-score ai-score-high ml-auto">AI 92%</span>
+              <span class="pill" style="background: var(--danger-soft); color: var(--danger);">срочно</span>
+            </div>
+            <h4 class="text-[13.5px] font-medium leading-tight mb-1">Ремонт труб 21А/21Б</h4>
+            <p class="text-[11.5px]" style="color: var(--text-tertiary);">АО «НПП Старт»</p>
+            <div class="flex items-center justify-between mt-3">
+              <span class="num text-[14px] font-medium">3,4 <span class="text-[10px]" style="color: var(--text-tertiary);">млн</span></span>
+              <span class="text-[10.5px] mono" style="color: var(--danger);">14.05 23:59</span>
+            </div>
+            <div class="checklist-mini">
+              <div class="checklist-step done"></div>
+              <div class="checklist-step done"></div>
+              <div class="checklist-step done"></div>
+              <div class="checklist-step current"></div>
+              <div class="checklist-step"></div>
+            </div>
+            <div class="text-[10px] mt-1.5 flex items-center justify-between mono" style="color: var(--text-tertiary);">
+              <span>3/5 · смета</span>
+              <span style="color: var(--accent);">проверка</span>
+            </div>
+            <div class="flex items-center justify-between mt-2">
+              <div class="flex items-center gap-1">
+                <span class="avatar avatar-ns">НС</span>
+                <span class="text-[10.5px]" style="color: var(--text-tertiary);">Наталья</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="tender-card">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="work-icon work-icon-mk"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h10M5 5l-2 3 2 3M11 5l2 3-2 3"/></svg></div>
+              <span class="text-[10.5px] mono uppercase" style="color: var(--text-tertiary);">44-ФЗ</span>
+              <span class="ai-score ai-score-high ml-auto">AI 78%</span>
+              <span class="pill" style="background: rgba(255,255,255,0.04); color: var(--text-secondary);">12д</span>
+            </div>
+            <h4 class="text-[13.5px] font-medium leading-tight mb-1">Монтаж м/к склада</h4>
+            <p class="text-[11.5px]" style="color: var(--text-tertiary);">ПАО «РЖД» Свердл. ж/д</p>
+            <div class="flex items-center justify-between mt-3">
+              <span class="num text-[14px] font-medium">19,4 <span class="text-[10px]" style="color: var(--text-tertiary);">млн</span></span>
+              <span class="text-[10.5px] mono" style="color: var(--text-tertiary);">25.05</span>
+            </div>
+            <div class="checklist-mini">
+              <div class="checklist-step done"></div>
+              <div class="checklist-step done"></div>
+              <div class="checklist-step current"></div>
+              <div class="checklist-step"></div>
+              <div class="checklist-step"></div>
+            </div>
+            <div class="text-[10px] mt-1.5 mono" style="color: var(--text-tertiary);">2/5 · документация</div>
+            <div class="flex items-center justify-between mt-2">
+              <span class="avatar avatar-ap">АП</span>
+            </div>
+          </div>
+
+          <div class="tender-card">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="work-icon work-icon-rope"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 14L6 4l3 6 2-3 3 7H2z"/></svg></div>
+              <span class="text-[10.5px] mono uppercase" style="color: var(--text-tertiary);">223-ФЗ</span>
+              <span class="ai-score ai-score-high ml-auto">AI 85%</span>
+              <span class="pill" style="background: rgba(255,255,255,0.04); color: var(--text-secondary);">15д</span>
+            </div>
+            <h4 class="text-[13.5px] font-medium leading-tight mb-1">Промальп. ремонт силоса</h4>
+            <p class="text-[11.5px]" style="color: var(--text-tertiary);">АО «Сухоложскцемент»</p>
+            <div class="flex items-center justify-between mt-3">
+              <span class="num text-[14px] font-medium">8,6 <span class="text-[10px]" style="color: var(--text-tertiary);">млн</span></span>
+            </div>
+            <div class="checklist-mini">
+              <div class="checklist-step done"></div>
+              <div class="checklist-step current"></div>
+              <div class="checklist-step"></div>
+              <div class="checklist-step"></div>
+              <div class="checklist-step"></div>
+            </div>
+            <div class="text-[10px] mt-1.5 mono" style="color: var(--text-tertiary);">1/5 · выезд</div>
+            <div class="flex items-center justify-between mt-2">
+              <span class="avatar avatar-ns">НС</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ COL 4: Подано ═══ -->
+      <div class="kanban-col">
+        <div class="col-header">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full" style="background: var(--warning);"></span>
+              <span class="text-[12.5px] font-medium">Подано · ждём</span>
+              <span class="text-[11px] mono px-1.5 rounded" style="background: rgba(255,255,255,0.06); color: var(--text-secondary);">2</span>
+            </div>
+            <button style="color: var(--text-tertiary);"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="3" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="8" cy="13" r="1"/></svg></button>
+          </div>
+          <div class="text-[11px] mt-1.5 mono" style="color: var(--text-tertiary);">~33 млн ₽</div>
+        </div>
+
+        <div class="kanban-col-body space-y-2">
+
+          <div class="tender-card">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="work-icon work-icon-akz"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 13l2-3 4-7 2 1-4 7-2 3z"/></svg></div>
+              <span class="text-[10.5px] mono uppercase" style="color: var(--text-tertiary);">44-ФЗ</span>
+              <span class="ai-score ai-score-mid ml-auto">AI 67%</span>
+              <span class="pill" style="background: var(--warning-soft); color: var(--warning);">3д</span>
+            </div>
+            <h4 class="text-[13.5px] font-medium leading-tight mb-1">Гидрозащита фасадов</h4>
+            <p class="text-[11.5px]" style="color: var(--text-tertiary);">АО «Уралтрансмаш»</p>
+            <div class="flex items-center justify-between mt-3">
+              <span class="num text-[14px] font-medium">7,8 <span class="text-[10px]" style="color: var(--text-tertiary);">млн</span></span>
+              <span class="text-[10.5px] mono" style="color: var(--text-tertiary);">итоги 12.05</span>
+            </div>
+            <div class="mt-2 flex items-center gap-2 text-[10.5px]" style="color: var(--text-tertiary);">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="5" cy="6" r="2"/><circle cx="11" cy="6" r="2"/><path d="M2 13c0-2 1.5-3 3-3M8 13c0-2 1.5-3 3-3"/></svg>
+              4 участника
+            </div>
+            <div class="flex items-center justify-between mt-2">
+              <span class="avatar avatar-ns">НС</span>
+              <span class="text-[10px] mono" style="color: var(--text-tertiary);">подано 09.05</span>
+            </div>
+          </div>
+
+          <div class="tender-card">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="work-icon work-icon-roof"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 8L8 3l6 5v6H2V8z"/></svg></div>
+              <span class="text-[10.5px] mono uppercase" style="color: var(--text-tertiary);">223-ФЗ</span>
+              <span class="ai-score ai-score-high ml-auto">AI 79%</span>
+              <span class="pill" style="background: var(--info-soft); color: var(--info);">8д</span>
+            </div>
+            <h4 class="text-[13.5px] font-medium leading-tight mb-1">Кровля логистич. центра</h4>
+            <p class="text-[11.5px]" style="color: var(--text-tertiary);">«Газпромнефть-Урал»</p>
+            <div class="flex items-center justify-between mt-3">
+              <span class="num text-[14px] font-medium">25,2 <span class="text-[10px]" style="color: var(--text-tertiary);">млн</span></span>
+              <span class="text-[10.5px] mono" style="color: var(--text-tertiary);">17.05</span>
+            </div>
+            <div class="flex items-center justify-between mt-2">
+              <span class="avatar avatar-ap">АП</span>
+              <span class="text-[10px] mono" style="color: var(--text-tertiary);">подано 06.05</span>
+            </div>
+          </div>
+
+          <!-- Empty state hint -->
+          <div class="empty-state">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mx-auto mb-2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>
+            <div class="text-[11.5px]">Тут будут тендеры,<br>ожидающие итогов</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ COL 5: Выиграно MTD ═══ -->
+      <div class="kanban-col">
+        <div class="col-header" style="background: linear-gradient(135deg, var(--success-soft), var(--bg-elevated)); border-color: rgba(52,211,153,0.2);">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full" style="background: var(--success);"></span>
+              <span class="text-[12.5px] font-medium">Выиграно</span>
+              <span class="text-[11px] mono px-1.5 rounded" style="background: rgba(52,211,153,0.15); color: var(--success);">2</span>
+            </div>
+            <button style="color: var(--text-tertiary);"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="3" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="8" cy="13" r="1"/></svg></button>
+          </div>
+          <div class="text-[11px] mt-1.5 mono" style="color: var(--success);">+21,5 млн MTD</div>
+        </div>
+
+        <div class="kanban-col-body space-y-2">
+
+          <div class="tender-card" style="background: linear-gradient(135deg, rgba(52,211,153,0.04), var(--bg-card)); border-color: rgba(52,211,153,0.15);">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="work-icon work-icon-rope"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 14L6 4l3 6 2-3 3 7H2z"/></svg></div>
+              <span class="text-[10.5px] mono uppercase" style="color: var(--text-tertiary);">44-ФЗ</span>
+              <span class="pill ml-auto" style="background: var(--success-soft); color: var(--success);">
+                <svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 8l3 3 7-7"/></svg>
+                победа
+              </span>
+            </div>
+            <h4 class="text-[13.5px] font-medium leading-tight mb-1">Промальп. монтаж м/к</h4>
+            <p class="text-[11.5px]" style="color: var(--text-tertiary);">ПАО «ВИЗ-Сталь»</p>
+            <div class="flex items-center justify-between mt-3">
+              <span class="num text-[14px] font-medium" style="color: var(--success);">6,1 <span class="text-[10px]" style="color: var(--text-tertiary);">млн</span></span>
+              <span class="text-[10.5px] mono" style="color: var(--text-tertiary);">06.05</span>
+            </div>
+            <div class="text-[10.5px] mt-2 flex items-center gap-1" style="color: var(--text-tertiary);">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 8l3 3 7-7"/></svg>
+              → объект PR-2026-05-06
+            </div>
+          </div>
+
+          <div class="tender-card" style="background: linear-gradient(135deg, rgba(52,211,153,0.04), var(--bg-card)); border-color: rgba(52,211,153,0.15);">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="work-icon work-icon-roof"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 8L8 3l6 5v6H2V8z"/></svg></div>
+              <span class="text-[10.5px] mono uppercase" style="color: var(--text-tertiary);">44-ФЗ</span>
+              <span class="pill ml-auto" style="background: var(--success-soft); color: var(--success);">
+                <svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 8l3 3 7-7"/></svg>
+                победа
+              </span>
+            </div>
+            <h4 class="text-[13.5px] font-medium leading-tight mb-1">Кровля цеха №7</h4>
+            <p class="text-[11.5px]" style="color: var(--text-tertiary);">RUSAL Каменск-Уральский</p>
+            <div class="flex items-center justify-between mt-3">
+              <span class="num text-[14px] font-medium" style="color: var(--success);">15,4 <span class="text-[10px]" style="color: var(--text-tertiary);">млн</span></span>
+              <span class="text-[10.5px] mono" style="color: var(--text-tertiary);">28.04</span>
+            </div>
+            <div class="text-[10.5px] mt-2 flex items-center gap-1" style="color: var(--text-tertiary);">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 8l3 3 7-7"/></svg>
+              → объект PR-2026-04-28
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ COL 6: ПРОИГРАНО (новая!) ═══ -->
+      <div class="kanban-col">
+        <div class="col-header" style="background: linear-gradient(135deg, var(--danger-soft), var(--bg-elevated)); border-color: rgba(248,113,113,0.2);">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full" style="background: var(--danger);"></span>
+              <span class="text-[12.5px] font-medium">Проиграно</span>
+              <span class="text-[11px] mono px-1.5 rounded" style="background: rgba(248,113,113,0.15); color: var(--danger);">3</span>
+            </div>
+            <button style="color: var(--text-tertiary);"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="3" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="8" cy="13" r="1"/></svg></button>
+          </div>
+          <div class="text-[11px] mt-1.5 mono" style="color: var(--danger);">−24,4 млн упущено</div>
+        </div>
+
+        <div class="kanban-col-body space-y-2">
+
+          <div class="tender-card" style="opacity: 0.85; background: linear-gradient(135deg, rgba(248,113,113,0.03), var(--bg-card));">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="work-icon work-icon-mk"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h10M5 5l-2 3 2 3M11 5l2 3-2 3"/></svg></div>
+              <span class="text-[10.5px] mono uppercase" style="color: var(--text-tertiary);">223-ФЗ</span>
+              <span class="pill ml-auto" style="background: var(--danger-soft); color: var(--danger);">
+                <svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+                цена
+              </span>
+            </div>
+            <h4 class="text-[13.5px] font-medium leading-tight mb-1" style="color: var(--text-secondary);">Тех. обслуживание дымососа</h4>
+            <p class="text-[11.5px]" style="color: var(--text-tertiary);">EVRAZ НТМК</p>
+            <div class="mt-3 p-2 rounded-md text-[11px] space-y-1" style="background: rgba(255,255,255,0.02);">
+              <div class="flex justify-between">
+                <span style="color: var(--text-tertiary);">Наша цена</span>
+                <span class="num">4,2 млн</span>
+              </div>
+              <div class="flex justify-between">
+                <span style="color: var(--text-tertiary);">Победитель</span>
+                <span class="num" style="color: var(--danger);">3,7 млн (−12%)</span>
+              </div>
+              <div class="flex justify-between mt-1 pt-1" style="border-top: 1px solid var(--border-subtle);">
+                <span style="color: var(--text-tertiary);">Кто:</span>
+                <span class="text-[10.5px]">«УралСтройМонтаж»</span>
+              </div>
+            </div>
+            <div class="text-[10px] mt-2 mono" style="color: var(--text-tertiary);">29.04 · 5 участников</div>
+          </div>
+
+          <div class="tender-card" style="opacity: 0.85; background: linear-gradient(135deg, rgba(248,113,113,0.03), var(--bg-card));">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="work-icon work-icon-akz"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 13l2-3 4-7 2 1-4 7-2 3z"/></svg></div>
+              <span class="text-[10.5px] mono uppercase" style="color: var(--text-tertiary);">44-ФЗ</span>
+              <span class="pill ml-auto" style="background: var(--danger-soft); color: var(--danger);">
+                требования
+              </span>
+            </div>
+            <h4 class="text-[13.5px] font-medium leading-tight mb-1" style="color: var(--text-secondary);">Демонтаж резервуаров</h4>
+            <p class="text-[11.5px]" style="color: var(--text-tertiary);">АО «Транснефть-Урал»</p>
+            <div class="mt-3 p-2 rounded-md text-[11px] space-y-1" style="background: rgba(255,255,255,0.02);">
+              <div class="flex justify-between">
+                <span style="color: var(--text-tertiary);">НМЦ</span>
+                <span class="num">8,9 млн</span>
+              </div>
+              <div class="flex justify-between">
+                <span style="color: var(--text-tertiary);">Причина</span>
+                <span class="text-[10.5px]" style="color: var(--danger);">не прошли по СРО</span>
+              </div>
+            </div>
+            <div class="text-[10px] mt-2 mono" style="color: var(--text-tertiary);">22.04 · нет нужного допуска</div>
+          </div>
+
+          <div class="tender-card" style="opacity: 0.85; background: linear-gradient(135deg, rgba(248,113,113,0.03), var(--bg-card));">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="work-icon work-icon-mono"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="10" height="10" rx="0.5"/></svg></div>
+              <span class="text-[10.5px] mono uppercase" style="color: var(--text-tertiary);">44-ФЗ</span>
+              <span class="pill ml-auto" style="background: rgba(255,255,255,0.04); color: var(--text-tertiary);">не подали</span>
+            </div>
+            <h4 class="text-[13.5px] font-medium leading-tight mb-1" style="color: var(--text-secondary);">Монолит. фундаменты</h4>
+            <p class="text-[11.5px]" style="color: var(--text-tertiary);">«Корпорация Развитие»</p>
+            <div class="mt-3 p-2 rounded-md text-[11px] space-y-1" style="background: rgba(255,255,255,0.02);">
+              <div class="flex justify-between">
+                <span style="color: var(--text-tertiary);">НМЦ</span>
+                <span class="num">11,3 млн</span>
+              </div>
+              <div class="flex justify-between">
+                <span style="color: var(--text-tertiary);">Причина</span>
+                <span class="text-[10.5px]" style="color: var(--warning);">мало времени на смету</span>
+              </div>
+            </div>
+            <div class="text-[10px] mt-2 mono" style="color: var(--text-tertiary);">15.04 · упущен дедлайн</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         LOSS ANALYTICS (новое! — что теряем)
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="mt-8 pt-6" style="border-top: 1px solid var(--border-subtle);">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="display-font text-[19px] font-medium tracking-tight">Аналитика проигрышей</h3>
+          <p class="text-[12.5px] mt-0.5" style="color: var(--text-tertiary);">за последние 90 дней · 11 проиграно из 28 поданных</p>
+        </div>
+        <button class="text-[11.5px] mono flex items-center gap-1" style="color: var(--text-tertiary);">детальный отчёт <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4l4 4-4 4"/></svg></button>
+      </div>
+
+      <div class="grid grid-cols-3 gap-4">
+
+        <!-- Why we lose -->
+        <div class="loss-card">
+          <div class="text-[11px] mono uppercase tracking-wider mb-3" style="color: var(--text-tertiary);">Причины поражений</div>
+          <div class="space-y-2.5">
+            <div>
+              <div class="flex justify-between text-[12.5px] mb-1">
+                <span>Цена конкурентов</span>
+                <span class="num font-medium">5</span>
+              </div>
+              <div class="h-1.5 rounded-full" style="background: rgba(255,255,255,0.04);">
+                <div class="h-1.5 rounded-full" style="width: 70%; background: var(--danger);"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[12.5px] mb-1">
+                <span>Не успели подготовить КП</span>
+                <span class="num font-medium">3</span>
+              </div>
+              <div class="h-1.5 rounded-full" style="background: rgba(255,255,255,0.04);">
+                <div class="h-1.5 rounded-full" style="width: 45%; background: var(--warning);"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[12.5px] mb-1">
+                <span>Несоответствие требованиям</span>
+                <span class="num font-medium">2</span>
+              </div>
+              <div class="h-1.5 rounded-full" style="background: rgba(255,255,255,0.04);">
+                <div class="h-1.5 rounded-full" style="width: 28%; background: var(--info);"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[12.5px] mb-1">
+                <span>Отсутствие опыта</span>
+                <span class="num font-medium">1</span>
+              </div>
+              <div class="h-1.5 rounded-full" style="background: rgba(255,255,255,0.04);">
+                <div class="h-1.5 rounded-full" style="width: 14%; background: var(--text-tertiary);"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top winners -->
+        <div class="loss-card">
+          <div class="text-[11px] mono uppercase tracking-wider mb-3" style="color: var(--text-tertiary);">Кто чаще всего обходит</div>
+          <div class="space-y-2.5">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-semibold" style="background: rgba(255,255,255,0.05); color: var(--text-secondary);">УС</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[12.5px] font-medium truncate">«УралСтройМонтаж»</div>
+                <div class="text-[10.5px]" style="color: var(--text-tertiary);">3 победы · средняя -8% к нам</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-semibold" style="background: rgba(255,255,255,0.05); color: var(--text-secondary);">АП</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[12.5px] font-medium truncate">АО «Альфа-Промстрой»</div>
+                <div class="text-[10.5px]" style="color: var(--text-tertiary);">2 победы · средняя -11% к нам</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-semibold" style="background: rgba(255,255,255,0.05); color: var(--text-secondary);">СС</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[12.5px] font-medium truncate">ООО «СтройСервис-Е»</div>
+                <div class="text-[10.5px]" style="color: var(--text-tertiary);">2 победы · средняя -6% к нам</div>
+              </div>
+            </div>
+            <div class="text-[11px] mt-2 pt-2" style="color: var(--text-tertiary); border-top: 1px solid var(--border-subtle);">
+              + ещё 4 разных конкурента (по 1 победе)
+            </div>
+          </div>
+        </div>
+
+        <!-- AI insight -->
+        <div class="loss-card" style="background: linear-gradient(135deg, var(--info-soft), var(--bg-card)); border-color: rgba(99,102,241,0.15);">
+          <div class="flex items-center gap-2 mb-3">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color: var(--info);"><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+            <span class="text-[11px] mono uppercase tracking-wider" style="color: var(--info);">AI-инсайт</span>
+          </div>
+          <p class="text-[12.5px] leading-relaxed" style="color: var(--text-secondary);">
+            <span style="color: var(--text-primary);">3 из 11 поражений</span> — потому что не успели подготовить КП. Это <span style="color: var(--text-primary);">~14 млн ₽ упущенной выручки</span>.
+          </p>
+          <p class="text-[12.5px] leading-relaxed mt-2" style="color: var(--text-secondary);">
+            Рекомендую: при появлении тендера с дедлайном &lt; 7 дней — авто-Telegram сметчику, чтобы он начал в тот же день.
+          </p>
+          <button class="mt-3 text-[11.5px] px-2.5 py-1.5 rounded-md font-medium flex items-center gap-1.5 w-full justify-center" style="background: var(--info); color: white;">
+            настроить правило
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4l4 4-4 4"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Смета · Marins Park · v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Inter+Tight:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root {
+    --bg-base: #0A0A0B;
+    --bg-elevated: #131316;
+    --bg-card: #18181C;
+    --bg-card-hover: #1E1E23;
+    --bg-card-elevated: #1A1A1F;
+    --bg-row-hover: rgba(255, 255, 255, 0.025);
+    --bg-row-edit: rgba(249, 115, 22, 0.05);
+    --bg-row-section: rgba(255, 255, 255, 0.03);
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-strong: rgba(255, 255, 255, 0.12);
+    --border-focus: rgba(249, 115, 22, 0.5);
+    --text-primary: #F4F4F5;
+    --text-secondary: #A1A1AA;
+    --text-tertiary: #71717A;
+    --accent: #F97316;
+    --accent-soft: rgba(249, 115, 22, 0.1);
+    --success: #34D399;
+    --success-soft: rgba(52, 211, 153, 0.1);
+    --danger: #F87171;
+    --danger-soft: rgba(248, 113, 113, 0.1);
+    --warning: #FBBF24;
+    --warning-soft: rgba(251, 191, 36, 0.1);
+    --info: #818CF8;
+    --info-soft: rgba(99, 102, 241, 0.1);
+  }
+  * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; box-sizing: border-box; }
+  html, body {
+    background: var(--bg-base); color: var(--text-primary);
+    font-family: 'Inter Tight', -apple-system, sans-serif;
+    letter-spacing: -0.011em;
+    overflow-x: hidden;
+  }
+  .display-font { font-family: 'Fraunces', Georgia, serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; font-feature-settings: 'tnum'; }
+  .num { font-feature-settings: 'tnum', 'ss01'; letter-spacing: -0.04em; }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse 60% 40% at 50% -20%, rgba(99, 102, 241, 0.04), transparent 60%);
+    pointer-events: none; z-index: 0;
+  }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 9px; border-radius: 999px;
+    font-size: 11px; font-weight: 500;
+  }
+
+  kbd {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; padding: 2px 6px;
+    border-radius: 5px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+  }
+
+  /* ─── Toolbar ─── */
+  .toolbar-btn {
+    padding: 6px 11px;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex; align-items: center; gap: 6px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .toolbar-btn:hover { background: rgba(255,255,255,0.04); color: var(--text-primary); }
+  .toolbar-btn.primary {
+    background: var(--accent); color: white;
+  }
+  .toolbar-btn.primary:hover { background: #EA580C; }
+
+  /* ─── Estimate Grid (Excel-like) ─── */
+  .est-table {
+    width: 100%;
+    background: var(--bg-card-elevated);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+  }
+  .est-header-row {
+    display: grid;
+    grid-template-columns: 40px 90px minmax(0, 2.5fr) 80px 100px 110px 110px 110px 50px;
+    gap: 0;
+    padding: 12px 16px;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-tertiary);
+    font-weight: 500;
+    position: sticky;
+    top: 64px; z-index: 5;
+  }
+
+  /* ─── Section row ─── */
+  .est-section-row {
+    display: grid;
+    grid-template-columns: 40px 1fr 110px;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--bg-row-section);
+    border-bottom: 1px solid var(--border-subtle);
+    cursor: pointer;
+    transition: background 0.15s ease;
+    align-items: center;
+  }
+  .est-section-row:hover { background: rgba(255,255,255,0.05); }
+  .section-toggle {
+    width: 16px; height: 16px;
+    color: var(--text-tertiary);
+    transition: transform 0.2s ease;
+  }
+  .section-toggle.collapsed { transform: rotate(-90deg); }
+
+  /* ─── Item row ─── */
+  .est-item-row {
+    display: grid;
+    grid-template-columns: 40px 90px minmax(0, 2.5fr) 80px 100px 110px 110px 110px 50px;
+    gap: 0;
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+    transition: background 0.1s ease;
+    align-items: center;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .est-item-row:hover { background: var(--bg-row-hover); }
+  .est-item-row.active {
+    background: var(--bg-row-edit);
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+  .est-item-row.deviation-positive { background: rgba(52,211,153,0.04); }
+  .est-item-row.deviation-negative { background: rgba(248,113,113,0.04); }
+
+  .est-item-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: var(--text-tertiary);
+  }
+
+  .est-item-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-weight: 500;
+  }
+
+  .est-item-name {
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-right: 16px;
+  }
+  .est-item-name .standard-tag {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 9.5px;
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--info-soft);
+    color: var(--info);
+    vertical-align: 2px;
+    font-weight: 500;
+  }
+
+  .est-item-cell {
+    font-feature-settings: 'tnum';
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .est-item-cell.editable {
+    color: var(--text-primary);
+    padding: 4px 8px;
+    border-radius: 5px;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+  }
+  .est-item-cell.editable:hover {
+    border-color: var(--border-subtle);
+    background: rgba(255,255,255,0.02);
+  }
+  .est-item-cell.editing {
+    border-color: var(--border-focus);
+    background: rgba(249, 115, 22, 0.06);
+    color: white;
+    font-weight: 500;
+  }
+
+  .deviation-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+  }
+  .deviation-badge.positive { background: var(--success-soft); color: var(--success); }
+  .deviation-badge.negative { background: var(--danger-soft); color: var(--danger); }
+
+  /* ─── KPI strip ─── */
+  .kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 14px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .kpi-card:hover { border-color: var(--border-strong); }
+
+  /* ─── Right panel (Resource sidebar) ─── */
+  .resource-panel {
+    background: var(--bg-card-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    overflow: hidden;
+    height: fit-content;
+    position: sticky;
+    top: 88px;
+  }
+
+  .resource-tab {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s ease;
+  }
+  .resource-tab:hover { color: var(--text-primary); }
+  .resource-tab.active {
+    color: var(--text-primary);
+    border-bottom-color: var(--accent);
+  }
+
+  .resource-row {
+    display: grid;
+    grid-template-columns: 22px 1fr 80px;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-subtle);
+    transition: background 0.15s ease;
+    cursor: pointer;
+  }
+  .resource-row:hover { background: rgba(255,255,255,0.03); }
+  .resource-row:last-child { border-bottom: none; }
+
+  .resource-icon {
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .resource-icon.material { background: rgba(249, 115, 22, 0.15); color: var(--accent); }
+  .resource-icon.work { background: rgba(99, 102, 241, 0.15); color: var(--info); }
+  .resource-icon.machine { background: rgba(168, 85, 247, 0.15); color: #C084FC; }
+  .resource-icon.fot { background: rgba(236, 72, 153, 0.15); color: #F472B6; }
+
+  /* ─── Stagger ─── */
+  .stagger > * {
+    opacity: 0;
+    transform: translateY(8px);
+    animation: rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .stagger > *:nth-child(1) { animation-delay: 0.05s; }
+  .stagger > *:nth-child(2) { animation-delay: 0.1s; }
+  .stagger > *:nth-child(3) { animation-delay: 0.15s; }
+  .stagger > *:nth-child(4) { animation-delay: 0.2s; }
+  .stagger > *:nth-child(5) { animation-delay: 0.25s; }
+  .stagger > *:nth-child(6) { animation-delay: 0.3s; }
+  @keyframes rise { to { opacity: 1; transform: translateY(0); } }
+
+  /* ─── AI suggest dropdown ─── */
+  .ai-suggest {
+    position: absolute;
+    background: var(--bg-card-elevated);
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    padding: 6px;
+    min-width: 280px;
+    z-index: 50;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); }
+
+  /* Mobile */
+  @media (max-width: 1280px) {
+    .est-grid-3col { grid-template-columns: 1fr !important; }
+    .resource-panel { position: static; }
+  }
+  @media (max-width: 768px) {
+    .px-10 { padding-left: 14px !important; padding-right: 14px !important; }
+    .display-font.text-\[32px\] { font-size: 22px !important; }
+    .est-item-row, .est-header-row {
+      grid-template-columns: 30px 70px 1fr 90px 70px !important;
+    }
+    .est-item-row > .hide-mobile, .est-header-row > .hide-mobile { display: none !important; }
+    .hide-mobile { display: none !important; }
+  }
+</style>
+  <link rel="stylesheet" href="theme.css">
+  <script src="theme-switcher.js" defer></script>
+</head>
+<body class="min-h-screen relative">
+
+<div class="relative" style="z-index: 1;">
+
+  <!-- ═════════════════════════════════════════════════════════════════
+       Top toolbar (sticky)
+       ═════════════════════════════════════════════════════════════ -->
+  <header class="sticky top-0 z-30 px-10 py-3" style="background: rgba(10,10,11,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-subtle);">
+    <div class="flex items-center justify-between gap-4">
+
+      <!-- Breadcrumb -->
+      <div class="flex items-center gap-2 text-[13px] flex-1 min-w-0">
+        <a class="cursor-pointer" style="color: var(--text-tertiary);">Объекты</a>
+        <span style="color: var(--text-tertiary);">/</span>
+        <a class="cursor-pointer" style="color: var(--text-tertiary);">Marins Park Hotel</a>
+        <span style="color: var(--text-tertiary);">/</span>
+        <span style="color: var(--text-primary); font-weight: 500;">Смета EST-2026-0078</span>
+        <span class="pill ml-2" style="background: var(--success-soft); color: var(--success);">Базовая</span>
+        <span class="text-[11px] mono ml-2" style="color: var(--text-tertiary);">v.2 от 28.04</span>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="flex items-center gap-1 flex-shrink-0">
+        <button class="toolbar-btn">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 13V3M8 3l-3 3M8 3l3 3"/></svg>
+          <span class="hide-mobile">Импорт</span>
+        </button>
+        <button class="toolbar-btn">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 3v10M8 13l-3-3M8 13l3-3"/></svg>
+          <span class="hide-mobile">Экспорт</span>
+        </button>
+        <div class="w-px h-5 mx-1 hide-mobile" style="background: var(--border-subtle);"></div>
+        <button class="toolbar-btn">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+          <span class="hide-mobile">История</span>
+        </button>
+        <button class="toolbar-btn">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="5" height="10" rx="0.5"/><rect x="9" y="3" width="4" height="6" rx="0.5"/></svg>
+          <span class="hide-mobile">Сравнить</span>
+        </button>
+        <div class="w-px h-5 mx-1 hide-mobile" style="background: var(--border-subtle);"></div>
+        <button class="toolbar-btn primary">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l3 3 7-7"/></svg>
+          Сохранить
+          <kbd style="background: rgba(255,255,255,0.15); color: white; border-color: rgba(255,255,255,0.2);">⌘S</kbd>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="px-10 py-6">
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         Hero block
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="mb-5 stagger">
+      <div class="flex items-center gap-2 mb-1.5">
+        <span class="text-[11px] mono uppercase tracking-wider" style="color: var(--text-tertiary);">Смета · Кровельные работы</span>
+        <span class="pill" style="background: var(--info-soft); color: var(--info);">импорт из Гранд-Сметы</span>
+      </div>
+      <h1 class="display-font text-[32px] font-light tracking-tight leading-[1.1]">
+        Кровля Marins Park Hotel
+      </h1>
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[13px]" style="color: var(--text-secondary);">
+        <span>1 540 м²</span>
+        <span style="color: var(--text-tertiary);">·</span>
+        <span>4 раздела · 23 позиции</span>
+        <span style="color: var(--text-tertiary);">·</span>
+        <span>Сметчик: Наталья Сорокина</span>
+        <span style="color: var(--text-tertiary);">·</span>
+        <span class="mono">создана 12.04 · правки 28.04</span>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         KPI strip (5 cards) — план/факт
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="grid grid-cols-5 gap-3 mb-6 stagger">
+      <div class="kpi-card">
+        <div class="text-[10.5px] mono uppercase tracking-wider mb-1.5" style="color: var(--text-tertiary);">Сумма сметы</div>
+        <div class="num text-[24px] font-light">8,90 <span class="text-[12px]" style="color: var(--text-secondary);">млн ₽</span></div>
+        <div class="text-[10.5px] mt-1" style="color: var(--text-tertiary);">с НДС 20%</div>
+      </div>
+      <div class="kpi-card">
+        <div class="text-[10.5px] mono uppercase tracking-wider mb-1.5" style="color: var(--text-tertiary);">Прямые затраты</div>
+        <div class="num text-[24px] font-light">5,77 <span class="text-[12px]" style="color: var(--text-secondary);">млн ₽</span></div>
+        <div class="text-[10.5px] mt-1" style="color: var(--text-tertiary);">материалы + ФОТ + субы</div>
+      </div>
+      <div class="kpi-card">
+        <div class="text-[10.5px] mono uppercase tracking-wider mb-1.5" style="color: var(--text-tertiary);">Накладные</div>
+        <div class="num text-[24px] font-light">0,46 <span class="text-[12px]" style="color: var(--text-secondary);">млн ₽</span></div>
+        <div class="text-[10.5px] mt-1" style="color: var(--text-tertiary);">8% от прямых</div>
+      </div>
+      <div class="kpi-card" style="background: linear-gradient(135deg, var(--success-soft), var(--bg-card)); border-color: rgba(52,211,153,0.15);">
+        <div class="text-[10.5px] mono uppercase tracking-wider mb-1.5" style="color: var(--text-tertiary);">Прибыль (план)</div>
+        <div class="num text-[24px] font-light" style="color: var(--success);">2,67 <span class="text-[12px]" style="color: var(--text-secondary);">млн ₽</span></div>
+        <div class="text-[10.5px] mt-1 mono" style="color: var(--success);">маржа 30,0%</div>
+      </div>
+      <div class="kpi-card">
+        <div class="text-[10.5px] mono uppercase tracking-wider mb-1.5" style="color: var(--text-tertiary);">Освоено факт</div>
+        <div class="num text-[24px] font-light">7,30 <span class="text-[12px]" style="color: var(--text-secondary);">млн ₽</span></div>
+        <div class="flex items-center gap-1.5 mt-1">
+          <div class="flex-1 h-1 rounded-full overflow-hidden" style="background: rgba(255,255,255,0.06);">
+            <div class="h-1 rounded-full" style="width: 82%; background: var(--accent);"></div>
+          </div>
+          <span class="text-[10px] mono" style="color: var(--text-tertiary);">82%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         Filter chips
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="flex items-center gap-3 mb-4 overflow-x-auto" style="scrollbar-width: none;">
+      <span class="text-[11px] mono uppercase tracking-wider flex-shrink-0" style="color: var(--text-tertiary);">Показать:</span>
+      <div class="toolbar-btn" style="background: var(--accent-soft); color: var(--accent);">Все позиции 23</div>
+      <div class="toolbar-btn">С отклонением 4</div>
+      <div class="toolbar-btn">Не начатые 7</div>
+      <div class="toolbar-btn">Готовые 100% · 11</div>
+      <div class="toolbar-btn" style="color: var(--danger);">Перерасход 2</div>
+      <div class="ml-auto flex items-center gap-2 flex-shrink-0">
+        <button class="toolbar-btn">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 5h10M5 8h6M7 11h2"/></svg>
+          Группировка
+        </button>
+        <button class="toolbar-btn">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
+          Колонки
+        </button>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         Main grid: Estimate table + Resource panel
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="grid grid-cols-3 gap-5 est-grid-3col">
+
+      <!-- ═══ Левая колонка: таблица сметы ═══ -->
+      <div class="col-span-2">
+        <div class="est-table">
+
+          <!-- Header -->
+          <div class="est-header-row">
+            <div>№</div>
+            <div>Шифр</div>
+            <div>Наименование работ</div>
+            <div class="text-right">Ед.</div>
+            <div class="text-right">Объём</div>
+            <div class="text-right">Цена за ед.</div>
+            <div class="text-right">Сумма</div>
+            <div class="text-right hide-mobile">Освоено</div>
+            <div></div>
+          </div>
+
+          <!-- ═══ Раздел 1 ═══ -->
+          <div class="est-section-row">
+            <svg class="section-toggle" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 6l3 3 3-3"/></svg>
+            <div>
+              <div class="text-[14px] font-medium">Раздел 1 · Подготовительные работы</div>
+              <div class="text-[11px] mono mt-0.5" style="color: var(--text-tertiary);">3 позиции · готово 100%</div>
+            </div>
+            <div class="num text-[14px] font-medium text-right">1,20 <span class="text-[11px]" style="color: var(--text-tertiary);">млн</span></div>
+          </div>
+
+          <!-- Item 1.1 -->
+          <div class="est-item-row">
+            <div class="est-item-num">1.1</div>
+            <div class="est-item-code">ГЭСН 12-01-009-1</div>
+            <div class="est-item-name">
+              Демонтаж кровельного покрытия из рулонных материалов
+              <span class="standard-tag">WS-018</span>
+            </div>
+            <div class="est-item-cell" style="color: var(--text-tertiary);">м²</div>
+            <div class="est-item-cell editable">1 540</div>
+            <div class="est-item-cell editable">425,00</div>
+            <div class="est-item-cell num font-medium">654 500</div>
+            <div class="est-item-cell num hide-mobile" style="color: var(--success);">654 500</div>
+            <div class="text-right">
+              <button style="color: var(--text-tertiary);"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="3" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="8" cy="13" r="1"/></svg></button>
+            </div>
+          </div>
+
+          <!-- Item 1.2 -->
+          <div class="est-item-row deviation-positive">
+            <div class="est-item-num">1.2</div>
+            <div class="est-item-code">ГЭСН 12-01-013-1</div>
+            <div class="est-item-name">
+              Очистка основания от строительного мусора
+              <span class="standard-tag">WS-019</span>
+            </div>
+            <div class="est-item-cell" style="color: var(--text-tertiary);">м²</div>
+            <div class="est-item-cell editable">1 540</div>
+            <div class="est-item-cell editable">155,00</div>
+            <div class="est-item-cell num font-medium">238 700</div>
+            <div class="est-item-cell num hide-mobile">
+              <span style="color: var(--success);">228 200</span>
+              <span class="deviation-badge positive">−4%</span>
+            </div>
+            <div class="text-right">
+              <button style="color: var(--text-tertiary);"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="3" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="8" cy="13" r="1"/></svg></button>
+            </div>
+          </div>
+
+          <!-- Item 1.3 -->
+          <div class="est-item-row">
+            <div class="est-item-num">1.3</div>
+            <div class="est-item-code">ГЭСН 12-01-022-3</div>
+            <div class="est-item-name">Огрунтовка основания битумным праймером</div>
+            <div class="est-item-cell" style="color: var(--text-tertiary);">м²</div>
+            <div class="est-item-cell editable">1 540</div>
+            <div class="est-item-cell editable">200,00</div>
+            <div class="est-item-cell num font-medium">308 000</div>
+            <div class="est-item-cell num hide-mobile" style="color: var(--success);">308 000</div>
+            <div class="text-right">
+              <button style="color: var(--text-tertiary);"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="3" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="8" cy="13" r="1"/></svg></button>
+            </div>
+          </div>
+
+          <!-- ═══ Раздел 2 ═══ -->
+          <div class="est-section-row">
+            <svg class="section-toggle" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 6l3 3 3-3"/></svg>
+            <div>
+              <div class="text-[14px] font-medium">Раздел 2 · Гидро- и пароизоляция</div>
+              <div class="text-[11px] mono mt-0.5" style="color: var(--text-tertiary);">7 позиций · готово 100%</div>
+            </div>
+            <div class="num text-[14px] font-medium text-right">2,40 <span class="text-[11px]" style="color: var(--text-tertiary);">млн</span></div>
+          </div>
+
+          <!-- Item 2.1 -->
+          <div class="est-item-row">
+            <div class="est-item-num">2.1</div>
+            <div class="est-item-code">ФЕР 12-01-002-9</div>
+            <div class="est-item-name">
+              Устройство пароизоляции 1 слой
+              <span class="standard-tag">WS-024</span>
+            </div>
+            <div class="est-item-cell" style="color: var(--text-tertiary);">м²</div>
+            <div class="est-item-cell editable">1 540</div>
+            <div class="est-item-cell editable">385,00</div>
+            <div class="est-item-cell num font-medium">592 900</div>
+            <div class="est-item-cell num hide-mobile" style="color: var(--success);">592 900</div>
+            <div class="text-right">
+              <button style="color: var(--text-tertiary);"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="3" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="8" cy="13" r="1"/></svg></button>
+            </div>
+          </div>
+
+          <!-- Item 2.2 -->
+          <div class="est-item-row active">
+            <div class="est-item-num" style="color: var(--accent);">2.2</div>
+            <div class="est-item-code">ФЕР 12-01-008-3</div>
+            <div class="est-item-name">
+              <span style="color: var(--accent); font-weight: 500;">Укладка утеплителя ROCKWOOL РУФ БАТТС толщ. 100мм</span>
+              <span class="standard-tag">WS-031</span>
+            </div>
+            <div class="est-item-cell" style="color: var(--text-tertiary);">м²</div>
+            <div class="est-item-cell editing">1 540,00</div>
+            <div class="est-item-cell editable">685,00</div>
+            <div class="est-item-cell num font-medium" style="color: var(--accent);">1 054 900</div>
+            <div class="est-item-cell num hide-mobile" style="color: var(--text-tertiary);">— в работе —</div>
+            <div class="text-right">
+              <button style="color: var(--accent);"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="3"/></svg></button>
+            </div>
+          </div>
+
+          <!-- Item 2.3 -->
+          <div class="est-item-row deviation-negative">
+            <div class="est-item-num">2.3</div>
+            <div class="est-item-code">ФЕР 12-01-014-2</div>
+            <div class="est-item-name">Стяжка цементно-песчаная М150, толщ. 50мм</div>
+            <div class="est-item-cell" style="color: var(--text-tertiary);">м²</div>
+            <div class="est-item-cell editable">1 540</div>
+            <div class="est-item-cell editable">580,00</div>
+            <div class="est-item-cell num font-medium">893 200</div>
+            <div class="est-item-cell num hide-mobile">
+              <span style="color: var(--danger);">934 800</span>
+              <span class="deviation-badge negative">+5%</span>
+            </div>
+            <div class="text-right">
+              <button style="color: var(--text-tertiary);"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="3" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="8" cy="13" r="1"/></svg></button>
+            </div>
+          </div>
+
+          <!-- Item 2.4 -->
+          <div class="est-item-row">
+            <div class="est-item-num">2.4</div>
+            <div class="est-item-code">ФЕР 12-01-018-1</div>
+            <div class="est-item-name">Армирование стяжки сеткой 100×100×4</div>
+            <div class="est-item-cell" style="color: var(--text-tertiary);">м²</div>
+            <div class="est-item-cell editable">1 540</div>
+            <div class="est-item-cell editable">95,00</div>
+            <div class="est-item-cell num font-medium">146 300</div>
+            <div class="est-item-cell num hide-mobile" style="color: var(--success);">146 300</div>
+            <div class="text-right">
+              <button style="color: var(--text-tertiary);"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="3" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="8" cy="13" r="1"/></svg></button>
+            </div>
+          </div>
+
+          <!-- ═══ Раздел 3 ═══ -->
+          <div class="est-section-row">
+            <svg class="section-toggle collapsed" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 6l3 3 3-3"/></svg>
+            <div>
+              <div class="text-[14px] font-medium">Раздел 3 · Финишное покрытие</div>
+              <div class="text-[11px] mono mt-0.5" style="color: var(--text-tertiary);">8 позиций · план 02.06–15.06</div>
+            </div>
+            <div class="num text-[14px] font-medium text-right">2,21 <span class="text-[11px]" style="color: var(--text-tertiary);">млн</span></div>
+          </div>
+
+          <!-- ═══ Раздел 4 ═══ -->
+          <div class="est-section-row">
+            <svg class="section-toggle collapsed" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 6l3 3 3-3"/></svg>
+            <div>
+              <div class="text-[14px] font-medium">Раздел 4 · Парапеты, водостоки, сдача</div>
+              <div class="text-[11px] mono mt-0.5" style="color: var(--text-tertiary);">5 позиций · план 16.06–25.06</div>
+            </div>
+            <div class="num text-[14px] font-medium text-right">1,03 <span class="text-[11px]" style="color: var(--text-tertiary);">млн</span></div>
+          </div>
+
+          <!-- Footer summary -->
+          <div class="est-section-row" style="background: var(--bg-elevated); border-top: 1px solid var(--border-strong); border-bottom: none; padding: 16px;">
+            <div></div>
+            <div>
+              <div class="text-[11px] mono uppercase tracking-wider" style="color: var(--text-tertiary);">Итого по смете</div>
+              <div class="text-[12px] mt-1" style="color: var(--text-secondary);">
+                Прямые: <span class="num font-medium" style="color: var(--text-primary);">5 766 000</span>
+                <span style="color: var(--text-tertiary);"> · </span>
+                Накладные 8%: <span class="num font-medium" style="color: var(--text-primary);">461 280</span>
+                <span style="color: var(--text-tertiary);"> · </span>
+                Прибыль 30%: <span class="num font-medium" style="color: var(--success);">1 868 184</span>
+              </div>
+            </div>
+            <div class="num text-[18px] font-medium text-right">8 900 000 <span class="text-[12px]" style="color: var(--text-secondary);">₽</span></div>
+          </div>
+
+        </div>
+
+        <!-- Add row hint -->
+        <div class="mt-3 flex items-center gap-3">
+          <button class="toolbar-btn" style="background: rgba(255,255,255,0.04); border: 1px dashed var(--border-strong);">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v10M3 8h10"/></svg>
+            Добавить позицию
+            <kbd>⌘ ↵</kbd>
+          </button>
+          <button class="toolbar-btn" style="color: var(--text-tertiary);">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 5h10M3 8h10M3 11h7"/></svg>
+            Добавить раздел
+          </button>
+          <div class="ml-auto text-[11px] mono" style="color: var(--text-tertiary);">
+            <kbd>⌘K</kbd> — поиск расценок
+            <span class="mx-2">·</span>
+            <kbd>↹</kbd> — переход
+            <span class="mx-2">·</span>
+            <kbd>F2</kbd> — редактировать
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ Правая колонка: ресурсная часть выбранной позиции ═══ -->
+      <div class="col-span-1">
+        <div class="resource-panel">
+
+          <!-- Header -->
+          <div class="px-5 py-4" style="border-bottom: 1px solid var(--border-subtle);">
+            <div class="text-[10.5px] mono uppercase tracking-wider mb-2" style="color: var(--text-tertiary);">Выбрана позиция 2.2</div>
+            <div class="text-[14px] font-medium leading-tight" style="color: var(--text-primary);">Укладка утеплителя ROCKWOOL РУФ БАТТС толщ. 100мм</div>
+            <div class="flex items-center gap-3 mt-3 text-[11.5px]">
+              <span class="num"><span style="color: var(--text-tertiary);">Объём:</span> <span style="color: var(--text-primary); font-weight: 500;">1 540 м²</span></span>
+              <span style="color: var(--text-tertiary);">·</span>
+              <span class="num"><span style="color: var(--text-tertiary);">Сумма:</span> <span style="color: var(--accent); font-weight: 500;">1,055 млн</span></span>
+            </div>
+          </div>
+
+          <!-- Tabs -->
+          <div class="flex" style="border-bottom: 1px solid var(--border-subtle);">
+            <div class="resource-tab active">Ресурсы (4)</div>
+            <div class="resource-tab">План/факт</div>
+            <div class="resource-tab">История</div>
+          </div>
+
+          <!-- Resources list -->
+          <div>
+            <!-- Material 1 -->
+            <div class="resource-row">
+              <div class="resource-icon material" title="Материал">
+                <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="10" height="10" rx="1"/></svg>
+              </div>
+              <div class="min-w-0">
+                <div class="text-[12.5px] font-medium truncate">ROCKWOOL РУФ БАТТС</div>
+                <div class="text-[10.5px] mono mt-0.5" style="color: var(--text-tertiary);">15,4 м³ × 4 280 ₽</div>
+              </div>
+              <div class="num text-[12.5px] font-medium text-right">65 912</div>
+            </div>
+
+            <!-- Work -->
+            <div class="resource-row">
+              <div class="resource-icon work" title="Работа">
+                <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l5-5 5 5M8 3v10"/></svg>
+              </div>
+              <div class="min-w-0">
+                <div class="text-[12.5px] font-medium truncate">Укладка теплоизоляции</div>
+                <div class="text-[10.5px] mono mt-0.5" style="color: var(--text-tertiary);">1 540 м² × 145 ₽</div>
+              </div>
+              <div class="num text-[12.5px] font-medium text-right">223 300</div>
+            </div>
+
+            <!-- FOT -->
+            <div class="resource-row">
+              <div class="resource-icon fot" title="ФОТ">
+                <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="5" r="2"/><path d="M3 14c0-3 2-4.5 5-4.5s5 1.5 5 4.5"/></svg>
+              </div>
+              <div class="min-w-0">
+                <div class="text-[12.5px] font-medium truncate">ФОТ + страх. (бригада 5 чел)</div>
+                <div class="text-[10.5px] mono mt-0.5" style="color: var(--text-tertiary);">102 ч × 850 ₽</div>
+              </div>
+              <div class="num text-[12.5px] font-medium text-right">86 700</div>
+            </div>
+
+            <!-- Machine -->
+            <div class="resource-row">
+              <div class="resource-icon machine" title="Механизм">
+                <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="11" r="2"/><circle cx="12" cy="11" r="2"/><path d="M3 11V7l4-2h5l2 4v2"/></svg>
+              </div>
+              <div class="min-w-0">
+                <div class="text-[12.5px] font-medium truncate">Подъёмник телескоп.</div>
+                <div class="text-[10.5px] mono mt-0.5" style="color: var(--text-tertiary);">12 смен × 8 500 ₽</div>
+              </div>
+              <div class="num text-[12.5px] font-medium text-right">102 000</div>
+            </div>
+          </div>
+
+          <!-- Totals -->
+          <div class="px-5 py-4" style="border-top: 1px solid var(--border-subtle); background: var(--bg-elevated);">
+            <div class="space-y-1.5 text-[12px]">
+              <div class="flex justify-between">
+                <span style="color: var(--text-tertiary);">Себестоимость</span>
+                <span class="num font-medium">477 912 ₽</span>
+              </div>
+              <div class="flex justify-between">
+                <span style="color: var(--text-tertiary);">Маржа</span>
+                <span class="num font-medium" style="color: var(--success);">576 988 ₽ · 54,7%</span>
+              </div>
+              <div class="flex justify-between mt-2 pt-2" style="border-top: 1px solid var(--border-subtle);">
+                <span style="color: var(--text-tertiary);">Цена за ед.</span>
+                <span class="num font-medium">685,00 ₽/м²</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI suggest -->
+          <div class="px-5 py-4 m-3 rounded-xl" style="background: linear-gradient(135deg, var(--info-soft), rgba(99,102,241,0.02)); border: 1px solid rgba(99,102,241,0.15);">
+            <div class="flex items-center gap-2 mb-2">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--info);"><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+              <span class="text-[10.5px] mono uppercase tracking-wider" style="color: var(--info);">AI-подсказка</span>
+            </div>
+            <p class="text-[12px] leading-relaxed" style="color: var(--text-secondary);">
+              На прошлом объекте RUSAL похожая работа стоила <span class="num" style="color: var(--text-primary);">645 ₽/м²</span>. Можно поднять до 700 ₽/м² без потери конкурентоспособности — проверено на 3 объектах.
+            </p>
+            <button class="text-[11.5px] mt-3 px-2.5 py-1.5 rounded-md font-medium flex items-center gap-1.5" style="background: var(--info); color: white;">
+              применить 700 ₽/м²
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l3 3 7-7"/></svg>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Структура сметы (donut chart) -->
+        <div class="mt-5 resource-panel" style="position: static; padding: 20px;">
+          <div class="text-[11px] mono uppercase tracking-wider mb-3" style="color: var(--text-tertiary);">Структура сметы</div>
+          <div class="flex items-start gap-4">
+            <!-- Simple SVG donut -->
+            <svg width="100" height="100" viewBox="0 0 100 100" class="flex-shrink-0">
+              <!-- Background -->
+              <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="14"/>
+              <!-- Materials 35% -->
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#F97316" stroke-width="14"
+                      stroke-dasharray="87.96 251.33" stroke-dashoffset="0" transform="rotate(-90 50 50)"/>
+              <!-- Subs 22% -->
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#818CF8" stroke-width="14"
+                      stroke-dasharray="55.29 251.33" stroke-dashoffset="-87.96" transform="rotate(-90 50 50)"/>
+              <!-- FOT 12% -->
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#6366F1" stroke-width="14"
+                      stroke-dasharray="30.16 251.33" stroke-dashoffset="-143.25" transform="rotate(-90 50 50)"/>
+              <!-- Margin 30% -->
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#34D399" stroke-width="14"
+                      stroke-dasharray="75.40 251.33" stroke-dashoffset="-173.41" transform="rotate(-90 50 50)"/>
+              <!-- Center text -->
+              <text x="50" y="48" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#A1A1AA">маржа</text>
+              <text x="50" y="62" text-anchor="middle" font-family="Inter Tight" font-size="14" font-weight="600" fill="#34D399">30%</text>
+            </svg>
+
+            <div class="flex-1 space-y-1.5 text-[11.5px]">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background: #F97316;"></span>
+                <span class="flex-1" style="color: var(--text-secondary);">Материалы</span>
+                <span class="num font-medium">35%</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background: #818CF8;"></span>
+                <span class="flex-1" style="color: var(--text-secondary);">Субподряд</span>
+                <span class="num font-medium">22%</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background: #6366F1;"></span>
+                <span class="flex-1" style="color: var(--text-secondary);">ФОТ + страх.</span>
+                <span class="num font-medium">12%</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background: #1F2937;"></span>
+                <span class="flex-1" style="color: var(--text-secondary);">Прочее</span>
+                <span class="num font-medium">1%</span>
+              </div>
+              <div class="flex items-center gap-2 pt-1.5" style="border-top: 1px solid var(--border-subtle); margin-top: 4px;">
+                <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background: #34D399;"></span>
+                <span class="flex-1" style="color: var(--text-secondary);">Прибыль</span>
+                <span class="num font-medium" style="color: var(--success);">30%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

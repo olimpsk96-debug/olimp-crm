@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+/* ── Шрифты ──────────────────────────────────────────────────────────────── */
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400&family=Inter+Tight:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap");
+
+/* ── CSS-переменные (тёмная тема по умолчанию) ───────────────────────────── */
+:root {
+  /* Фоны */
+  --bg-base:       #0A0A0B;
+  --bg-elevated:   #131316;
+  --bg-card:       #18181C;
+  --bg-card-hover: #1E1E23;
+
+  /* Границы */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
+
+  /* Текст */
+  --text-primary:   #F4F4F5;
+  --text-secondary: #A1A1AA;
+  --text-tertiary:  #71717A;
+
+  /* Акценты */
+  --accent:   #F97316;
+  --success:  #34D399;
+  --warning:  #FBBF24;
+  --danger:   #F87171;
+  --info:     #818CF8;
+
+  /* Радиусы */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  /* Анимации */
+  --ease-apple: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+}
+
+/* Светлая тема */
+[data-theme="light"] {
+  --bg-base:       #F8F8FA;
+  --bg-elevated:   #FFFFFF;
+  --bg-card:       #FFFFFF;
+  --bg-card-hover: #F4F4F6;
+
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --border-strong: rgba(0, 0, 0, 0.12);
+
+  --text-primary:   #09090B;
+  --text-secondary: #52525B;
+  --text-tertiary:  #A1A1AA;
+}
+
+/* ── Базовые стили ───────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: "Inter Tight", system-ui, sans-serif;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tabular nums для всех цифр */
+.num, [data-numeric] {
+  font-family: "JetBrains Mono", monospace;
+  font-feature-settings: "tnum" 1, "kern" 1;
+}
+
+/* Display шрифт */
+.display {
+  font-family: "Fraunces", Georgia, serif;
+}
+
+/* Скроллбар */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
