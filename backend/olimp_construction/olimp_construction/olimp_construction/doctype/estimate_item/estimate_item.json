@@ -1,0 +1,103 @@
+{
+  "name": "Estimate Item",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "istable": 1,
+  "editable_grid": 1,
+  "track_changes": 0,
+  "fields": [
+    {
+      "fieldname": "section_title",
+      "label": "Раздел",
+      "fieldtype": "Data",
+      "in_list_view": 0,
+      "bold": 1
+    },
+    {
+      "fieldname": "is_section",
+      "label": "Строка — раздел",
+      "fieldtype": "Check",
+      "default": "0",
+      "in_list_view": 0
+    },
+    {
+      "fieldname": "item_code",
+      "label": "Код",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "columns": 1
+    },
+    {
+      "fieldname": "item_name",
+      "label": "Наименование работ",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "in_list_view": 1,
+      "columns": 4
+    },
+    {
+      "fieldname": "unit",
+      "label": "Ед. изм.",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "columns": 1
+    },
+    {
+      "fieldname": "qty",
+      "label": "Кол-во",
+      "fieldtype": "Float",
+      "precision": "3",
+      "in_list_view": 1,
+      "columns": 1
+    },
+    {
+      "fieldname": "base_unit_price",
+      "label": "Ед. цена (норм)",
+      "fieldtype": "Currency",
+      "in_list_view": 1,
+      "columns": 2
+    },
+    {
+      "fieldname": "base_amount",
+      "label": "Сумма (норм)",
+      "fieldtype": "Currency",
+      "read_only": 1,
+      "in_list_view": 1,
+      "columns": 2
+    },
+    {
+      "fieldname": "our_unit_price",
+      "label": "Наша ед. цена",
+      "fieldtype": "Currency",
+      "in_list_view": 1,
+      "columns": 2
+    },
+    {
+      "fieldname": "our_amount",
+      "label": "Наша сумма",
+      "fieldtype": "Currency",
+      "read_only": 1,
+      "in_list_view": 1,
+      "columns": 2
+    },
+    {
+      "fieldname": "deviation_pct",
+      "label": "Откл. %",
+      "fieldtype": "Percent",
+      "read_only": 1,
+      "in_list_view": 0
+    },
+    {
+      "fieldname": "work_type",
+      "label": "Вид работ",
+      "fieldtype": "Select",
+      "options": "\nАКЗ\nКровля\nПромальп\nМонолит\nУсиление\nКомплексный"
+    },
+    {
+      "fieldname": "notes",
+      "label": "Примечание",
+      "fieldtype": "Small Text"
+    }
+  ],
+  "permissions": []
+}

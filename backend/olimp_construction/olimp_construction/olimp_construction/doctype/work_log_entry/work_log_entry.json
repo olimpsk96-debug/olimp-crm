@@ -1,0 +1,111 @@
+{
+  "name": "Work Log Entry",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "istable": 1,
+  "editable_grid": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "entry_date",
+      "fieldtype": "Date",
+      "label": "Дата",
+      "reqd": 1,
+      "in_list_view": 1,
+      "columns": 2
+    },
+    {
+      "fieldname": "weather",
+      "fieldtype": "Select",
+      "label": "Погода",
+      "options": "Ясно\nПасмурно\nОблачно\nДождь\nСнег\nТуман\nВетер сильный\nГрозы",
+      "default": "Ясно",
+      "in_list_view": 1,
+      "columns": 1
+    },
+    {
+      "fieldname": "temperature_c",
+      "fieldtype": "Int",
+      "label": "T °C"
+    },
+    {
+      "fieldname": "wind_ms",
+      "fieldtype": "Float",
+      "label": "Ветер м/с",
+      "precision": "1"
+    },
+    {
+      "fieldname": "shift",
+      "fieldtype": "Select",
+      "label": "Смена",
+      "options": "1 смена\n2 смена\nНочная",
+      "default": "1 смена"
+    },
+    {
+      "fieldname": "workers_count",
+      "fieldtype": "Int",
+      "label": "Рабочих",
+      "default": "0",
+      "in_list_view": 1,
+      "columns": 1
+    },
+    {
+      "fieldname": "responsible",
+      "fieldtype": "Data",
+      "label": "Бригадир / отв.",
+      "in_list_view": 1,
+      "columns": 2
+    },
+    {
+      "fieldname": "works_description",
+      "fieldtype": "Small Text",
+      "label": "Выполненные работы",
+      "reqd": 1,
+      "in_list_view": 1,
+      "columns": 3
+    },
+    {
+      "fieldname": "volume_done",
+      "fieldtype": "Data",
+      "label": "Объём (с единицей)",
+      "description": "Например: «120 м² АКЗ, 4 секции лесов»"
+    },
+    {
+      "fieldname": "equipment_used",
+      "fieldtype": "Small Text",
+      "label": "Применённая техника"
+    },
+    {
+      "fieldname": "materials_used",
+      "fieldtype": "Small Text",
+      "label": "Израсходованные материалы"
+    },
+    {
+      "fieldname": "hidden_works",
+      "fieldtype": "Check",
+      "label": "Скрытые работы (требуют акта)",
+      "default": "0",
+      "in_list_view": 1,
+      "columns": 1
+    },
+    {
+      "fieldname": "has_issues",
+      "fieldtype": "Check",
+      "label": "Замечания",
+      "default": "0"
+    },
+    {
+      "fieldname": "issues_description",
+      "fieldtype": "Small Text",
+      "label": "Описание замечаний / отклонений от проекта",
+      "depends_on": "eval:doc.has_issues==1"
+    },
+    {
+      "fieldname": "inspector_signed",
+      "fieldtype": "Check",
+      "label": "Подписано тех.надзором",
+      "default": "0"
+    }
+  ],
+  "permissions": []
+}

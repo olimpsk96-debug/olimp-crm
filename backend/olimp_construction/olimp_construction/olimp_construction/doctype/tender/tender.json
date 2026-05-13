@@ -1,0 +1,265 @@
+{
+  "actions": [],
+  "allow_rename": 1,
+  "autoname": "format:TND-{YYYY}-{####}",
+  "creation": "2026-05-10 12:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "title",
+    "status",
+    "col_break_top",
+    "customer",
+    "tender_law",
+    "section_details",
+    "purchase_number",
+    "platform_url",
+    "work_type",
+    "region",
+    "col_break_details",
+    "nmck",
+    "our_price",
+    "margin_pct",
+    "deadline_col_break",
+    "deadline_date",
+    "deadline_time",
+    "submission_date",
+    "section_ai",
+    "ai_match_score",
+    "ai_recommendation",
+    "ai_analysis",
+    "section_result",
+    "result",
+    "win_amount",
+    "project_link",
+    "section_notes",
+    "notes",
+    "checklist",
+    "amended_from"
+  ],
+  "fields": [
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Название тендера",
+      "reqd": 1,
+      "bold": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Статус",
+      "options": "Новый\nОценивается\nГотовится заявка\nЗаявка подана\nВыиграли\nПроиграли\nОтклонён",
+      "reqd": 1,
+      "default": "Новый",
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "col_break_top",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "customer",
+      "fieldtype": "Link",
+      "label": "Заказчик",
+      "options": "Customer",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "tender_law",
+      "fieldtype": "Select",
+      "label": "Закон",
+      "options": "44-ФЗ\n223-ФЗ\nКоммерческий",
+      "default": "44-ФЗ",
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "section_details",
+      "fieldtype": "Section Break",
+      "label": "Детали закупки"
+    },
+    {
+      "fieldname": "purchase_number",
+      "fieldtype": "Data",
+      "label": "Номер закупки",
+      "description": "Номер с zakupki.gov.ru / ЭТП"
+    },
+    {
+      "fieldname": "platform_url",
+      "fieldtype": "Data",
+      "label": "Ссылка на площадку",
+      "options": "URL"
+    },
+    {
+      "fieldname": "work_type",
+      "fieldtype": "Select",
+      "label": "Вид работ",
+      "options": "\nАКЗ\nКровля\nПромальп\nМонолит\nУсиление\nКомплексный",
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "region",
+      "fieldtype": "Data",
+      "label": "Регион"
+    },
+    {
+      "fieldname": "col_break_details",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "nmck",
+      "fieldtype": "Currency",
+      "label": "НМЦК (начальная цена)",
+      "in_list_view": 1,
+      "options": "RUB"
+    },
+    {
+      "fieldname": "our_price",
+      "fieldtype": "Currency",
+      "label": "Наша цена",
+      "options": "RUB"
+    },
+    {
+      "fieldname": "margin_pct",
+      "fieldtype": "Percent",
+      "label": "Целевая маржа, %",
+      "read_only": 0
+    },
+    {
+      "fieldname": "deadline_col_break",
+      "fieldtype": "Section Break",
+      "label": "Сроки"
+    },
+    {
+      "fieldname": "deadline_date",
+      "fieldtype": "Date",
+      "label": "Дедлайн подачи",
+      "in_list_view": 1,
+      "reqd": 1
+    },
+    {
+      "fieldname": "deadline_time",
+      "fieldtype": "Time",
+      "label": "Время (МСК)"
+    },
+    {
+      "fieldname": "submission_date",
+      "fieldtype": "Date",
+      "label": "Дата подачи заявки"
+    },
+    {
+      "fieldname": "section_ai",
+      "fieldtype": "Section Break",
+      "label": "AI-оценка"
+    },
+    {
+      "fieldname": "ai_match_score",
+      "fieldtype": "Int",
+      "label": "Match Score, %",
+      "description": "0-100: насколько тендер подходит Олимпу"
+    },
+    {
+      "fieldname": "ai_recommendation",
+      "fieldtype": "Select",
+      "label": "Рекомендация AI",
+      "options": "\nПодать\nНе подавать\nПроверить вручную"
+    },
+    {
+      "fieldname": "ai_analysis",
+      "fieldtype": "Long Text",
+      "label": "Анализ AI",
+      "read_only": 1
+    },
+    {
+      "fieldname": "section_result",
+      "fieldtype": "Section Break",
+      "label": "Результат"
+    },
+    {
+      "fieldname": "result",
+      "fieldtype": "Select",
+      "label": "Итог",
+      "options": "\nВыиграли\nПроиграли\nОтменён заказчиком"
+    },
+    {
+      "fieldname": "win_amount",
+      "fieldtype": "Currency",
+      "label": "Сумма контракта",
+      "options": "RUB",
+      "depends_on": "eval:doc.result=='Выиграли'"
+    },
+    {
+      "fieldname": "project_link",
+      "fieldtype": "Link",
+      "label": "Проект",
+      "options": "Construction Project",
+      "depends_on": "eval:doc.result=='Выиграли'"
+    },
+    {
+      "fieldname": "section_notes",
+      "fieldtype": "Section Break",
+      "label": "Заметки и чеклист"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Text Editor",
+      "label": "Комментарии"
+    },
+    {
+      "fieldname": "checklist",
+      "fieldtype": "Table",
+      "label": "Чеклист",
+      "options": "Tender Checklist Item"
+    },
+    {
+      "fieldname": "amended_from",
+      "fieldtype": "Link",
+      "label": "Изменено из",
+      "no_copy": 1,
+      "options": "Tender",
+      "print_hide": 1,
+      "read_only": 1
+    }
+  ],
+  "in_create": 1,
+  "links": [],
+  "modified": "2026-05-10 12:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Olimp Construction",
+  "name": "Tender",
+  "naming_rule": "Expression",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "create": 1,
+      "delete": 0,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "All",
+      "share": 1,
+      "write": 1
+    }
+  ],
+  "sort_field": "deadline_date",
+  "sort_order": "ASC",
+  "title_field": "title",
+  "track_changes": 1
+}

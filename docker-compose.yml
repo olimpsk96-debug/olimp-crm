@@ -27,6 +27,7 @@ volumes:
   redis_cache:
   redis_queue:
   erpnext_sites:
+  erpnext_assets:
   erpnext_logs:
   minio_data:
   n8n_data:
@@ -40,7 +41,7 @@ services:
   # 1. БАЗА ДАННЫХ
   # ════════════════════════════════════════════════════════════════════════
   mariadb:
-    image: mariadb:10.11
+    image: mariadb:10.6
     container_name: olimp_mariadb
     restart: unless-stopped
     networks: [olimp_net]
@@ -94,6 +95,7 @@ services:
     networks: [olimp_net]
     ports:
       - "8000:8000"
+    entrypoint: ["/scripts/docker-entrypoint-backend.sh"]
     depends_on:
       mariadb:
         condition: service_healthy
@@ -108,9 +110,17 @@ services:
       REDIS_QUEUE: redis://redis-queue:6379
       SOCKETIO_PORT: 9000
       MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_DIRECTOR_CHAT_ID: ${TELEGRAM_DIRECTOR_CHAT_ID}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
     volumes:
       - erpnext_sites:/home/frappe/frappe-bench/sites
+      - erpnext_assets:/home/frappe/frappe-bench/assets
       - erpnext_logs:/home/frappe/frappe-bench/logs
+      - ./backend/olimp_construction:/home/frappe/frappe-bench/apps/olimp_construction
+      - ./backend/olimp_construction.pth:/home/frappe/frappe-bench/env/lib/python3.11/site-packages/olimp_construction.pth:ro
+      - ./scripts/docker-entrypoint-backend.sh:/scripts/docker-entrypoint-backend.sh:ro
+      - ./backend/olimp_construction.pth:/home/frappe/frappe-bench/env/lib/python3.11/site-packages/olimp_construction.pth:ro
 
   configurator:
     image: frappe/erpnext:v15
@@ -185,6 +195,8 @@ services:
     volumes:
       - erpnext_sites:/home/frappe/frappe-bench/sites
       - erpnext_logs:/home/frappe/frappe-bench/logs
+      - ./backend/olimp_construction:/home/frappe/frappe-bench/apps/olimp_construction
+      - ./backend/olimp_construction.pth:/home/frappe/frappe-bench/env/lib/python3.11/site-packages/olimp_construction.pth:ro
 
   queue-long:
     image: frappe/erpnext:v15
@@ -198,6 +210,8 @@ services:
     volumes:
       - erpnext_sites:/home/frappe/frappe-bench/sites
       - erpnext_logs:/home/frappe/frappe-bench/logs
+      - ./backend/olimp_construction:/home/frappe/frappe-bench/apps/olimp_construction
+      - ./backend/olimp_construction.pth:/home/frappe/frappe-bench/env/lib/python3.11/site-packages/olimp_construction.pth:ro
 
   scheduler:
     image: frappe/erpnext:v15
@@ -208,9 +222,15 @@ services:
       configurator:
         condition: service_completed_successfully
     command: ["bench", "schedule"]
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_DIRECTOR_CHAT_ID: ${TELEGRAM_DIRECTOR_CHAT_ID}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
     volumes:
       - erpnext_sites:/home/frappe/frappe-bench/sites
       - erpnext_logs:/home/frappe/frappe-bench/logs
+      - ./backend/olimp_construction:/home/frappe/frappe-bench/apps/olimp_construction
+      - ./backend/olimp_construction.pth:/home/frappe/frappe-bench/env/lib/python3.11/site-packages/olimp_construction.pth:ro
 
   # ════════════════════════════════════════════════════════════════════════
   # 4. NEXT.JS (кастомный фронт)
@@ -247,6 +267,7 @@ services:
       - ./certbot/conf:/etc/letsencrypt:ro
       - ./certbot/www:/var/www/certbot:ro
       - erpnext_sites:/home/frappe/frappe-bench/sites:ro
+      - erpnext_assets:/home/frappe/frappe-bench/assets:ro
     depends_on:
       - backend
       - frontend
@@ -265,7 +286,7 @@ services:
   # 6. MINIO (S3-совместимое хранилище)
   # ════════════════════════════════════════════════════════════════════════
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2024-01-16T16-07-38Z
     container_name: olimp_minio
     restart: unless-stopped
     networks: [olimp_net]
@@ -315,6 +336,10 @@ services:
       DB_POSTGRESDB_DATABASE: n8n
       DB_POSTGRESDB_USER: n8n
       DB_POSTGRESDB_PASSWORD: ${N8N_DB_PASSWORD}
+      TENDERGURU_API_KEY: ${TENDERGURU_API_KEY}
+      TENDERGURU_REFRESH_KEY: ${TENDERGURU_REFRESH_KEY}
+      FRAPPE_API_KEY: ${FRAPPE_API_KEY}
+      FRAPPE_API_SECRET: ${FRAPPE_API_SECRET}
     volumes:
       - n8n_data:/home/node/.n8n
     depends_on:
@@ -358,7 +383,7 @@ services:
   # 10. QDRANT (vector DB для AI-ассистента)
   # ════════════════════════════════════════════════════════════════════════
   qdrant:
-    image: qdrant/qdrant:latest
+    image: qdrant/qdrant:v1.7.4
     container_name: olimp_qdrant
     restart: unless-stopped
     networks: [olimp_net]

@@ -1,0 +1,152 @@
+{
+  "actions": [],
+  "autoname": "FR-.YYYY.-.#####",
+  "creation": "2026-05-11 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "title", "status", "column_break_1",
+    "project", "foreman_name", "report_date",
+    "section_workers",
+    "workers_count", "brigades_info",
+    "section_work",
+    "work_done",
+    "section_issues",
+    "issues", "has_safety_incident",
+    "section_materials",
+    "materials_used", "equipment_used",
+    "section_notes",
+    "notes"
+  ],
+  "fields": [
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Заголовок отчёта",
+      "reqd": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Статус",
+      "options": "Черновик\nОтправлен\nПринят",
+      "default": "Черновик"
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "project",
+      "fieldtype": "Link",
+      "label": "Проект",
+      "options": "Construction Project"
+    },
+    {
+      "fieldname": "foreman_name",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Прораб"
+    },
+    {
+      "fieldname": "report_date",
+      "fieldtype": "Date",
+      "in_list_view": 1,
+      "label": "Дата отчёта",
+      "reqd": 1
+    },
+    {
+      "fieldname": "section_workers",
+      "fieldtype": "Section Break",
+      "label": "Люди"
+    },
+    {
+      "fieldname": "workers_count",
+      "fieldtype": "Int",
+      "label": "Количество рабочих"
+    },
+    {
+      "fieldname": "brigades_info",
+      "fieldtype": "Data",
+      "label": "Бригады / субподрядчики"
+    },
+    {
+      "fieldname": "section_work",
+      "fieldtype": "Section Break",
+      "label": "Выполненные работы"
+    },
+    {
+      "fieldname": "work_done",
+      "fieldtype": "Text",
+      "label": "Что сделано за день"
+    },
+    {
+      "fieldname": "section_issues",
+      "fieldtype": "Section Break",
+      "label": "Проблемы и ОТ/ТБ"
+    },
+    {
+      "fieldname": "issues",
+      "fieldtype": "Text",
+      "label": "Проблемы / замечания"
+    },
+    {
+      "fieldname": "has_safety_incident",
+      "fieldtype": "Check",
+      "label": "Был инцидент по ОТ/ТБ"
+    },
+    {
+      "fieldname": "section_materials",
+      "fieldtype": "Section Break",
+      "label": "Ресурсы"
+    },
+    {
+      "fieldname": "materials_used",
+      "fieldtype": "Text",
+      "label": "Использованные материалы"
+    },
+    {
+      "fieldname": "equipment_used",
+      "fieldtype": "Text",
+      "label": "Использованная техника"
+    },
+    {
+      "fieldname": "section_notes",
+      "fieldtype": "Section Break",
+      "label": "Примечания"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Text",
+      "label": "Примечания"
+    }
+  ],
+  "index_web_pages_for_search": 1,
+  "links": [],
+  "modified": "2026-05-11 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Olimp Construction",
+  "name": "Foreman Report",
+  "naming_rule": "Expression (old-style)",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    }
+  ],
+  "sort_field": "report_date",
+  "sort_order": "DESC",
+  "states": [],
+  "track_changes": 1
+}

@@ -1,0 +1,116 @@
+{
+  "actions": [],
+  "autoname": "ML-.YYYY.-.#####",
+  "creation": "2026-05-11 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "equipment", "maintenance_type", "maintenance_date", "column_break_1",
+    "performed_by", "next_maintenance_date",
+    "section_work",
+    "description",
+    "section_cost",
+    "cost_labor", "cost_parts", "total_cost",
+    "section_notes",
+    "notes"
+  ],
+  "fields": [
+    {
+      "fieldname": "equipment",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "label": "Техника",
+      "options": "Equipment",
+      "reqd": 1
+    },
+    {
+      "fieldname": "maintenance_type",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Тип",
+      "options": "Плановое ТО\nВнеплановое ТО\nРемонт\nПоверка\nСРО\nСтраховка",
+      "default": "Плановое ТО",
+      "reqd": 1
+    },
+    {
+      "fieldname": "maintenance_date",
+      "fieldtype": "Date",
+      "in_list_view": 1,
+      "label": "Дата",
+      "reqd": 1
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "performed_by",
+      "fieldtype": "Data",
+      "label": "Исполнитель"
+    },
+    {
+      "fieldname": "next_maintenance_date",
+      "fieldtype": "Date",
+      "label": "Следующее ТО"
+    },
+    {
+      "fieldname": "section_work",
+      "fieldtype": "Section Break",
+      "label": "Выполненные работы"
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Text",
+      "label": "Описание"
+    },
+    {
+      "fieldname": "section_cost",
+      "fieldtype": "Section Break",
+      "label": "Стоимость"
+    },
+    {
+      "fieldname": "cost_labor",
+      "fieldtype": "Currency",
+      "label": "Работы"
+    },
+    {
+      "fieldname": "cost_parts",
+      "fieldtype": "Currency",
+      "label": "Запчасти / материалы"
+    },
+    {
+      "fieldname": "total_cost",
+      "fieldtype": "Currency",
+      "label": "Итого",
+      "read_only": 1
+    },
+    {
+      "fieldname": "section_notes",
+      "fieldtype": "Section Break",
+      "label": "Примечания"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Text",
+      "label": "Примечания"
+    }
+  ],
+  "links": [],
+  "modified": "2026-05-11 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Olimp Construction",
+  "name": "Maintenance Log",
+  "naming_rule": "Expression (old-style)",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1, "delete": 1, "email": 1, "export": 1,
+      "print": 1, "read": 1, "report": 1,
+      "role": "System Manager", "share": 1, "write": 1
+    }
+  ],
+  "sort_field": "maintenance_date",
+  "sort_order": "DESC",
+  "states": [],
+  "track_changes": 1
+}

@@ -1,0 +1,128 @@
+[
+  {
+    "doctype": "Workflow",
+    "name": "Tender Workflow",
+    "workflow_name": "Tender Workflow",
+    "document_type": "Tender",
+    "workflow_state_field": "status",
+    "is_active": 1,
+    "send_email_alert": 0,
+    "states": [
+      {
+        "doctype": "Workflow Document State",
+        "state": "Новый",
+        "doc_status": "0",
+        "allow_edit": "Tender Manager",
+        "style": "Primary"
+      },
+      {
+        "doctype": "Workflow Document State",
+        "state": "Оценивается",
+        "doc_status": "0",
+        "allow_edit": "Tender Manager",
+        "style": "Primary"
+      },
+      {
+        "doctype": "Workflow Document State",
+        "state": "Готовится заявка",
+        "doc_status": "0",
+        "allow_edit": "Tender Manager",
+        "style": "Primary"
+      },
+      {
+        "doctype": "Workflow Document State",
+        "state": "Заявка подана",
+        "doc_status": "0",
+        "allow_edit": "Director",
+        "style": "Primary"
+      },
+      {
+        "doctype": "Workflow Document State",
+        "state": "Выиграли",
+        "doc_status": "1",
+        "allow_edit": "Director",
+        "style": "Success"
+      },
+      {
+        "doctype": "Workflow Document State",
+        "state": "Проиграли",
+        "doc_status": "0",
+        "allow_edit": "Director",
+        "style": "Danger"
+      },
+      {
+        "doctype": "Workflow Document State",
+        "state": "Отклонён",
+        "doc_status": "0",
+        "allow_edit": "Director",
+        "style": "Danger"
+      }
+    ],
+    "transitions": [
+      {
+        "doctype": "Workflow Transition",
+        "state": "Новый",
+        "action": "Начать оценку",
+        "next_state": "Оценивается",
+        "allowed": "Tender Manager",
+        "allow_self_approval": 1
+      },
+      {
+        "doctype": "Workflow Transition",
+        "state": "Оценивается",
+        "action": "Готовить заявку",
+        "next_state": "Готовится заявка",
+        "allowed": "Tender Manager",
+        "allow_self_approval": 1
+      },
+      {
+        "doctype": "Workflow Transition",
+        "state": "Готовится заявка",
+        "action": "Подать заявку",
+        "next_state": "Заявка подана",
+        "allowed": "Tender Manager",
+        "allow_self_approval": 1
+      },
+      {
+        "doctype": "Workflow Transition",
+        "state": "Заявка подана",
+        "action": "Отметить победу",
+        "next_state": "Выиграли",
+        "allowed": "Director",
+        "allow_self_approval": 1
+      },
+      {
+        "doctype": "Workflow Transition",
+        "state": "Заявка подана",
+        "action": "Отметить поражение",
+        "next_state": "Проиграли",
+        "allowed": "Director",
+        "allow_self_approval": 1
+      },
+      {
+        "doctype": "Workflow Transition",
+        "state": "Новый",
+        "action": "Отклонить",
+        "next_state": "Отклонён",
+        "allowed": "Director",
+        "allow_self_approval": 1
+      },
+      {
+        "doctype": "Workflow Transition",
+        "state": "Оценивается",
+        "action": "Отклонить",
+        "next_state": "Отклонён",
+        "allowed": "Director",
+        "allow_self_approval": 1
+      },
+      {
+        "doctype": "Workflow Transition",
+        "state": "Готовится заявка",
+        "action": "Отклонить",
+        "next_state": "Отклонён",
+        "allowed": "Director",
+        "allow_self_approval": 1
+      }
+    ]
+  }
+]

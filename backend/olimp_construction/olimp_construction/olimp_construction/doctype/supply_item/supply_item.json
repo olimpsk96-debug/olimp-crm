@@ -1,0 +1,71 @@
+{
+  "actions": [],
+  "creation": "2026-05-11 00:00:00.000000",
+  "doctype": "DocType",
+  "editable_grid": 1,
+  "engine": "InnoDB",
+  "field_order": [
+    "item_name", "specification", "unit", "qty",
+    "unit_price_estimated", "amount_estimated",
+    "supplier_suggestion"
+  ],
+  "fields": [
+    {
+      "fieldname": "item_name",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Наименование",
+      "reqd": 1
+    },
+    {
+      "fieldname": "specification",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Марка / ГОСТ"
+    },
+    {
+      "fieldname": "unit",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Ед.",
+      "columns": 1
+    },
+    {
+      "fieldname": "qty",
+      "fieldtype": "Float",
+      "in_list_view": 1,
+      "label": "Кол-во",
+      "precision": "3"
+    },
+    {
+      "fieldname": "unit_price_estimated",
+      "fieldtype": "Currency",
+      "in_list_view": 1,
+      "label": "Цена (оценка)"
+    },
+    {
+      "fieldname": "amount_estimated",
+      "fieldtype": "Currency",
+      "in_list_view": 1,
+      "label": "Сумма",
+      "read_only": 1
+    },
+    {
+      "fieldname": "supplier_suggestion",
+      "fieldtype": "Data",
+      "label": "Поставщик (предложение)"
+    }
+  ],
+  "index_web_pages_for_search": 0,
+  "istable": 1,
+  "links": [],
+  "modified": "2026-05-11 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Olimp Construction",
+  "name": "Supply Item",
+  "owner": "Administrator",
+  "permissions": [],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "states": []
+}

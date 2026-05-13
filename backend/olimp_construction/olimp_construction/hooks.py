@@ -12,6 +12,93 @@ override_doctype_class: dict[str, str] = {}
 
 # Custom fields (добавляются к стандартным DocType)
 custom_fields: dict[str, list[dict]] = {
+    "File": [
+        {
+            "fieldname": "olimp_category",
+            "label": "Категория (Олимп)",
+            "fieldtype": "Data",
+            "insert_after": "attached_to_field",
+            "description": "Договор / Сертификат / Фото объекта и т.п. — для документов проектов",
+        },
+        {
+            "fieldname": "olimp_comment",
+            "label": "Комментарий (Олимп)",
+            "fieldtype": "Small Text",
+            "insert_after": "olimp_category",
+        },
+    ],
+    "Estimate": [
+        {
+            "fieldname": "estimation_method",
+            "label": "Метод оценки",
+            "fieldtype": "Select",
+            "options": "\nРесурсный\nБазисно-индексный\nРесурсно-индексный",
+            "insert_after": "estimate_date",
+            "description": "Согласно методике Минстроя РФ. Для строек по 44-ФЗ — обычно базисно-индексный.",
+        },
+        {
+            "fieldname": "regional_index",
+            "label": "Индекс пересчёта (СМР)",
+            "fieldtype": "Float",
+            "precision": "4",
+            "insert_after": "estimation_method",
+            "description": "Индекс Минстроя для перевода базовых цен 2001г в текущие (например, Свердловская обл.).",
+        },
+    ],
+    "Construction Project": [
+        {
+            "fieldname": "margin_section",
+            "label": "Фактическая маржа (авто)",
+            "fieldtype": "Section Break",
+            "insert_after": "notes",
+            "collapsible": 1,
+        },
+        {
+            "fieldname": "real_revenue",
+            "label": "Выручка (подписанные КС-2)",
+            "fieldtype": "Currency",
+            "insert_after": "margin_section",
+            "read_only": 1,
+            "no_copy": 1,
+        },
+        {
+            "fieldname": "real_cost",
+            "label": "Расходы (Material Request)",
+            "fieldtype": "Currency",
+            "insert_after": "real_revenue",
+            "read_only": 1,
+            "no_copy": 1,
+        },
+        {
+            "fieldname": "margin_col_break",
+            "fieldtype": "Column Break",
+            "insert_after": "real_cost",
+        },
+        {
+            "fieldname": "real_margin_amount",
+            "label": "Маржа, ₽",
+            "fieldtype": "Currency",
+            "insert_after": "margin_col_break",
+            "read_only": 1,
+            "no_copy": 1,
+        },
+        {
+            "fieldname": "real_margin_pct",
+            "label": "Маржа, %",
+            "fieldtype": "Percent",
+            "insert_after": "real_margin_amount",
+            "read_only": 1,
+            "no_copy": 1,
+        },
+        {
+            "fieldname": "ks2_completion_pct",
+            "label": "% закрытия по КС-2",
+            "fieldtype": "Percent",
+            "insert_after": "real_margin_pct",
+            "read_only": 1,
+            "no_copy": 1,
+        },
+    ],
     "Project": [
         {
             "fieldname": "olimp_section",
@@ -140,12 +227,17 @@ custom_fields: dict[str, list[dict]] = {
 # Фикстуры
 fixtures = ["Custom Field", "Property Setter", "Workflow"]
 
+# После миграции — синхронизировать Custom Fields из словаря custom_fields выше
+after_migrate = ["olimp_construction.install.sync_custom_fields"]
+
 # Cron задачи
 scheduler_events = {
     "daily": [
         "olimp_construction.tasks.check_equipment_alerts",
         "olimp_construction.tasks.check_tender_deadlines",
         "olimp_construction.tasks.check_safety_clearance_expiry",
+        "olimp_construction.tasks.check_crm_followups",
+        "olimp_construction.api.certification.check_certification_expiry",
     ],
     "weekly": [
         "olimp_construction.tasks.update_customer_payment_patterns",
@@ -160,7 +252,17 @@ scheduler_events = {
 
 # Webhook и события
 doc_events: dict[str, dict] = {
-    "Project": {
+    "Construction Project": {
         "on_update": "olimp_construction.tasks.recalculate_project_margin",
+    },
+    "KS2 Act": {
+        # При смене статуса КС-2 → пересчитать маржу связанного проекта
+        "on_update": "olimp_construction.tasks.on_ks2_update_recalc_project",
+    },
+    "Material Request": {
+        "on_update": [
+            "olimp_construction.tasks.on_material_request_update_recalc_project",
+            "olimp_construction.api.stock.on_material_request_received",
+        ],
     },
 }

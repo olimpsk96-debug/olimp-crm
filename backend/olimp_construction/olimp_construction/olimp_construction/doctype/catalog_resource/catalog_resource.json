@@ -1,0 +1,206 @@
+{
+  "name": "Catalog Resource",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "field:resource_code",
+  "title_field": "resource_name",
+  "track_changes": 0,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "resource_code",
+      "fieldtype": "Data",
+      "label": "Код ресурса",
+      "reqd": 1,
+      "unique": 1,
+      "in_list_view": 1,
+      "in_global_search": 1
+    },
+    {
+      "fieldname": "resource_name",
+      "fieldtype": "Data",
+      "label": "Наименование",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_global_search": 1,
+      "length": 500
+    },
+    {
+      "fieldname": "resource_type",
+      "fieldtype": "Select",
+      "label": "Тип",
+      "options": "Material\nLabor\nEquipment\nAbstract Material",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "unit",
+      "fieldtype": "Data",
+      "label": "Ед. измерения",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "price_avg",
+      "fieldtype": "Currency",
+      "label": "Цена средняя",
+      "in_list_view": 1,
+      "precision": "2"
+    },
+    {
+      "fieldname": "currency",
+      "fieldtype": "Data",
+      "label": "Валюта",
+      "default": "RUB"
+    },
+    {
+      "fieldname": "section_break_prices",
+      "fieldtype": "Section Break",
+      "label": "Разброс цен"
+    },
+    {
+      "fieldname": "price_min",
+      "fieldtype": "Currency",
+      "label": "Цена min",
+      "precision": "2"
+    },
+    {
+      "fieldname": "price_median",
+      "fieldtype": "Currency",
+      "label": "Цена медиана",
+      "precision": "2"
+    },
+    {
+      "fieldname": "column_break_2",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "price_max",
+      "fieldtype": "Currency",
+      "label": "Цена max",
+      "precision": "2"
+    },
+    {
+      "fieldname": "price_variants",
+      "fieldtype": "Int",
+      "label": "Кол-во вариантов цен"
+    },
+    {
+      "fieldname": "section_break_classify",
+      "fieldtype": "Section Break",
+      "label": "Классификация"
+    },
+    {
+      "fieldname": "parent_category",
+      "fieldtype": "Data",
+      "label": "Группа работ",
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "parent_collection",
+      "fieldtype": "Data",
+      "label": "Сборник (ГЭСН-аналог)",
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "parent_department",
+      "fieldtype": "Data",
+      "label": "Отдел",
+      "length": 500
+    },
+    {
+      "fieldname": "parent_section",
+      "fieldtype": "Data",
+      "label": "Раздел",
+      "length": 500
+    },
+    {
+      "fieldname": "category",
+      "fieldtype": "Data",
+      "label": "Категория"
+    },
+    {
+      "fieldname": "section_break_usage",
+      "fieldtype": "Section Break",
+      "label": "Статистика использования"
+    },
+    {
+      "fieldname": "usage_count",
+      "fieldtype": "Int",
+      "label": "Использовано раз (по базе)",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "used_in_work_items",
+      "fieldtype": "Int",
+      "label": "В скольких позициях работ"
+    },
+    {
+      "fieldname": "column_break_3",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "avg_cost_per_use",
+      "fieldtype": "Currency",
+      "label": "Ср. стоимость на использование",
+      "precision": "2"
+    },
+    {
+      "fieldname": "avg_qty_per_use",
+      "fieldtype": "Float",
+      "label": "Ср. кол-во на использование",
+      "precision": "3"
+    },
+    {
+      "fieldname": "section_break_meta",
+      "fieldtype": "Section Break",
+      "label": "Метаданные"
+    },
+    {
+      "fieldname": "region",
+      "fieldtype": "Data",
+      "label": "Регион",
+      "default": "Санкт-Петербург"
+    },
+    {
+      "fieldname": "source",
+      "fieldtype": "Data",
+      "label": "Источник данных",
+      "default": "DDC CWICR"
+    },
+    {
+      "fieldname": "regional_factor",
+      "fieldtype": "Float",
+      "label": "Региональный коэф. на Екатеринбург",
+      "default": "1.0",
+      "precision": "4",
+      "description": "Множитель для адаптации цены С-Пб → Свердловская обл."
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "email": 1, "export": 1, "share": 1, "report": 1
+    },
+    {
+      "role": "Сметчик",
+      "read": 1, "report": 1, "export": 1
+    },
+    {
+      "role": "Снабженец",
+      "read": 1, "report": 1, "export": 1
+    },
+    {
+      "role": "Тендерный менеджер",
+      "read": 1, "report": 1
+    }
+  ],
+  "sort_field": "usage_count",
+  "sort_order": "DESC",
+  "naming_rule": "By fieldname"
+}

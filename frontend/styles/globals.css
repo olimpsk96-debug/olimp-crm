@@ -47,12 +47,21 @@
   --bg-card:       #FFFFFF;
   --bg-card-hover: #F4F4F6;
 
-  --border-subtle: rgba(0, 0, 0, 0.06);
-  --border-strong: rgba(0, 0, 0, 0.12);
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.14);
 
   --text-primary:   #09090B;
   --text-secondary: #52525B;
-  --text-tertiary:  #A1A1AA;
+  --text-tertiary:  #71717A;
+
+  /* Акценты слегка темнее для контраста на белом */
+  --accent:   #EA580C;
+  --success:  #15803D;
+  --warning:  #B45309;
+  --danger:   #DC2626;
+  --info:     #4F46E5;
+
+  color-scheme: light;
 }
 
 /* ── Базовые стили ───────────────────────────────────────────────────────── */
@@ -90,4 +99,114 @@ html {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-tertiary);
+}
+
+/* ── Mobile responsiveness ─────────────────────────────────────────────────
+   На малом экране (≤ 768px) мы:
+   - Делаем сайдбар горизонтальным (скроллируется по X)
+   - Контент-страницы — padding меньше
+   - Все drawer'ы (правые модалки) занимают всю ширину
+   - Гриды KPI колапсируются в 1 колонку
+   - Таблицы получают горизонтальный скролл
+   Стили применяются через структурные селекторы (у нас inline-styles, classes мало).
+─────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Сайдбар — горизонтальный, фиксированный сверху, скролл по X */
+  body > div[style*="display: flex"][style*="minHeight"] > aside {
+    width: 100% !important;
+    height: auto !important;
+    position: sticky !important;
+    top: 0 !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-subtle);
+    z-index: 30;
+    padding-bottom: 4px;
+  }
+  body > div[style*="display: flex"][style*="minHeight"] {
+    flex-direction: column !important;
+  }
+  body > div[style*="display: flex"] > aside > div:first-child,
+  body > div[style*="display: flex"] > aside > div:nth-child(2),
+  body > div[style*="display: flex"] > aside > div:last-child {
+    display: none !important;
+  }
+  body > div[style*="display: flex"] > aside > nav {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    padding: 8px 12px !important;
+    gap: 4px !important;
+  }
+  body > div[style*="display: flex"] > aside > nav a {
+    flex-shrink: 0;
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+  }
+
+  /* Контент-страницы */
+  main > div[style*="padding: 32px"],
+  main > div[style*="padding: 28px"] {
+    padding: 16px !important;
+  }
+
+  /* Drawer'ы — на всю ширину */
+  body aside[style*="position: fixed"][style*="right: 0"] {
+    width: 100% !important;
+    max-width: 100vw !important;
+  }
+
+  /* Гриды KPI/полей: 4/3/2 → 1 колонка */
+  div[style*="gridTemplateColumns: \"repeat(4, 1fr)\""],
+  div[style*="gridTemplateColumns: \"repeat(3, 1fr)\""],
+  div[style*="grid-template-columns: repeat(4, 1fr)"],
+  div[style*="grid-template-columns: repeat(3, 1fr)"] {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  div[style*="gridTemplateColumns: \"1fr 1fr\""],
+  div[style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Заголовки + кнопки в шапке страниц */
+  div[style*="justifyContent"][style*="space-between"][style*="flex-end"],
+  div[style*="justify-content: space-between"][style*="flex-end"] {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  /* Таблицы — горизонтальный скролл (но обёртка должна быть с overflow:auto) */
+  table {
+    font-size: 12px !important;
+  }
+  table th, table td {
+    padding: 8px 6px !important;
+  }
+
+  /* Глобальный поиск — на всю ширину */
+  body > div[style*="position: fixed"][style*="zIndex: 100"] > div {
+    width: 96vw !important;
+  }
+
+  /* H1 поменьше */
+  h1 {
+    font-size: 18px !important;
+  }
+
+  /* Уменьшаем общий padding везде где много */
+  div[style*="padding: 32"] {
+    padding: 16px !important;
+  }
+}
+
+/* Очень узкий экран (≤ 480px) — KPI в 1 колонку */
+@media (max-width: 480px) {
+  div[style*="gridTemplateColumns: \"repeat(4, 1fr)\""],
+  div[style*="grid-template-columns: repeat(4, 1fr)"] {
+    grid-template-columns: 1fr !important;
+  }
 }

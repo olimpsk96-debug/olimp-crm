@@ -1,0 +1,183 @@
+{
+  "name": "Change Order",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "CO-.YYYY.-.#####",
+  "title_field": "title",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Краткое описание",
+      "reqd": 1,
+      "in_list_view": 1,
+      "bold": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Статус",
+      "options": "Черновик\nНа согласовании\nОдобрен\nОтклонён\nЗакрыт",
+      "default": "Черновик",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "project",
+      "fieldtype": "Link",
+      "label": "Проект",
+      "options": "Construction Project",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "reason_category",
+      "fieldtype": "Select",
+      "label": "Категория причины",
+      "options": "Запрос заказчика\nИзменение условий объекта\nОшибка в проекте\nНормативное требование\nПрочее",
+      "default": "Запрос заказчика"
+    },
+    {
+      "fieldname": "variation_type",
+      "fieldtype": "Select",
+      "label": "Тип изменения",
+      "options": "\nДополнительные работы\nИсключение работ\nЗамена материалов\nПродление сроков\nКомбинированное",
+      "default": ""
+    },
+    {
+      "fieldname": "request_date",
+      "fieldtype": "Date",
+      "label": "Дата запроса",
+      "default": "Today"
+    },
+    {
+      "fieldname": "section_break_desc",
+      "fieldtype": "Section Break",
+      "label": "Описание"
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Text",
+      "label": "Что меняется и почему"
+    },
+    {
+      "fieldname": "section_break_items",
+      "fieldtype": "Section Break",
+      "label": "Позиции"
+    },
+    {
+      "fieldname": "items",
+      "fieldtype": "Table",
+      "label": "Позиции изменения",
+      "options": "Change Order Item"
+    },
+    {
+      "fieldname": "section_break_amounts",
+      "fieldtype": "Section Break",
+      "label": "Суммы согласования"
+    },
+    {
+      "fieldname": "contractor_amount",
+      "fieldtype": "Currency",
+      "label": "Сумма подрядчика (наша заявка)"
+    },
+    {
+      "fieldname": "engineer_amount",
+      "fieldtype": "Currency",
+      "label": "Сумма инженера заказчика"
+    },
+    {
+      "fieldname": "column_break_amounts",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "approved_amount",
+      "fieldtype": "Currency",
+      "label": "Согласованная сумма",
+      "description": "Может быть отрицательной (исключение работ)"
+    },
+    {
+      "fieldname": "schedule_impact_days",
+      "fieldtype": "Int",
+      "label": "Влияние на срок, дней",
+      "default": "0",
+      "description": "Положительное = продление, отрицательное = сокращение"
+    },
+    {
+      "fieldname": "section_break_approval",
+      "fieldtype": "Section Break",
+      "label": "Согласование"
+    },
+    {
+      "fieldname": "submitted_by",
+      "fieldtype": "Data",
+      "label": "Подал",
+      "read_only": 1
+    },
+    {
+      "fieldname": "submitted_at",
+      "fieldtype": "Date",
+      "label": "Дата подачи",
+      "read_only": 1
+    },
+    {
+      "fieldname": "column_break_appr",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "approved_by",
+      "fieldtype": "Data",
+      "label": "Согласовал (со стороны заказчика)"
+    },
+    {
+      "fieldname": "approved_at",
+      "fieldtype": "Date",
+      "label": "Дата согласования",
+      "read_only": 1
+    },
+    {
+      "fieldname": "rejected_by",
+      "fieldtype": "Data",
+      "label": "Отклонил"
+    },
+    {
+      "fieldname": "rejected_at",
+      "fieldtype": "Date",
+      "label": "Дата отклонения",
+      "read_only": 1
+    },
+    {
+      "fieldname": "section_break_notes",
+      "fieldtype": "Section Break",
+      "label": "Примечания"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Text",
+      "label": "Заметки"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "email": 1, "export": 1, "share": 1, "report": 1
+    },
+    {
+      "role": "Бухгалтер Олимп",
+      "read": 1, "write": 1, "create": 1, "print": 1, "report": 1
+    },
+    {
+      "role": "Тендерный менеджер",
+      "read": 1, "write": 1, "create": 1, "report": 1
+    }
+  ],
+  "sort_field": "request_date",
+  "sort_order": "DESC",
+  "naming_rule": "Expression"
+}

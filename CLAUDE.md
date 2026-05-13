@@ -23,6 +23,61 @@
 
 ---
 
+## 0.1 Как запускать Claude Code в этом проекте
+
+```bash
+claude --permission-mode auto
+```
+
+Режим `auto` автоматически разрешает все tool calls (Bash, Edit, Write, миграции Frappe) — Дима не хочет тратить время на подтверждения для каждого действия.
+
+**Что это значит для тебя:**
+- Не спрашивай разрешения на отдельные операции — выполняй сразу
+- При деструктивных действиях (rm -rf, drop table, force-push, удаление DocType) — всё равно сначала **спроси у Димы**, режим auto не отменяет здравый смысл
+- Команды миграций (`bench migrate`), рестарты контейнеров, правки кода — выполняй без вопросов
+
+---
+
+## 0.2 Параллельная работа через субагентов
+
+Для ускорения используй subagents — это даёт **2-4x скорость** на независимых задачах.
+
+**Когда запускать параллельно:**
+- Аудит/инвентаризация — несколько Explore-агентов на разные модули в одном сообщении
+- Независимые фиксы багов — каждому general-purpose-агенту своя изолированная задача с конкретными файлами
+- Архитектура крупных фич — один Plan-агент (Opus) пока ты делаешь подготовку
+
+**Когда НЕ запускать параллельно:**
+- Связанные правки одного файла (конфликт)
+- Задачи, требующие результат предыдущей (последовательность)
+- Мелочи на 5 минут (накладные расходы > выгоды)
+
+**Правила:**
+- Делай 2-4 параллельных агента в одном сообщении (не больше — труднее синтезировать)
+- Каждому давай ясный, изолированный scope с конкретными файлами
+- После сбора всех отчётов — сам синтезируй и принимай решения
+- Параллельная работа на разных страницах frontend — безопасно
+- Параллельная работа на разных DocType backend — безопасно
+- НЕ запускай агентов которые могут редактировать одни и те же файлы
+
+## 0.3 Выбор модели по сложности
+
+Использую разные модели для разных задач:
+
+| Задача | Модель | Почему |
+|--------|--------|--------|
+| Аудит/инвентаризация/поиск файлов | **Haiku** (Explore agents по умолчанию) | Быстро, дёшево |
+| Архитектура крупной фичи, ADR-решения | **Opus** (Plan agent) | Качество стратегического мышления |
+| Реализация (код, фиксы) | **Sonnet** (основной) | Баланс качества и скорости |
+| Простые рефакторинги, форматирование | **Sonnet** (или general-purpose) | Достаточно для механики |
+| AI-ассистент пользователю (production) | **Haiku 4.5** | Дёшево, быстро, для diaglog |
+| AI-оценка тендеров (production) | **Haiku 4.5** | Single-prompt задача |
+| AI глубокий анализ маржи (production) | **Sonnet 4.6** | Когда нужно качество |
+
+**Не используй Opus в production** для пользовательских AI-функций — слишком дорого. Только для разработки и архитектуры.
+
+---
+
 ## 1. Документы, которые ты ОБЯЗАН прочитать перед работой
 
 В корне репозитория лежат:
@@ -820,11 +875,74 @@ class Equipment(Document):
 
 ---
 
-## 18. Что менялось от версии к версии
+## 18. Известные подводные камни (история багов и уроков)
+
+**Правило:** После каждого исправления ошибки/бага — обязательно добавить запись сюда. Это страховка, чтобы один и тот же баг не повторялся в будущем (особенно когда подключается другой ассистент или сессия).
+
+Формат: `### Дата — Краткое название` → 1-3 строки сути (что сломалось, почему, как починили).
+
+### 2026-05-11 — `Customer.territory` требует существующий Link
+В Frappe поле `Customer.territory` — `Link → Territory`, и валидация падает если территория не существует в БД. По умолчанию ERPNext **не создаёт** "Russia". В `save_client()` нужно использовать `frappe.db.get_value("Territory", {"name": "All Territories"}, "name")` как fallback. То же для `customer_group` (использовать существующую группу из БД, не хардкодить "Commercial" — она может отсутствовать).
+
+### 2026-05-12 — Поля сметы `Estimate` называются `base_total`/`our_total`, не `total_cost`/`total_price`
+В нашем `Estimate` DocType итоговые суммы хранятся в полях `base_total` (сумма по нормам), `our_total` (наша цена), `margin_pct`, `margin_amount`. **Нет полей** `total_cost` или `total_price`. При обращении к смете из других API использовать `getattr(est, "base_total", 0)` или прямые названия полей. Проверять `*.json` DocType перед написанием API.
+
+### 2026-05-12 — Конфликт имён: ERPNext уже имеет `Project` DocType
+ERPNext поставляется со стандартным DocType `Project` (модуль "Projects"). Если создать свой `Project` — будет коллизия. Наш кастомный DocType называется **`Construction Project`** (autoname `PR-.YYYY.-.####`). Все Link-поля в Tender, Estimate, KS2 Act, Material Request, Foreman Report, Safety Incident, Equipment, Fuel Log указывают на `Construction Project`, не на `Project`. При создании новых DocType со стандартными именами (`Customer`, `Item`, `Project`, `Employee` и т.п.) — **всегда префиксовать** или проверять `frappe.db.exists("DocType", "X")` перед созданием.
+
+### 2026-05-11 — `frappe.get_doc("Customer", {...dict})` не работает через `bench execute`
+Через `bench --site ... execute frappe.get_doc --args` нельзя передать dict для создания документа (происходит TypeError). Для создания тестовых данных:
+- либо `bench execute olimp_construction.api.crm.save_client --kwargs '{"data": {...}}'`
+- либо `bench execute frappe.db.sql --args '["INSERT INTO ..."]'` (быстрый seed без валидаций)
+
+### 2026-05-12 — `TenderLaw`: рассинхрон фронта и бэка («Прямой договор» vs «Коммерческий»)
+В `frontend/types/tender.ts` был тип `TenderLaw = ... | "Прямой договор"`, тогда как `tender.json` DocType и `api/tender.py` (функция `create_from_tenderguru`, константа `VALID_LAWS`) используют `"Коммерческий"`. В рантайме это приводило бы к молчаливому несовпадению: бэк отдавал бы `"Коммерческий"`, фронт ожидал `"Прямой договор"`. **Правило:** единым источником истины для enum-полей служит `options` в `*.json` DocType. При добавлении/изменении Select-полей — синхронизируй `*.json` → backend константы (`VALID_*`) → frontend types за один коммит.
+
+### 2026-05-12 — Дублирование `STATUSES_ACTIVE` в 3 файлах
+Список активных статусов тендера `("Новый", "Оценивается", "Готовится заявка", "Заявка подана")` был задублирован в `telegram_utils.py` (без "Заявка подана"!), `api/dashboard.py` и `api/crm.py`. Из-за этого в Telegram-алертах о дедлайнах **тендеры со статусом «Заявка подана» не учитывались**. Исправлено: единая константа `STATUSES_ACTIVE` живёт в `olimp_construction/telegram_utils.py`, остальные модули импортируют её через `from olimp_construction.telegram_utils import STATUSES_ACTIVE`. **Правило:** доменные константы (списки статусов, enum-значения) — в одном месте; перед добавлением нового места поиска используй `grep -rn "<статус>" backend/` чтобы найти существующую константу.
+
+### 2026-05-13 — `custom_fields` в hooks.py НЕ применяется при `bench migrate` автоматически
+В Frappe словарь `custom_fields` в `hooks.py` сам по себе ничего не делает — это просто данные. Custom Fields подгружаются либо из **fixtures** (export → JSON в `fixtures/custom_field.json`), либо нужен явный hook `after_install` / `after_migrate` который вызывает `frappe.custom.doctype.custom_field.custom_field.create_custom_fields(custom_fields)`. **Правило:** при добавлении нового Custom Field в `hooks.py` обязательно проверить что у нас зарегистрирован `after_migrate = ["olimp_construction.install.sync_custom_fields"]` — иначе поля «вроде есть в коде», но реально на DocType их нет.
+
+### 2026-05-13 — `doc_events["Project"]` ≠ наш `Construction Project`
+В hooks.py было `doc_events: {"Project": {"on_update": ...}}`, но мы не используем стандартный ERPNext `Project`, у нас собственный `Construction Project`. Хук молча не срабатывал. **Правило:** при добавлении doc_events перепроверять через `frappe.db.exists("DocType", X)` или ища Link-references — какой DocType реально используется в проекте, не угадывать по «общему смыслу».
+
+### 2026-05-13 — Material Request: статусы «Заказана/Получена» НЕ существуют
+В DocType реально: «Черновик / Отправлена / Одобрена / Закупается / Получена / Отменена». Если в SQL пишешь WHERE status IN (...) — копируй опции прямо из `*.json` через `grep '"options"'`, не угадывай. Cost-расчёт по проекту учитывает {Одобрена, Закупается, Получена} как committed cost (см. `tasks.recalculate_project_margin` и `api.project.get_list`).
+
+### 2026-05-13 — Child DocType `before_save` срабатывает не всегда
+В Frappe `before_save` на child DocType (istable=1) **не вызывается надёжно** при `parent.insert()` через `frappe.get_doc({..., "items": [...]})` со словарями. **Правило:** все расчёты для строк (qty × unit_price = amount, и т.п.) делать в `before_save` **родительского** документа, итерируя `for it in self.items: it.amount = ...`. Был баг в Change Order — поправлено в `change_order.py`.
+
+### 2026-05-13 — DocType требует и `.json`, и `.py` модуль (даже пустой)
+Создание `cost_catalog_item.json` без рядом стоящего `cost_catalog_item.py` приводит к `ImportError: Module import failed for Cost Catalog Item, the DocType you're trying to open might be deleted. No module named '...doctype.cost_catalog_item.cost_catalog_item'`. **Правило:** при создании нового DocType всегда создавать **оба** файла: `.json` (метаданные) **и** `.py` (с пустым `class XYZ(Document): pass`). Иначе `bench migrate` пройдёт, но любое обращение через ORM упадёт.
+
+### 2026-05-13 — Telegram `parse_mode="HTML"` по умолчанию + `*Markdown*` в текстах
+`send_message()` в `telegram_utils.py` отправляет с `parse_mode="HTML"`. Если в тексте есть `*звёздочки*` (markdown-bold) — они **не** распознаются и отображаются как литералы. Правило: используем `<b>…</b>` для bold, `<i>…</i>` для italic. Был баг в `check_crm_followups` — исправлен.
+
+### 2026-05-13 — Гранд-Смета XML: windows-1251 на фронте + реальный формат GS v12
+**Файл сметы из Гранд-Сметы — в кодировке windows-1251.** `file.text()` в браузере декодирует как UTF-8 → русские строки превращаются в мусор. Правило: для XML импорта из GS читать через `arrayBuffer()` + детект encoding из declaration + `new TextDecoder("windows-1251")` (см. `EstimateDrawer.tsx` `handleImportXml`).
+
+**Реальный формат GrandSmeta v12.x не похож на «общий XML».** Названия — в атрибуте `Caption` (не `Name`/`Title`), единица — `Units` (не `Unit`), объём с формулами — берём из дочернего `<Quantity Result="..."/>` (атрибут `Quantity` может содержать `100/1000` или `=ОКР(700; 2)`), цена — из `<PriceBase PZ="..."/>` (это ПЗ в ценах **2001 года**), а **актуальная цена = PZ × SMR-index** из `<Indexes><IndexesPos><Index SMR="..."/></IndexesPos></Indexes>`. Также есть `<AddZatrats>` — там понижающий договорной коэффициент с `Options="…AsKf"` (применяется к our_unit_price) и НДС с `Options="…Inactive"` (игнорируется на уровне Estimate). `<Header/>` — пустой разделитель, пропускать. **Правило:** при импорте новых внешних форматов сначала смотреть реальный XML/JSON клиента, потом писать парсер — общие шаблоны "Name/Title/Amount" почти никогда не угадывают.
+
+### 2026-05-12 — Material Request: статус «Получено» vs «Получена»
+В `material_request.json` (options) и `api/supply.py` (VALID_STATUSES), `types/supply.ts`, `supply/page.tsx`, `SupplyDrawer.tsx` стоял мужской род «Получено», а в `api/project.py` (SQL-запрос и фильтр на стороне Python) использовался женский род «Получена». Заявка (Material Request) — женского рода, поэтому корректное значение — **«Получена»**. Из-за рассинхрона `api/project.py` молча выдавал supply_total=0 (статус с женским родом не существовал в БД). Приведено к «Получена» во всех 6 местах. **Внимание:** label `"Получено"` в `ks2_act.json` (поле `payment_received`) — это другой контекст («получено денег»), его не трогаем. **Правило:** грамматический род в Select-options должен соответствовать роду DocType; меняй централизованно через `*.json` + grep по проекту.
+
+---
+
+## 19. Что менялось от версии к версии
 
 | Версия CLAUDE.md | Дата | Главное изменение |
 |------------------|------|-------------------|
 | v1.0 | первая версия | Базовые правила, ERPNext + Next.js |
-| **v2.0** | **после ТЗ v2** | **+ AI-ассистент, + техника, + голос, + recommendation engine** |
+| v2.0 | после ТЗ v2 | + AI-ассистент, + техника, + голос, + recommendation engine |
+| **v2.1** | **2026-05-12** | **+ раздел 18 «Известные подводные камни» — фиксируем все баги, чтобы не повторялись** |
+| **v2.2** | **2026-05-12** | **+ 3 записи в р.18: TenderLaw рассинхрон, дубль STATUSES_ACTIVE, Получено/Получена** |
+| **v2.3** | **2026-05-12** | **Фаза 12.2: печать КС-2/КС-3 в гос.форме (ОКУД 0322005/0322001) — Jinja2 Print Format + openpyxl Excel; см. `api/exports.py` и `setup_print_formats()`** |
+| **v2.4** | **2026-05-13** | **+ запись в р.18: парсер Гранд-Сметы XML (формат v12.x + windows-1251) — `import_from_gs_xml` теперь учитывает SMR-индекс и понижающий коэффициент из `<AddZatrats>`** |
+| **v2.5** | **2026-05-13** | **+ 4 записи в р.18 (cron + хуки + статусы + Telegram). Реализованы 3 cron-задачи (equipment alerts, safety, project margin) + событийный пересчёт маржи через doc_events КС-2 и Material Request. Custom Fields на Construction Project применяются через `after_migrate` hook `olimp_construction.install.sync_custom_fields`** |
+| **v2.6** | **2026-05-13** | **Идеи из OpenConstructionERP (AGPL-3.0, воспроизведены своими силами): (1) defusedxml в GS-парсере; (2) Change Orders — DocType `Change Order/Item` + страница `/change-orders` (workflow 5 статусов, раздельные суммы подрядчик/инженер/одобрено); (3) Cost Catalog ГЭСН — `Cost Catalog Item` + 21 seed-позиция + fuzzy через **rapidfuzz** + страница `/catalog`; (4) EVM Forecast — `api/evm.py` (CPI/SPI/EAC/ETC/VAC/TCPI) + `<EVMBlock>` в карточке проекта. + 2 записи в р.18: child DocType `before_save` ненадёжен; DocType требует и `.json`, и `.py`.** |
+| **v2.7** | **2026-05-13** | **Идеи из OpenProject (GPL, изучены через субагента, воспроизведены своими силами): (1) Activity Feed — `api/activity.py` агрегирует события из 13 DocType, компонент `<ActivityFeed>` переиспользуется на дашборде и странице `/activity` с фильтрами; (2) Meetings — `Meeting` + `Meeting Item` + `Meeting Attendee`, страница `/meetings` с 2 табами (планёрки + агрегированные открытые поручения), сортировка просроченных первыми, inline смена статуса каждого поручения через `set_item_status`.** |
+| **v2.8** | **2026-05-13** | **DDC CWICR импорт (CC BY 4.0): DocType `Catalog Resource` + 6 670 ресурсов (3875 материалов, 1631 оборудование, 1096 abstract, 68 труд) из С.-Пб + страница `/resources`. После аудита внедрены 4 доработки: (1) `api/search.py search_all` глобальный поиск по 15 DocType + `<GlobalSearch>` ⌘K модалка с навигацией ↑↓Enter; (2) `api/documents.py` документы проекта через File + Custom Fields `olimp_category/olimp_comment` + новая вкладка `<ProjectDocuments>` с upload/preview/удалить и 10 категорий; (3) `Employee Certification` DocType + `api/certification.py` + daily cron `check_certification_expiry` (Telegram-сводка за 30/14/7 дней, защита от спама через next_reminder_sent) + страница `/certifications` со светофором сроков; (4) `api/exports.py estimate_pdf/estimate_excel` + кнопки в `EstimateDrawer`. Версия v1.7.** |
+| **v2.9** | **2026-05-13** | **Складской учёт (Фаза 3 закрыта): DocType `Stock Item` + `Stock Movement` (4 типа: Приход/Расход/Перемещение/Инвентаризация) с weighted-average pricing в `on_update`. Страница `/stock` с low-stock алертами и live-предпросмотром «остаток после операции» в drawer. Универсальный Excel-экспорт списков `api/exports.export_list(spec)` для 6 типов (tenders/projects/estimates/stock/certifications/ks2) + `<ExportButton>` в шапках страниц. Mobile responsiveness через `globals.css` @media + `<meta viewport>`: сайдбар становится горизонтальным, drawer'ы на всю ширину, гриды KPI коллапсируются 4→2→1 столбец. Селекторы через `[style*=...]` — работают с inline-стилями без переделки. Версия v1.8.** |
 
 Когда обновляешь CLAUDE.md — добавляй запись в эту таблицу.

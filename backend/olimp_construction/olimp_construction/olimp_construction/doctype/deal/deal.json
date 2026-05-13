@@ -1,0 +1,87 @@
+{
+  "name": "Deal",
+  "module": "Olimp Construction",
+  "doctype": "DocType",
+  "autoname": "DL-.YYYY.-.#####",
+  "is_submittable": 0,
+  "track_changes": 1,
+  "fields": [
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Название",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "customer",
+      "fieldtype": "Link",
+      "label": "Клиент",
+      "options": "Customer",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "contact_name",
+      "fieldtype": "Data",
+      "label": "Контактное лицо"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Статус",
+      "options": "Лид\nПереговоры\nКП отправлено\nДоговор\nВ работе\nЗакрыт выигран\nЗакрыт проигран",
+      "default": "Лид",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "amount_estimated",
+      "fieldtype": "Currency",
+      "label": "Сумма (оценка)",
+      "options": "RUB",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "probability_pct",
+      "fieldtype": "Int",
+      "label": "Вероятность, %",
+      "default": 50
+    },
+    {
+      "fieldname": "source",
+      "fieldtype": "Select",
+      "label": "Источник",
+      "options": "\nСайт\nРекомендация\nТендер\nХолодный звонок\nЗнакомство\nПрочее"
+    },
+    {
+      "fieldname": "expected_close_date",
+      "fieldtype": "Date",
+      "label": "Ожидаемое закрытие"
+    },
+    {
+      "fieldname": "tender",
+      "fieldtype": "Link",
+      "label": "Тендер",
+      "options": "Tender"
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Text",
+      "label": "Описание"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Text",
+      "label": "Заметки"
+    }
+  ],
+  "permissions": [
+    {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1},
+    {"role": "All", "read": 1, "write": 1, "create": 1}
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

@@ -1,0 +1,79 @@
+{
+  "name": "Interaction",
+  "module": "Olimp Construction",
+  "doctype": "DocType",
+  "autoname": "INT-.YYYY.-.#####",
+  "is_submittable": 0,
+  "track_changes": 1,
+  "fields": [
+    {
+      "fieldname": "customer",
+      "fieldtype": "Link",
+      "label": "Клиент",
+      "options": "Customer",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "contact_name",
+      "fieldtype": "Data",
+      "label": "Контактное лицо",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "interaction_type",
+      "fieldtype": "Select",
+      "label": "Тип",
+      "options": "\nЗвонок\nВстреча\nПисьмо\nТендер\nПрочее",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "date",
+      "fieldtype": "Date",
+      "label": "Дата",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "summary",
+      "fieldtype": "Text",
+      "label": "Содержание",
+      "reqd": 1
+    },
+    {
+      "fieldname": "result",
+      "fieldtype": "Text",
+      "label": "Результат / договорённости"
+    },
+    {
+      "fieldname": "next_action",
+      "fieldtype": "Small Text",
+      "label": "Следующий шаг"
+    },
+    {
+      "fieldname": "next_action_date",
+      "fieldtype": "Date",
+      "label": "Дата следующего шага"
+    },
+    {
+      "fieldname": "tender",
+      "fieldtype": "Link",
+      "label": "Тендер",
+      "options": "Tender"
+    },
+    {
+      "fieldname": "deal",
+      "fieldtype": "Link",
+      "label": "Сделка",
+      "options": "Deal"
+    }
+  ],
+  "permissions": [
+    {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1},
+    {"role": "All", "read": 1, "write": 1, "create": 1}
+  ],
+  "sort_field": "date",
+  "sort_order": "DESC"
+}

@@ -1,0 +1,121 @@
+{
+  "name": "Construction Project",
+  "module": "Olimp Construction",
+  "doctype": "DocType",
+  "autoname": "PR-.YYYY.-.####",
+  "is_submittable": 0,
+  "track_changes": 1,
+  "title_field": "title",
+  "fields": [
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Название проекта",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Статус",
+      "options": "Подготовка\nВ работе\nСдача\nЗакрыт\nНа паузе\nОтменён",
+      "default": "Подготовка",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "customer",
+      "fieldtype": "Link",
+      "label": "Заказчик",
+      "options": "Customer",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "tender",
+      "fieldtype": "Link",
+      "label": "Тендер",
+      "options": "Tender"
+    },
+    {
+      "fieldname": "estimate",
+      "fieldtype": "Link",
+      "label": "Смета",
+      "options": "Estimate"
+    },
+    {
+      "fieldname": "work_type",
+      "fieldtype": "Select",
+      "label": "Тип работ",
+      "options": "\nАКЗ (антикоррозийная защита)\nПромальп (промышленный альпинизм)\nБетонные работы\nСварочные работы\nКровельные работы\nСтроительно-монтажные\nПрочее",
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "location",
+      "fieldtype": "Data",
+      "label": "Адрес / объект"
+    },
+    {
+      "fieldname": "contract_number",
+      "fieldtype": "Data",
+      "label": "Номер договора"
+    },
+    {
+      "fieldname": "contract_amount",
+      "fieldtype": "Currency",
+      "label": "Сумма контракта",
+      "options": "RUB",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "planned_cost",
+      "fieldtype": "Currency",
+      "label": "Плановая себестоимость",
+      "options": "RUB"
+    },
+    {
+      "fieldname": "planned_margin_pct",
+      "fieldtype": "Percent",
+      "label": "Плановая маржа, %"
+    },
+    {
+      "fieldname": "start_date",
+      "fieldtype": "Date",
+      "label": "Дата начала",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "planned_end_date",
+      "fieldtype": "Date",
+      "label": "Плановая дата сдачи"
+    },
+    {
+      "fieldname": "actual_end_date",
+      "fieldtype": "Date",
+      "label": "Фактическая дата сдачи"
+    },
+    {
+      "fieldname": "foreman",
+      "fieldtype": "Data",
+      "label": "Ответственный прораб"
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Text",
+      "label": "Описание работ"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Text",
+      "label": "Заметки"
+    }
+  ],
+  "permissions": [
+    {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1},
+    {"role": "All", "read": 1, "write": 1, "create": 1}
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

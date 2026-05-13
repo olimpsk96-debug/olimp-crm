@@ -1,0 +1,150 @@
+{
+  "name": "Stock Item",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "SI-.YYYY.-.#####",
+  "title_field": "item_name",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "item_name",
+      "fieldtype": "Data",
+      "label": "Наименование материала",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_global_search": 1,
+      "bold": 1
+    },
+    {
+      "fieldname": "item_code",
+      "fieldtype": "Data",
+      "label": "Артикул / код",
+      "in_list_view": 1,
+      "in_global_search": 1
+    },
+    {
+      "fieldname": "category",
+      "fieldtype": "Select",
+      "label": "Категория",
+      "options": "ЛКМ (краски/лаки)\nГрунты\nРастворители\nМеталлопрокат\nКрепёж\nИзоляция\nКровельные\nПрочее",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "unit",
+      "fieldtype": "Data",
+      "label": "Ед. измерения",
+      "reqd": 1,
+      "in_list_view": 1,
+      "description": "кг, л, м², т, шт, пог.м"
+    },
+    {
+      "fieldname": "default_warehouse",
+      "fieldtype": "Data",
+      "label": "Склад по умолчанию",
+      "default": "Основной склад",
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "min_qty",
+      "fieldtype": "Float",
+      "label": "Мин. остаток (для алертов)",
+      "default": "0",
+      "precision": "3",
+      "description": "При остатке ниже этого значения — пометка «нужно заказать»"
+    },
+    {
+      "fieldname": "section_break_stock",
+      "fieldtype": "Section Break",
+      "label": "Остаток (авто)"
+    },
+    {
+      "fieldname": "current_qty",
+      "fieldtype": "Float",
+      "label": "Текущий остаток",
+      "read_only": 1,
+      "default": "0",
+      "precision": "3",
+      "in_list_view": 1,
+      "description": "Пересчитывается автоматически по Stock Movement"
+    },
+    {
+      "fieldname": "last_price",
+      "fieldtype": "Currency",
+      "label": "Цена последнего прихода",
+      "read_only": 1
+    },
+    {
+      "fieldname": "column_break_2",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "avg_price",
+      "fieldtype": "Currency",
+      "label": "Средняя цена",
+      "read_only": 1
+    },
+    {
+      "fieldname": "total_value",
+      "fieldtype": "Currency",
+      "label": "Стоимость остатка",
+      "read_only": 1,
+      "in_list_view": 1,
+      "description": "current_qty × avg_price"
+    },
+    {
+      "fieldname": "last_movement_date",
+      "fieldtype": "Date",
+      "label": "Последнее движение",
+      "read_only": 1
+    },
+    {
+      "fieldname": "section_break_meta",
+      "fieldtype": "Section Break",
+      "label": "Связь с каталогом"
+    },
+    {
+      "fieldname": "catalog_resource",
+      "fieldtype": "Link",
+      "label": "Ресурс CWICR (если есть)",
+      "options": "Catalog Resource",
+      "description": "Связь с открытой базой расценок CWICR для справочной цены"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Small Text",
+      "label": "Примечание"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "email": 1, "export": 1, "share": 1, "report": 1
+    },
+    {
+      "role": "Снабженец",
+      "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1, "print": 1, "export": 1
+    },
+    {
+      "role": "Сметчик",
+      "read": 1, "report": 1
+    },
+    {
+      "role": "Прораб",
+      "read": 1
+    },
+    {
+      "role": "Бухгалтер Олимп",
+      "read": 1, "report": 1, "export": 1
+    }
+  ],
+  "sort_field": "item_name",
+  "sort_order": "ASC",
+  "naming_rule": "Expression"
+}

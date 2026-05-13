@@ -1,0 +1,140 @@
+{
+  "name": "TenderGuru Sync",
+  "active": false,
+  "nodes": [
+    {
+      "id": "trigger",
+      "name": "Каждый час",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300],
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "hours", "hoursInterval": 1 }]
+        }
+      }
+    },
+    {
+      "id": "fetch_tenders",
+      "name": "TenderGuru API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "https://www.tenderguru.ru/api2.3/export",
+        "authentication": "none",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "api_code",  "value": "={{ $env.TENDERGURU_API_KEY }}" },
+            { "name": "kwords",   "value": "АКЗ кровля промальп антикоррозийная гидроизоляция монолитные" },
+            { "name": "f",        "value": "44,223" },
+            { "name": "r66",      "value": "1" },
+            { "name": "r72",      "value": "1" },
+            { "name": "r86",      "value": "1" },
+            { "name": "r89",      "value": "1" },
+            { "name": "r74",      "value": "1" },
+            { "name": "r59",      "value": "1" },
+            { "name": "price1",   "value": "500000" },
+            { "name": "price2",   "value": "100000000" },
+            { "name": "dtype",    "value": "json" },
+            { "name": "page",     "value": "1" }
+          ]
+        },
+        "options": { "timeout": 30000 }
+      }
+    },
+    {
+      "id": "extract_items",
+      "name": "Разбить на тендеры",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [680, 300],
+      "parameters": {
+        "options": {}
+      }
+    },
+    {
+      "id": "filter_price",
+      "name": "Фильтр по цене",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [900, 300],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.NMCK ?? $json.Price ?? 0 }}",
+              "rightValue": 500000,
+              "operator": { "type": "number", "operation": "gte" }
+            },
+            {
+              "leftValue": "={{ $json.NMCK ?? $json.Price ?? 0 }}",
+              "rightValue": 100000000,
+              "operator": { "type": "number", "operation": "lte" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "create_tender",
+      "name": "Создать Tender в ERPNext",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8000/api/method/olimp_construction.api.tender.create_from_tenderguru",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'token ' + $env.FRAPPE_API_KEY + ':' + $env.FRAPPE_API_SECRET }}"
+            },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ tender_data: $json }) }}",
+        "options": { "timeout": 15000, "ignore4xxStatusCode": true }
+      }
+    },
+    {
+      "id": "log_result",
+      "name": "Лог результата",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1340, 300],
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            { "id": "1", "name": "result",     "value": "={{ $json.message?.created ? 'created' : $json.message?.skipped ? 'skipped' : 'error' }}", "type": "string" },
+            { "id": "2", "name": "tender_name","value": "={{ $json.message?.created || $json.message?.skipped || '' }}", "type": "string" },
+            { "id": "3", "name": "timestamp",  "value": "={{ $now.toISO() }}", "type": "string" }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Каждый час":              { "main": [[{ "node": "TenderGuru API",               "type": "main", "index": 0 }]] },
+    "TenderGuru API":          { "main": [[{ "node": "Разбить на тендеры",           "type": "main", "index": 0 }]] },
+    "Разбить на тендеры":      { "main": [[{ "node": "Фильтр по цене",               "type": "main", "index": 0 }]] },
+    "Фильтр по цене":          { "main": [[{ "node": "Создать Tender в ERPNext",     "type": "main", "index": 0 }]] },
+    "Создать Tender в ERPNext":{ "main": [[{ "node": "Лог результата",               "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "last",
+    "saveDataErrorExecution": "all"
+  },
+  "tags": ["tenders", "tenderguru", "sync"]
+}

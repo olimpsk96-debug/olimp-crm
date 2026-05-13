@@ -1,0 +1,275 @@
+{
+  "name": "KS3 Act",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "KS3-.YYYY.-.#####",
+  "engine": "InnoDB",
+  "editable_grid": 1,
+  "track_changes": 1,
+  "title_field": "title",
+  "fields": [
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Название справки",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Статус",
+      "options": "Черновик\nНа подписании\nПодписан\nОтклонён",
+      "default": "Черновик",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "act_number",
+      "fieldtype": "Data",
+      "label": "№ справки"
+    },
+    {
+      "fieldname": "okud_code",
+      "fieldtype": "Data",
+      "label": "ОКУД",
+      "default": "0322001",
+      "read_only": 1
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "project",
+      "fieldtype": "Link",
+      "label": "Проект",
+      "options": "Construction Project",
+      "reqd": 1
+    },
+    {
+      "fieldname": "tender",
+      "fieldtype": "Link",
+      "label": "Тендер",
+      "options": "Tender"
+    },
+    {
+      "fieldname": "customer",
+      "fieldtype": "Data",
+      "label": "Заказчик"
+    },
+    {
+      "fieldname": "contract_number",
+      "fieldtype": "Data",
+      "label": "№ договора"
+    },
+    {
+      "fieldname": "section_addresses",
+      "fieldtype": "Section Break",
+      "label": "Реквизиты"
+    },
+    {
+      "fieldname": "customer_inn",
+      "fieldtype": "Data",
+      "label": "ИНН заказчика"
+    },
+    {
+      "fieldname": "customer_address",
+      "fieldtype": "Small Text",
+      "label": "Адрес заказчика"
+    },
+    {
+      "fieldname": "column_break_addr",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "contractor_inn",
+      "fieldtype": "Data",
+      "label": "ИНН подрядчика",
+      "default": "6671..."
+    },
+    {
+      "fieldname": "contractor_address",
+      "fieldtype": "Small Text",
+      "label": "Адрес подрядчика",
+      "default": "г. Екатеринбург"
+    },
+    {
+      "fieldname": "subcontractor_name",
+      "fieldtype": "Data",
+      "label": "Субподрядчик (если есть)"
+    },
+    {
+      "fieldname": "section_period",
+      "fieldtype": "Section Break",
+      "label": "Период"
+    },
+    {
+      "fieldname": "period_from",
+      "fieldtype": "Date",
+      "label": "Период с",
+      "reqd": 1
+    },
+    {
+      "fieldname": "period_to",
+      "fieldtype": "Date",
+      "label": "Период по",
+      "reqd": 1
+    },
+    {
+      "fieldname": "column_break_period",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "report_date",
+      "fieldtype": "Date",
+      "label": "Дата справки",
+      "default": "Today"
+    },
+    {
+      "fieldname": "signed_date",
+      "fieldtype": "Date",
+      "label": "Дата подписания"
+    },
+    {
+      "fieldname": "section_ks2",
+      "fieldtype": "Section Break",
+      "label": "Связанные акты КС-2"
+    },
+    {
+      "fieldname": "ks2_acts",
+      "fieldtype": "Table",
+      "label": "КС-2 в справке",
+      "options": "KS3 Linked Act"
+    },
+    {
+      "fieldname": "section_items",
+      "fieldtype": "Section Break",
+      "label": "Позиции"
+    },
+    {
+      "fieldname": "items",
+      "fieldtype": "Table",
+      "label": "Стоимость работ",
+      "options": "KS3 Item"
+    },
+    {
+      "fieldname": "section_totals",
+      "fieldtype": "Section Break",
+      "label": "Итоги"
+    },
+    {
+      "fieldname": "total_since_start",
+      "fieldtype": "Currency",
+      "label": "Всего с начала строительства",
+      "read_only": 1
+    },
+    {
+      "fieldname": "total_since_year",
+      "fieldtype": "Currency",
+      "label": "Всего с начала года",
+      "read_only": 1
+    },
+    {
+      "fieldname": "total_period",
+      "fieldtype": "Currency",
+      "label": "Всего за отчётный период",
+      "read_only": 1
+    },
+    {
+      "fieldname": "column_break_totals",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "vat_rate",
+      "fieldtype": "Percent",
+      "label": "НДС, %",
+      "default": 20
+    },
+    {
+      "fieldname": "vat_amount",
+      "fieldtype": "Currency",
+      "label": "Сумма НДС",
+      "read_only": 1
+    },
+    {
+      "fieldname": "total_with_vat",
+      "fieldtype": "Currency",
+      "label": "Всего с НДС",
+      "read_only": 1
+    },
+    {
+      "fieldname": "retention_pct",
+      "fieldtype": "Percent",
+      "label": "Гарантийное удержание, %",
+      "default": 0
+    },
+    {
+      "fieldname": "retention_amount",
+      "fieldtype": "Currency",
+      "label": "Сумма удержания",
+      "read_only": 1
+    },
+    {
+      "fieldname": "total_to_pay",
+      "fieldtype": "Currency",
+      "label": "Итого к оплате",
+      "read_only": 1
+    },
+    {
+      "fieldname": "section_signatures",
+      "fieldtype": "Section Break",
+      "label": "Подписи"
+    },
+    {
+      "fieldname": "signatory_customer_name",
+      "fieldtype": "Data",
+      "label": "От заказчика — ФИО"
+    },
+    {
+      "fieldname": "signatory_customer_position",
+      "fieldtype": "Data",
+      "label": "От заказчика — должность"
+    },
+    {
+      "fieldname": "column_break_sig",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "signatory_contractor_name",
+      "fieldtype": "Data",
+      "label": "От подрядчика — ФИО",
+      "default": "Клочков Д."
+    },
+    {
+      "fieldname": "signatory_contractor_position",
+      "fieldtype": "Data",
+      "label": "От подрядчика — должность",
+      "default": "Директор"
+    },
+    {
+      "fieldname": "section_notes",
+      "fieldtype": "Section Break",
+      "label": "Примечания"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Text",
+      "label": "Примечания"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "email": 1, "export": 1, "share": 1, "report": 1
+    },
+    {
+      "role": "Бухгалтер Олимп",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "report": 1
+    }
+  ],
+  "sort_field": "report_date",
+  "sort_order": "DESC",
+  "naming_rule": "Expression"
+}

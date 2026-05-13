@@ -1,0 +1,136 @@
+{
+  "name": "Employee Certification",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "EC-.YYYY.-.#####",
+  "title_field": "title",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Краткое название",
+      "reqd": 1,
+      "in_list_view": 1,
+      "description": "Например: Иванов И.И. — Работы на высоте 2 группа"
+    },
+    {
+      "fieldname": "employee_name",
+      "fieldtype": "Data",
+      "label": "ФИО сотрудника",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_global_search": 1
+    },
+    {
+      "fieldname": "employee_role",
+      "fieldtype": "Data",
+      "label": "Должность",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "user",
+      "fieldtype": "Link",
+      "label": "Пользователь системы",
+      "options": "User",
+      "description": "Если у сотрудника есть учётка ERP — выбрать"
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "cert_type",
+      "fieldtype": "Select",
+      "label": "Тип аттестации",
+      "options": "Работы на высоте\nЭлектробезопасность (1 группа)\nЭлектробезопасность (2 группа)\nЭлектробезопасность (3 группа)\nЭлектробезопасность (4 группа)\nЭлектробезопасность (5 группа)\nПромальпинизм\nСварочные работы\nГазоопасные работы\nОгневые работы\nПромбезопасность\nОхрана труда\nПервая помощь\nПожарно-технический минимум\nКрановщик\nСтропальщик\nДопуск к управлению техникой\nМедосмотр\nПрочее",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "cert_number",
+      "fieldtype": "Data",
+      "label": "№ удостоверения / протокола"
+    },
+    {
+      "fieldname": "issuing_organization",
+      "fieldtype": "Data",
+      "label": "Кем выдано (учебный центр)"
+    },
+    {
+      "fieldname": "section_break_dates",
+      "fieldtype": "Section Break",
+      "label": "Даты"
+    },
+    {
+      "fieldname": "issue_date",
+      "fieldtype": "Date",
+      "label": "Дата выдачи",
+      "reqd": 1
+    },
+    {
+      "fieldname": "expiry_date",
+      "fieldtype": "Date",
+      "label": "Действует до",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "column_break_dates",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Статус",
+      "options": "Действует\nИстекает скоро\nПросрочено\nАрхив",
+      "default": "Действует",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "read_only": 1,
+      "description": "Авто-пересчёт по expiry_date"
+    },
+    {
+      "fieldname": "next_reminder_sent",
+      "fieldtype": "Date",
+      "label": "Последнее напоминание",
+      "read_only": 1
+    },
+    {
+      "fieldname": "section_break_files",
+      "fieldtype": "Section Break",
+      "label": "Документы"
+    },
+    {
+      "fieldname": "certificate_file",
+      "fieldtype": "Attach",
+      "label": "Скан удостоверения"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Text",
+      "label": "Примечание"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "email": 1, "export": 1, "share": 1, "report": 1
+    },
+    {
+      "role": "Инженер ОТ-ТБ",
+      "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1, "print": 1
+    },
+    {
+      "role": "Главный инженер",
+      "read": 1, "report": 1
+    }
+  ],
+  "sort_field": "expiry_date",
+  "sort_order": "ASC",
+  "naming_rule": "Expression"
+}

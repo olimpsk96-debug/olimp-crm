@@ -1,0 +1,132 @@
+{
+  "actions": [],
+  "autoname": "MR-.YYYY.-.#####",
+  "creation": "2026-05-11 00:00:00.000000",
+  "doctype": "DocType",
+  "editable_grid": 1,
+  "engine": "InnoDB",
+  "field_order": [
+    "title", "status", "priority", "column_break_1",
+    "project", "requested_by", "request_date", "needed_by_date",
+    "section_items",
+    "items",
+    "section_totals",
+    "total_estimated",
+    "section_notes",
+    "notes"
+  ],
+  "fields": [
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Название заявки",
+      "reqd": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Статус",
+      "options": "Черновик\nОтправлена\nОдобрена\nЗакупается\nПолучена\nОтменена",
+      "default": "Черновик"
+    },
+    {
+      "fieldname": "priority",
+      "fieldtype": "Select",
+      "label": "Приоритет",
+      "options": "Обычная\nСрочная\nКритическая",
+      "default": "Обычная"
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "project",
+      "fieldtype": "Link",
+      "label": "Проект",
+      "options": "Construction Project"
+    },
+    {
+      "fieldname": "requested_by",
+      "fieldtype": "Data",
+      "label": "Запросил"
+    },
+    {
+      "fieldname": "request_date",
+      "fieldtype": "Date",
+      "label": "Дата заявки",
+      "default": "Today"
+    },
+    {
+      "fieldname": "needed_by_date",
+      "fieldtype": "Date",
+      "label": "Нужно к"
+    },
+    {
+      "fieldname": "section_items",
+      "fieldtype": "Section Break",
+      "label": "Позиции"
+    },
+    {
+      "fieldname": "items",
+      "fieldtype": "Table",
+      "label": "Материалы",
+      "options": "Supply Item"
+    },
+    {
+      "fieldname": "section_totals",
+      "fieldtype": "Section Break",
+      "label": "Итого"
+    },
+    {
+      "fieldname": "total_estimated",
+      "fieldtype": "Currency",
+      "label": "Сумма (оценочная)",
+      "read_only": 1
+    },
+    {
+      "fieldname": "section_notes",
+      "fieldtype": "Section Break",
+      "label": "Примечания"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Text",
+      "label": "Примечания"
+    }
+  ],
+  "index_web_pages_for_search": 1,
+  "links": [],
+  "modified": "2026-05-11 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Olimp Construction",
+  "name": "Material Request",
+  "naming_rule": "Expression",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "create": 1,
+      "read": 1,
+      "write": 1,
+      "role": "Tender Manager"
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "states": [],
+  "track_changes": 1
+}

@@ -1,0 +1,46 @@
+{
+  "name": "KS3 Linked Act",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "istable": 1,
+  "editable_grid": 0,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "ks2_act",
+      "fieldtype": "Link",
+      "label": "КС-2",
+      "options": "KS2 Act",
+      "reqd": 1,
+      "in_list_view": 1,
+      "columns": 3
+    },
+    {
+      "fieldname": "act_number",
+      "fieldtype": "Data",
+      "label": "№ акта",
+      "in_list_view": 1,
+      "read_only": 1,
+      "columns": 2
+    },
+    {
+      "fieldname": "act_date",
+      "fieldtype": "Date",
+      "label": "Дата",
+      "in_list_view": 1,
+      "read_only": 1,
+      "columns": 2
+    },
+    {
+      "fieldname": "act_amount",
+      "fieldtype": "Currency",
+      "label": "Сумма",
+      "in_list_view": 1,
+      "read_only": 1,
+      "columns": 3
+    }
+  ],
+  "permissions": [],
+  "sort_field": "act_date",
+  "sort_order": "DESC"
+}

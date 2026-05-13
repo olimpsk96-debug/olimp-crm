@@ -1,0 +1,123 @@
+{
+  "name": "Meeting",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "MT-.YYYY.-.#####",
+  "title_field": "title",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Название планёрки",
+      "reqd": 1,
+      "in_list_view": 1,
+      "bold": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Статус",
+      "options": "Запланирована\nПроведена\nОтменена",
+      "default": "Запланирована",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "meeting_type",
+      "fieldtype": "Select",
+      "label": "Тип",
+      "options": "Утренняя планёрка\nЕженедельная\nС заказчиком\nС поставщиком\nПо ОТ-ТБ\nРазбор инцидента\nПрочая",
+      "default": "Утренняя планёрка"
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "project",
+      "fieldtype": "Link",
+      "label": "Проект",
+      "options": "Construction Project"
+    },
+    {
+      "fieldname": "meeting_date",
+      "fieldtype": "Date",
+      "label": "Дата",
+      "reqd": 1,
+      "default": "Today",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "start_time",
+      "fieldtype": "Time",
+      "label": "Начало"
+    },
+    {
+      "fieldname": "duration_min",
+      "fieldtype": "Int",
+      "label": "Длительность, мин",
+      "default": "30"
+    },
+    {
+      "fieldname": "location",
+      "fieldtype": "Data",
+      "label": "Место / ссылка",
+      "description": "Адрес, кабинет или ссылка на Zoom/Telegram"
+    },
+    {
+      "fieldname": "section_break_attendees",
+      "fieldtype": "Section Break",
+      "label": "Участники"
+    },
+    {
+      "fieldname": "attendees",
+      "fieldtype": "Table",
+      "label": "Список участников",
+      "options": "Meeting Attendee"
+    },
+    {
+      "fieldname": "section_break_items",
+      "fieldtype": "Section Break",
+      "label": "Повестка и решения"
+    },
+    {
+      "fieldname": "items",
+      "fieldtype": "Table",
+      "label": "Вопросы и поручения",
+      "options": "Meeting Item"
+    },
+    {
+      "fieldname": "section_break_notes",
+      "fieldtype": "Section Break",
+      "label": "Заметки"
+    },
+    {
+      "fieldname": "agenda_notes",
+      "fieldtype": "Text Editor",
+      "label": "Заметки / протокол"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "email": 1, "export": 1, "share": 1, "report": 1
+    },
+    {
+      "role": "Прораб",
+      "read": 1, "write": 1, "create": 1
+    },
+    {
+      "role": "Главный инженер",
+      "read": 1, "write": 1, "create": 1, "delete": 1
+    },
+    {
+      "role": "Инженер ОТ-ТБ",
+      "read": 1, "write": 1, "create": 1
+    }
+  ],
+  "sort_field": "meeting_date",
+  "sort_order": "DESC",
+  "naming_rule": "Expression"
+}

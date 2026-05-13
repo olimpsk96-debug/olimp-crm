@@ -1,0 +1,182 @@
+{
+  "actions": [],
+  "autoname": "KS-.YYYY.-.#####",
+  "creation": "2026-05-11 00:00:00.000000",
+  "doctype": "DocType",
+  "editable_grid": 1,
+  "engine": "InnoDB",
+  "field_order": [
+    "title", "status", "act_number", "column_break_1",
+    "project", "tender", "customer", "contract_number",
+    "section_period",
+    "period_from", "period_to", "act_date", "signed_date",
+    "section_items",
+    "items",
+    "section_totals",
+    "amount",
+    "section_payment",
+    "payment_status", "payment_due_date", "payment_received",
+    "section_notes",
+    "notes"
+  ],
+  "fields": [
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Название акта",
+      "reqd": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Статус",
+      "options": "Черновик\nНа подписании\nПодписан\nОтклонён",
+      "default": "Черновик"
+    },
+    {
+      "fieldname": "act_number",
+      "fieldtype": "Data",
+      "label": "№ акта"
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "project",
+      "fieldtype": "Link",
+      "label": "Проект",
+      "options": "Construction Project"
+    },
+    {
+      "fieldname": "tender",
+      "fieldtype": "Link",
+      "label": "Тендер",
+      "options": "Tender"
+    },
+    {
+      "fieldname": "customer",
+      "fieldtype": "Data",
+      "label": "Заказчик"
+    },
+    {
+      "fieldname": "contract_number",
+      "fieldtype": "Data",
+      "label": "№ договора"
+    },
+    {
+      "fieldname": "section_period",
+      "fieldtype": "Section Break",
+      "label": "Период"
+    },
+    {
+      "fieldname": "period_from",
+      "fieldtype": "Date",
+      "label": "Период с"
+    },
+    {
+      "fieldname": "period_to",
+      "fieldtype": "Date",
+      "label": "Период по"
+    },
+    {
+      "fieldname": "act_date",
+      "fieldtype": "Date",
+      "label": "Дата акта",
+      "default": "Today"
+    },
+    {
+      "fieldname": "signed_date",
+      "fieldtype": "Date",
+      "label": "Дата подписания"
+    },
+    {
+      "fieldname": "section_items",
+      "fieldtype": "Section Break",
+      "label": "Выполненные работы"
+    },
+    {
+      "fieldname": "items",
+      "fieldtype": "Table",
+      "label": "Работы",
+      "options": "KS2 Item"
+    },
+    {
+      "fieldname": "section_totals",
+      "fieldtype": "Section Break",
+      "label": "Итого"
+    },
+    {
+      "fieldname": "amount",
+      "fieldtype": "Currency",
+      "label": "Сумма акта",
+      "read_only": 1
+    },
+    {
+      "fieldname": "section_payment",
+      "fieldtype": "Section Break",
+      "label": "Оплата"
+    },
+    {
+      "fieldname": "payment_status",
+      "fieldtype": "Select",
+      "label": "Статус оплаты",
+      "options": "Ожидает\nЧастично\nОплачено",
+      "default": "Ожидает"
+    },
+    {
+      "fieldname": "payment_due_date",
+      "fieldtype": "Date",
+      "label": "Ожидаемая дата оплаты"
+    },
+    {
+      "fieldname": "payment_received",
+      "fieldtype": "Currency",
+      "label": "Получено"
+    },
+    {
+      "fieldname": "section_notes",
+      "fieldtype": "Section Break",
+      "label": "Примечания"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Text",
+      "label": "Примечания"
+    }
+  ],
+  "index_web_pages_for_search": 1,
+  "links": [],
+  "modified": "2026-05-11 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Olimp Construction",
+  "name": "KS2 Act",
+  "naming_rule": "Expression",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "create": 1,
+      "read": 1,
+      "write": 1,
+      "role": "Tender Manager"
+    }
+  ],
+  "sort_field": "act_date",
+  "sort_order": "DESC",
+  "states": [],
+  "track_changes": 1
+}

@@ -1,0 +1,127 @@
+{
+  "name": "Cost Catalog Item",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "CC-.YYYY.-.#####",
+  "title_field": "item_name",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "item_name",
+      "fieldtype": "Data",
+      "label": "Наименование работы",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_global_search": 1,
+      "bold": 1
+    },
+    {
+      "fieldname": "code",
+      "fieldtype": "Data",
+      "label": "Код расценки",
+      "in_list_view": 1,
+      "in_global_search": 1,
+      "description": "Код ГЭСН/ФЕР/ТЕР или внутренний"
+    },
+    {
+      "fieldname": "section",
+      "fieldtype": "Select",
+      "label": "Раздел ГЭСН",
+      "options": "\n01 — Земляные работы\n06 — Бетон/железобетон монолитный\n07 — Бетон/железобетон сборный\n08 — Кирпич и блоки\n09 — Металлоконструкции\n10 — Деревянные конструкции\n11 — Полы\n12 — Кровли\n13 — Защита от коррозии (АКЗ)\n15 — Отделочные работы\n16 — Трубопроводы внутренние\n17 — Водопровод и канализация\n18 — Отопление\n19 — Газоснабжение\n20 — Вентиляция и кондиционирование\n21 — Электротехнические устройства\nПрочее",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "standard",
+      "fieldtype": "Select",
+      "label": "Стандарт",
+      "options": "ГЭСН\nФЕР\nТЕР\nВнутренний\nИмпорт из ГС",
+      "default": "Внутренний",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "edition",
+      "fieldtype": "Select",
+      "label": "Редакция",
+      "options": "\nГЭСН-2001\nГЭСН-2020\nГЭСН-2024\nФЕР-2001\nФЕР-2020\nТЕР-2024"
+    },
+    {
+      "fieldname": "unit",
+      "fieldtype": "Data",
+      "label": "Ед. измерения",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "base_price",
+      "fieldtype": "Currency",
+      "label": "Базовая цена (текущая)",
+      "reqd": 1,
+      "in_list_view": 1,
+      "description": "Цена в текущих ценах региона (₽)"
+    },
+    {
+      "fieldname": "section_break_meta",
+      "fieldtype": "Section Break",
+      "label": "Дополнительно"
+    },
+    {
+      "fieldname": "work_type",
+      "fieldtype": "Select",
+      "label": "Тип работ",
+      "options": "\nАКЗ\nКровля\nПромальп\nМонолит\nУсиление\nКомплексный\nОбщестроительные\nИнженерные сети\nЭлектрика"
+    },
+    {
+      "fieldname": "region",
+      "fieldtype": "Select",
+      "label": "Регион",
+      "options": "Свердловская область\nЧелябинская область\nТюменская область\nПермский край\nБазовый",
+      "default": "Свердловская область"
+    },
+    {
+      "fieldname": "usage_count",
+      "fieldtype": "Int",
+      "label": "Использовано раз",
+      "default": "0",
+      "read_only": 1
+    },
+    {
+      "fieldname": "column_break_2",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "is_active",
+      "fieldtype": "Check",
+      "label": "Активна",
+      "default": "1"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Text",
+      "label": "Примечание (состав работ)"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "email": 1, "export": 1, "share": 1, "report": 1
+    },
+    {
+      "role": "Сметчик",
+      "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1
+    },
+    {
+      "role": "Тендерный менеджер",
+      "read": 1, "report": 1
+    }
+  ],
+  "sort_field": "section",
+  "sort_order": "ASC",
+  "naming_rule": "Expression"
+}

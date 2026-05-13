@@ -1,0 +1,136 @@
+{
+  "actions": [],
+  "autoname": "SI-.YYYY.-.#####",
+  "creation": "2026-05-11 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "title", "severity", "status", "column_break_1",
+    "project", "incident_date", "resolved_date",
+    "section_details",
+    "description", "affected_person", "location",
+    "section_measures",
+    "measures_taken", "preventive_actions",
+    "section_notes",
+    "notes"
+  ],
+  "fields": [
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Описание инцидента",
+      "reqd": 1
+    },
+    {
+      "fieldname": "severity",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Серьёзность",
+      "options": "Незначительный\nСредний\nТяжёлый\nКритический",
+      "default": "Незначительный",
+      "reqd": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Статус",
+      "options": "Открыт\nВ работе\nЗакрыт",
+      "default": "Открыт"
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "project",
+      "fieldtype": "Link",
+      "label": "Проект",
+      "options": "Construction Project"
+    },
+    {
+      "fieldname": "incident_date",
+      "fieldtype": "Date",
+      "in_list_view": 1,
+      "label": "Дата инцидента",
+      "reqd": 1
+    },
+    {
+      "fieldname": "resolved_date",
+      "fieldtype": "Date",
+      "label": "Дата закрытия"
+    },
+    {
+      "fieldname": "section_details",
+      "fieldtype": "Section Break",
+      "label": "Детали"
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Text",
+      "label": "Подробное описание"
+    },
+    {
+      "fieldname": "affected_person",
+      "fieldtype": "Data",
+      "label": "Пострадавший (ФИО / должность)"
+    },
+    {
+      "fieldname": "location",
+      "fieldtype": "Data",
+      "label": "Место происшествия"
+    },
+    {
+      "fieldname": "section_measures",
+      "fieldtype": "Section Break",
+      "label": "Меры"
+    },
+    {
+      "fieldname": "measures_taken",
+      "fieldtype": "Text",
+      "label": "Принятые меры"
+    },
+    {
+      "fieldname": "preventive_actions",
+      "fieldtype": "Text",
+      "label": "Превентивные мероприятия"
+    },
+    {
+      "fieldname": "section_notes",
+      "fieldtype": "Section Break",
+      "label": "Примечания"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Text",
+      "label": "Примечания"
+    }
+  ],
+  "index_web_pages_for_search": 1,
+  "links": [],
+  "modified": "2026-05-11 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Olimp Construction",
+  "name": "Safety Incident",
+  "naming_rule": "Expression (old-style)",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    }
+  ],
+  "sort_field": "incident_date",
+  "sort_order": "DESC",
+  "states": [],
+  "track_changes": 1
+}

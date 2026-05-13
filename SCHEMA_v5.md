@@ -74,6 +74,198 @@
 
 ---
 
+## 3. БЛОК A · Тендеры (Фаза 1)
+
+### 3.A.1 Tender ⭐
+
+```yaml
+DocType: Tender
+naming: "TND-{YYYY}-{####}"   # TND-2026-0001
+title_field: title
+module: Olimp Construction
+
+fields:
+  # ── Основное ──────────────────────────────────────────────────────
+  - title: Data, required              # Название тендера
+  - status: Select, required [
+      "Новый",                         # только найден, не рассмотрен
+      "Оценивается",                   # идёт анализ / запрошены данные
+      "Готовится заявка",              # команда готовит КП
+      "Заявка подана",                 # подано, ждём итогов
+      "Выиграли",                      # контракт наш
+      "Проиграли",                     # проигран
+      "Отклонён"                       # решили не подавать
+    ]
+  - customer: Link → Customer          # Заказчик
+
+  # ── Параметры закупки ─────────────────────────────────────────────
+  - tender_law: Select [
+      "44-ФЗ",                         # госзакупки (Госзакупки.ру / ЕИС)
+      "223-ФЗ",                        # закупки госкомпаний
+      "Коммерческий"                   # частный заказчик
+    ]
+  - purchase_number: Data              # Номер закупки (ИКЗ / реестровый №)
+  - platform_url: Data                 # Ссылка на лот на площадке
+  - work_type: Select [
+      "АКЗ",                           # антикоррозийная защита
+      "Кровля",
+      "Промальп",
+      "Монолит",
+      "Усиление",
+      "Комплексный"
+    ]
+  - region: Data                       # Регион объекта
+
+  # ── Финансы ───────────────────────────────────────────────────────
+  - nmck: Currency                     # НМЦК (начальная максимальная цена)
+  - our_price: Currency                # Наша цена предложения
+  - margin_pct: Percent                # Целевая маржа, %
+
+  # ── Сроки ─────────────────────────────────────────────────────────
+  - deadline_date: Date, required      # Дедлайн подачи заявки
+  - deadline_time: Time                # Время дедлайна (МСК)
+  - submission_date: Date              # Дата фактической подачи
+
+  # ── AI-анализ ─────────────────────────────────────────────────────
+  - ai_match_score: Int                # 0-100, % соответствия профилю компании
+  - ai_recommendation: Select [
+      "Подать",
+      "Не подавать",
+      "Проверить вручную"
+    ]
+  - ai_analysis: Long Text             # Развёрнутый анализ Claude
+
+  # ── Итог ──────────────────────────────────────────────────────────
+  - result: Select [
+      "Выиграли",
+      "Проиграли",
+      "Отменён заказчиком"
+    ]
+  - win_amount: Currency               # Сумма контракта (если выиграли)
+  - project_link: Link → Project       # Связанный проект (после победы)
+
+  # ── Прочее ────────────────────────────────────────────────────────
+  - notes: Text Editor                 # Внутренние комментарии
+  - checklist: Table                   # Чеклист документов для подачи
+  - amended_from: Link → Tender        # Если создан через Amend
+
+permissions:
+  - role: "Tender Manager"  → read, write, create
+  - role: "Director"        → read, write, create, delete, submit
+  - role: "All"             → read (только свои)
+
+workflow:
+  # States совпадают с полем status
+  Новый → Оценивается → Готовится заявка → Заявка подана
+                                                          ↓           ↓
+                                                      Выиграли   Проиграли
+  Любой → Отклонён
+
+api_endpoints:
+  - olimp_construction.api.tender.get_pipeline   # GET all for Kanban
+  - olimp_construction.api.tender.score_tender   # POST → AI-оценка (Фаза 1.4)
+```
+
+### Бизнес-правила
+
+- **Алерты** (cron daily): за 7/3/1 день до `deadline_date` → Telegram директору
+- **AI-оценка**: при создании (или по кнопке) Claude анализирует title + work_type + region + nmck → ставит `ai_match_score` и `ai_recommendation`
+- **После победы**: автоматически создаётся Project, поле `project_link` заполняется
+- **Конверсия**: `Выиграли / (Выиграли + Проиграли)` — показывается на дашборде директора
+
+### Связи с другими DocType
+
+```
+Tender → Customer           (заказчик)
+Tender → Project            (после победы)
+Tender → AI Knowledge Document  (индексируется с итогом)
+```
+
+---
+
+## 3. БЛОК B · Сметы (Фаза 2)
+
+### 3.B.1 Estimate ⭐
+
+```yaml
+DocType: Estimate
+naming: "EST-{YYYY}-{#####}"   # EST-2026-00001
+title_field: title
+module: Olimp Construction
+
+fields:
+  # ── Основное ──────────────────────────────────────────────────────
+  - title: Data, required              # "Смета АКЗ Marins Park v2"
+  - status: Select, required [
+      "Базовая",                       # первая версия, не утверждена
+      "Скорректированная",             # скорректирована после замечаний
+      "Утверждена",                    # утверждена и принята к работе
+      "Архив"                          # устаревшая версия
+    ]
+  - version: Int, default=1           # версия сметы
+
+  # ── Привязки ─────────────────────────────────────────────────────
+  - project: Link → Project
+  - tender: Link → Tender
+  - estimate_date: Date
+
+  # ── Позиции ──────────────────────────────────────────────────────
+  - items: Table → Estimate Item (child)
+
+  # ── Итоги (авто) ────────────────────────────────────────────────
+  - base_total: Currency, read_only   # сумма по нормам (с накладными + прибылью)
+  - our_total: Currency, read_only    # наша цена итого
+  - overhead_pct: Percent             # накладные расходы, %
+  - profit_pct: Percent               # сметная прибыль, %
+  - margin_pct: Percent, read_only    # маржа = (наша - норм) / наша
+  - margin_amount: Currency, read_only
+
+  # ── Импорт ──────────────────────────────────────────────────────
+  - import_source: Select ["Гранд-Смета GS3", "Гранд-Смета XML", "Ручной ввод"]
+  - imported_at: Datetime, read_only
+  - notes: Text Editor
+
+business_logic:
+  - before_save: рассчитывает base_amount/our_amount каждой позиции, затем base_total/our_total/margin_pct
+  - deviation_pct: (our - base) / base × 100 на каждой позиции
+  - import_from_gs_xml: парсит XML Гранд-Сметы, создаёт позиции автоматически
+
+permissions:
+  - All: read, write, create
+  - System Manager: delete
+```
+
+### 3.B.2 Estimate Item (child) ⭐
+
+```yaml
+DocType: Estimate Item
+istable: 1
+module: Olimp Construction
+
+fields:
+  - is_section: Check              # 1 = строка-раздел (группировка)
+  - item_code: Data                # код по расценке (ГЭСН, ТЕР, ФЕР)
+  - item_name: Data, required      # наименование работ / раздел
+  - unit: Data                     # ед. измерения (м², м³, т, шт)
+  - qty: Float, precision=3        # количество
+  - base_unit_price: Currency      # единичная цена по норме
+  - base_amount: Currency, r/o     # qty × base_unit_price
+  - our_unit_price: Currency       # наша единичная цена
+  - our_amount: Currency, r/o      # qty × our_unit_price
+  - deviation_pct: Percent, r/o    # отклонение нашей цены от нормы, %
+  - work_type: Select [АКЗ, Кровля, Промальп, Монолит, Усиление, Комплексный]
+  - notes: Small Text
+```
+
+### Связи Estimate
+
+```
+Estimate → Project  (один проект — несколько версий смет)
+Estimate → Tender   (смета для конкретного тендера)
+```
+
+---
+
 ## 3. БЛОК F · AI-ассистент с RAG (новое)
 
 ### 3.F.1 AI Knowledge Document ⭐

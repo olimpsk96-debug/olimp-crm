@@ -1,0 +1,42 @@
+{
+  "name": "Meeting Attendee",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "istable": 1,
+  "editable_grid": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "full_name",
+      "fieldtype": "Data",
+      "label": "ФИО",
+      "reqd": 1,
+      "in_list_view": 1,
+      "columns": 4
+    },
+    {
+      "fieldname": "role",
+      "fieldtype": "Data",
+      "label": "Должность",
+      "in_list_view": 1,
+      "columns": 3
+    },
+    {
+      "fieldname": "company",
+      "fieldtype": "Data",
+      "label": "Организация",
+      "in_list_view": 1,
+      "columns": 3
+    },
+    {
+      "fieldname": "presence",
+      "fieldtype": "Select",
+      "label": "Присутствие",
+      "options": "Был\nНе был\nОпоздал",
+      "default": "Был",
+      "in_list_view": 1,
+      "columns": 1
+    }
+  ],
+  "permissions": []
+}

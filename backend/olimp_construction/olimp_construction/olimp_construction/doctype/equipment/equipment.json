@@ -1,0 +1,177 @@
+{
+  "actions": [],
+  "autoname": "EQ-.YYYY.-.####",
+  "creation": "2026-05-11 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "equipment_name", "category", "status", "column_break_1",
+    "inventory_code", "year_of_manufacture", "vin_number",
+    "section_location",
+    "current_location", "responsible_person", "project",
+    "section_financial",
+    "purchase_price", "depreciation_rate_pct", "rental_rate_per_day",
+    "section_dates",
+    "next_maintenance_date", "insurance_expiry", "certification_expiry", "sro_expiry",
+    "section_meters",
+    "engine_hours", "odometer",
+    "section_notes",
+    "notes"
+  ],
+  "fields": [
+    {
+      "fieldname": "equipment_name",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Наименование",
+      "reqd": 1
+    },
+    {
+      "fieldname": "category",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Категория",
+      "options": "Подъёмники\nАКЗ оборудование\nБетонные работы\nСварочное\nПромальп\nГрузовая техника\nПрочее",
+      "default": "Прочее",
+      "reqd": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Статус",
+      "options": "Доступна\nНа объекте\nНа ТО\nВ ремонте\nСписана",
+      "default": "Доступна"
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "inventory_code",
+      "fieldtype": "Data",
+      "label": "Инвентарный код"
+    },
+    {
+      "fieldname": "year_of_manufacture",
+      "fieldtype": "Int",
+      "label": "Год выпуска"
+    },
+    {
+      "fieldname": "vin_number",
+      "fieldtype": "Data",
+      "label": "VIN / Гос. номер"
+    },
+    {
+      "fieldname": "section_location",
+      "fieldtype": "Section Break",
+      "label": "Местонахождение"
+    },
+    {
+      "fieldname": "current_location",
+      "fieldtype": "Data",
+      "label": "Текущее место"
+    },
+    {
+      "fieldname": "responsible_person",
+      "fieldtype": "Data",
+      "label": "Ответственный"
+    },
+    {
+      "fieldname": "project",
+      "fieldtype": "Link",
+      "label": "Проект",
+      "options": "Construction Project"
+    },
+    {
+      "fieldname": "section_financial",
+      "fieldtype": "Section Break",
+      "label": "Финансы"
+    },
+    {
+      "fieldname": "purchase_price",
+      "fieldtype": "Currency",
+      "label": "Стоимость покупки"
+    },
+    {
+      "fieldname": "depreciation_rate_pct",
+      "fieldtype": "Float",
+      "label": "Амортизация % / год",
+      "default": "10"
+    },
+    {
+      "fieldname": "rental_rate_per_day",
+      "fieldtype": "Currency",
+      "label": "Ставка аренды / день"
+    },
+    {
+      "fieldname": "section_dates",
+      "fieldtype": "Section Break",
+      "label": "Ключевые даты"
+    },
+    {
+      "fieldname": "next_maintenance_date",
+      "fieldtype": "Date",
+      "in_list_view": 1,
+      "label": "Следующее ТО"
+    },
+    {
+      "fieldname": "insurance_expiry",
+      "fieldtype": "Date",
+      "label": "Страховка до"
+    },
+    {
+      "fieldname": "certification_expiry",
+      "fieldtype": "Date",
+      "label": "Поверка / аттестация до"
+    },
+    {
+      "fieldname": "sro_expiry",
+      "fieldtype": "Date",
+      "label": "СРО до"
+    },
+    {
+      "fieldname": "section_meters",
+      "fieldtype": "Section Break",
+      "label": "Показатели"
+    },
+    {
+      "fieldname": "engine_hours",
+      "fieldtype": "Float",
+      "label": "Моточасы"
+    },
+    {
+      "fieldname": "odometer",
+      "fieldtype": "Float",
+      "label": "Пробег, км"
+    },
+    {
+      "fieldname": "section_notes",
+      "fieldtype": "Section Break",
+      "label": "Примечания"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Text",
+      "label": "Примечания"
+    }
+  ],
+  "links": [],
+  "modified": "2026-05-11 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Olimp Construction",
+  "name": "Equipment",
+  "naming_rule": "Expression (old-style)",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1, "delete": 1, "email": 1, "export": 1,
+      "print": 1, "read": 1, "report": 1,
+      "role": "System Manager", "share": 1, "write": 1
+    }
+  ],
+  "sort_field": "next_maintenance_date",
+  "sort_order": "ASC",
+  "states": [],
+  "track_changes": 1
+}

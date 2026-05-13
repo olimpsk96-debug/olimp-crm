@@ -1,0 +1,54 @@
+{
+  "name": "Meeting Item",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "istable": 1,
+  "editable_grid": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "topic",
+      "fieldtype": "Data",
+      "label": "Вопрос / тема",
+      "reqd": 1,
+      "in_list_view": 1,
+      "columns": 4
+    },
+    {
+      "fieldname": "decision",
+      "fieldtype": "Small Text",
+      "label": "Решение",
+      "in_list_view": 1,
+      "columns": 4
+    },
+    {
+      "fieldname": "responsible",
+      "fieldtype": "Data",
+      "label": "Ответственный",
+      "in_list_view": 1,
+      "columns": 1
+    },
+    {
+      "fieldname": "due_date",
+      "fieldtype": "Date",
+      "label": "Срок",
+      "in_list_view": 1,
+      "columns": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Статус",
+      "options": "Открыто\nВ работе\nВыполнено\nОтменено",
+      "default": "Открыто",
+      "in_list_view": 1,
+      "columns": 1
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Small Text",
+      "label": "Примечание"
+    }
+  ],
+  "permissions": []
+}
