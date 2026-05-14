@@ -14,16 +14,21 @@ from frappe.utils import flt
 
 
 def _parse_level(s) -> int:
-    """Извлекает число из строк вида '1 — Очень низкая' / '5 — Критическое'."""
+    """Извлекает число из строк вида '1 — Очень низкая' / '5 - Критическое' (any dash)."""
     if not s:
         return 0
+    head = str(s).strip().split(None, 1)[0]
     try:
-        return int(str(s).split("—")[0].strip())
-    except (ValueError, IndexError):
+        return int(head)
+    except ValueError:
         return 0
 
 
 class ProjectRisk(Document):
+    def validate(self):
+        if flt(self.impact_amount) < 0:
+            frappe.throw("Финансовый импакт не может быть отрицательным")
+
     def before_save(self):
         p = _parse_level(self.probability)
         i = _parse_level(self.impact)

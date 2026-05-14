@@ -139,7 +139,6 @@ def get_summary(project: str) -> dict:
 @frappe.whitelist()
 def save_task(data: dict | str) -> dict:
     """Создать или обновить Schedule Task."""
-    frappe.has_permission("Schedule Task", "create", throw=True)
     if isinstance(data, str):
         data = json.loads(data)
 
@@ -152,6 +151,7 @@ def save_task(data: dict | str) -> dict:
         frappe.db.commit()
         return {"name": doc.name, "updated": True}
 
+    frappe.has_permission("Schedule Task", "create", throw=True)
     doc = frappe.get_doc({"doctype": "Schedule Task", **data})
     doc.insert(ignore_permissions=True)
     frappe.db.commit()

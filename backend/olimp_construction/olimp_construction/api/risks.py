@@ -17,11 +17,13 @@ from frappe.utils import flt, today
 
 
 def _parse_level(s) -> int:
+    """Парсит число из строки вида '3 — Средняя' или '3 - Средняя' (any dash)."""
     if not s:
         return 0
+    head = str(s).strip().split(None, 1)[0]  # первый токен до пробела
     try:
-        return int(str(s).split("—")[0].strip())
-    except (ValueError, IndexError):
+        return int(head)
+    except ValueError:
         return 0
 
 
@@ -157,7 +159,6 @@ def get_matrix(project: str | None = None) -> list[dict]:
 @frappe.whitelist()
 def save_risk(data: dict | str) -> dict:
     """Создать/обновить риск. risk_score и contingency_amount считаются в модели."""
-    frappe.has_permission("Project Risk", "create", throw=True)
     if isinstance(data, str):
         data = json.loads(data)
 
@@ -170,6 +171,7 @@ def save_risk(data: dict | str) -> dict:
         frappe.db.commit()
         return {"name": doc.name, "updated": True, "risk_score": doc.risk_score, "contingency_amount": flt(doc.contingency_amount)}
 
+    frappe.has_permission("Project Risk", "create", throw=True)
     data.setdefault("detected_date", today())
     doc = frappe.get_doc({"doctype": "Project Risk", **data})
     doc.insert(ignore_permissions=True)
@@ -189,27 +191,44 @@ def delete_risk(name: str) -> dict:
 
 @frappe.whitelist()
 def apply_to_estimate(risk: str, estimate: str) -> dict:
-    """Добавляет позицию контингенции в указанную смету.
+    """Добавляет (или обновляет) позицию контингенции в указанную смету.
 
-    Создаёт Estimate Item с маркером 'РИСК-РЕЗЕРВ' = риск.title, qty=1, our_unit_price=contingency_amount.
+    Создаёт Estimate Item с item_code=`RISK-{risk.name}`, qty=1,
+    our_unit_price=contingency_amount, base_unit_price=contingency_amount.
+    При повторном вызове — обновляет существующую строку, а не создаёт дубль.
     Помечает Project Risk.linked_estimate = estimate.
     """
     frappe.has_permission("Project Risk", "write", doc=risk, throw=True)
     frappe.has_permission("Estimate", "write", doc=estimate, throw=True)
 
     r = frappe.get_doc("Project Risk", risk)
-    if not r.contingency_amount or flt(r.contingency_amount) <= 0:
+    amount = flt(r.contingency_amount)
+    if amount <= 0:
         frappe.throw("У риска нулевая контингенция — заполните Impact amount")
 
     est = frappe.get_doc("Estimate", estimate)
-    # Добавим в items
-    item = est.append("items", {
-        "item_code": f"RISK-{r.name}",
-        "item_name": f"Резерв на риск: {r.title}",
-        "unit": "ед.",
-        "qty": 1,
-        "our_unit_price": flt(r.contingency_amount),
-    })
+    risk_item_code = f"RISK-{r.name}"
+
+    existing = next((it for it in est.items if it.item_code == risk_item_code), None)
+    if existing:
+        existing.qty = 1
+        existing.our_unit_price = amount
+        existing.base_unit_price = amount
+        existing.item_name = f"Резерв на риск: {r.title}"
+        action = "updated"
+        item_name = existing.name
+    else:
+        item = est.append("items", {
+            "item_code": risk_item_code,
+            "item_name": f"Резерв на риск: {r.title}",
+            "unit": "ед.",
+            "qty": 1,
+            "base_unit_price": amount,
+            "our_unit_price": amount,
+        })
+        action = "added"
+        item_name = getattr(item, "name", None)
+
     est.save(ignore_permissions=True)
 
     r.linked_estimate = estimate
@@ -220,6 +239,7 @@ def apply_to_estimate(risk: str, estimate: str) -> dict:
         "ok": True,
         "risk": risk,
         "estimate": estimate,
-        "item_added": getattr(item, "name", None),
-        "amount": flt(r.contingency_amount),
+        "action": action,
+        "item": item_name,
+        "amount": amount,
     }

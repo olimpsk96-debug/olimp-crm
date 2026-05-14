@@ -25,8 +25,9 @@ const inputStyle: React.CSSProperties = {
 };
 
 function parseLvl(s: string): number {
-  const part = (s || "").split("—")[0] ?? "";
-  return parseInt(part.trim() || "0", 10);
+  const head = (s || "").trim().split(/\s+/)[0] ?? "";
+  const n = parseInt(head, 10);
+  return Number.isFinite(n) ? n : 0;
 }
 
 function zoneColor(score: number): string {
@@ -271,6 +272,11 @@ export default function RiskDrawer({
                           placeholder="Что в итоге произошло" />
               </>
             )}
+
+            <label style={lbl}>Заметки</label>
+            <textarea style={{ ...inputStyle, minHeight: 50, marginBottom: 12, fontFamily: "inherit" }}
+                      value={form.notes || ""} onChange={(e) => up("notes", e.target.value)}
+                      placeholder="Дополнительный контекст, ссылки на документы" />
 
             {error && <div style={{ padding: 10, marginBottom: 12, background: "rgba(248,113,113,0.1)", border: "1px solid var(--danger)", borderRadius: 8, color: "var(--danger)", fontSize: 12 }}>{error}</div>}
 

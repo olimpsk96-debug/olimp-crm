@@ -11,6 +11,12 @@ from frappe.utils import getdate, flt
 
 
 class ScheduleTask(Document):
+    def validate(self):
+        if self.start_date and self.end_date and getdate(self.end_date) < getdate(self.start_date):
+            frappe.throw("Дата окончания не может быть раньше даты начала")
+        if self.parent_task and self.parent_task == self.name:
+            frappe.throw("Раздел не может быть родителем сам себе")
+
     def before_save(self):
         # duration_days = end - start + 1
         if self.start_date and self.end_date:
@@ -20,12 +26,11 @@ class ScheduleTask(Document):
         else:
             self.duration_days = 0
 
-        # Прогресс 100% → статус «Выполнена», если не задан явно
-        if flt(self.progress) >= 100 and self.status not in ("Выполнена", "Отменена"):
+        # Авто-смена статуса по прогрессу
+        progress = flt(self.progress)
+        if progress >= 100 and self.status not in ("Выполнена", "Отменена"):
             self.status = "Выполнена"
-        elif flt(self.progress) > 0 and flt(self.progress) < 100 and self.status == "Запланирована":
+        elif 0 < progress < 100 and self.status == "Запланирована":
             self.status = "В работе"
-
-        # Раздел не может быть собственным родителем
-        if self.parent_task and self.parent_task == self.name:
-            frappe.throw("Раздел не может быть родителем сам себе")
+        elif progress == 0 and self.status == "В работе":
+            self.status = "Запланирована"

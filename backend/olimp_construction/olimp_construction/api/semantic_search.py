@@ -56,11 +56,18 @@ def get_status() -> dict:
 def reindex_catalog(reset: int | bool = 0, batch_size: int = 96) -> dict:
     """Перестроить индекс семантического поиска для всех Catalog Resource.
 
+    Только для System Manager — операция платная (OpenAI embeddings) и долгая.
+
     Параметры:
     - reset=1 — пересоздать коллекцию (на случай смены модели/размерности)
     - batch_size — сколько ресурсов отправлять в OpenAI за раз (макс ~2048)
     """
-    frappe.has_permission("Catalog Resource", "read", throw=True)
+    if "System Manager" not in frappe.get_roles(frappe.session.user):
+        frappe.throw(
+            "Переиндексация каталога доступна только администратору (System Manager). "
+            "Операция платная и долгая.",
+            frappe.PermissionError,
+        )
 
     if int(reset or 0):
         reset_catalog_collection()
@@ -148,6 +155,7 @@ def search(
 
     if not query or len(query.strip()) < 2:
         return []
+    limit = max(1, min(int(limit), 50))  # clamp [1..50] — защита от огромных JSON
 
     try:
         emb = create_embedding(query.strip())
