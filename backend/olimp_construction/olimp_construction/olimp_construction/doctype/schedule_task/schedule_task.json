@@ -1,0 +1,167 @@
+{
+  "name": "Schedule Task",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "format:ST-{YYYY}-{#####}",
+  "title_field": "title",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Название задачи",
+      "reqd": 1,
+      "in_list_view": 1,
+      "bold": 1
+    },
+    {
+      "fieldname": "project",
+      "fieldtype": "Link",
+      "label": "Проект",
+      "options": "Construction Project",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "parent_task",
+      "fieldtype": "Link",
+      "label": "Раздел (родитель)",
+      "options": "Schedule Task",
+      "description": "Если задача внутри раздела — указываем родителя (раздел)"
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "is_section",
+      "fieldtype": "Check",
+      "label": "Это раздел",
+      "default": "0",
+      "description": "Раздел — это группа задач, длительность и прогресс считаются автоматически"
+    },
+    {
+      "fieldname": "is_critical",
+      "fieldtype": "Check",
+      "label": "Критический путь",
+      "default": "0",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Статус",
+      "options": "Запланирована\nВ работе\nВыполнена\nОтменена",
+      "default": "Запланирована",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "section_break_dates",
+      "fieldtype": "Section Break",
+      "label": "Сроки"
+    },
+    {
+      "fieldname": "start_date",
+      "fieldtype": "Date",
+      "label": "Начало",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "end_date",
+      "fieldtype": "Date",
+      "label": "Окончание",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "column_break_dates",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "duration_days",
+      "fieldtype": "Int",
+      "label": "Длительность, дней",
+      "read_only": 1,
+      "description": "Считается автоматически как end - start + 1"
+    },
+    {
+      "fieldname": "progress",
+      "fieldtype": "Percent",
+      "label": "Прогресс",
+      "default": 0,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "section_break_team",
+      "fieldtype": "Section Break",
+      "label": "Команда"
+    },
+    {
+      "fieldname": "assignee",
+      "fieldtype": "Data",
+      "label": "Исполнитель",
+      "description": "ФИО, бригада или название подрядчика",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "subcontractor",
+      "fieldtype": "Link",
+      "label": "Субподрядчик (если есть)",
+      "options": "Supplier"
+    },
+    {
+      "fieldname": "column_break_team",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "order_idx",
+      "fieldtype": "Int",
+      "label": "Порядковый №",
+      "default": 0,
+      "description": "Для сортировки строк в Gantt; 0 = автонумерация по start_date"
+    },
+    {
+      "fieldname": "predecessor",
+      "fieldtype": "Link",
+      "label": "Предшественник",
+      "options": "Schedule Task",
+      "description": "Задача, которая должна завершиться до начала этой (опционально)"
+    },
+    {
+      "fieldname": "section_break_extra",
+      "fieldtype": "Section Break",
+      "label": "Дополнительно"
+    },
+    {
+      "fieldname": "estimate_item_link",
+      "fieldtype": "Data",
+      "label": "Связь со строкой сметы (Estimate Item ID)",
+      "description": "Опционально — для авто-связи с бюджетом"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Small Text",
+      "label": "Заметки"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "email": 1, "export": 1, "share": 1, "report": 1
+    },
+    {
+      "role": "Главный инженер",
+      "read": 1, "write": 1, "create": 1, "delete": 1, "print": 1, "report": 1
+    },
+    {
+      "role": "Прораб",
+      "read": 1, "write": 1, "report": 1
+    }
+  ],
+  "sort_field": "order_idx",
+  "sort_order": "ASC",
+  "naming_rule": "Expression"
+}

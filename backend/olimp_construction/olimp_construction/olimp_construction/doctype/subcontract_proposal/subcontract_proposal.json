@@ -1,0 +1,144 @@
+{
+  "name": "Subcontract Proposal",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "format:SP-{YYYY}-{#####}",
+  "title_field": "supplier_name_snapshot",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "bid_request",
+      "fieldtype": "Link",
+      "label": "Тендер (Bid Request)",
+      "options": "Subcontract Bid Request",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "supplier",
+      "fieldtype": "Link",
+      "label": "Поставщик / субподрядчик",
+      "options": "Supplier",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "supplier_name_snapshot",
+      "fieldtype": "Data",
+      "label": "ФИО / название (snapshot)",
+      "read_only": 1
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Статус",
+      "options": "Получено\nНа рассмотрении\nВыбрано\nОтклонено",
+      "default": "Получено",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "received_date",
+      "fieldtype": "Date",
+      "label": "Дата получения",
+      "default": "Today",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "valid_until",
+      "fieldtype": "Date",
+      "label": "Действует до"
+    },
+    {
+      "fieldname": "section_break_amount",
+      "fieldtype": "Section Break",
+      "label": "Цена и условия"
+    },
+    {
+      "fieldname": "total_amount",
+      "fieldtype": "Currency",
+      "label": "Итого, ₽",
+      "read_only": 1,
+      "precision": "2",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "vs_target_pct",
+      "fieldtype": "Percent",
+      "label": "К нашей оценке, %",
+      "read_only": 1,
+      "description": "100% = идеально совпадает с нашей оценкой, <100% = дешевле, >100% = дороже",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "column_break_amount",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "delivery_terms",
+      "fieldtype": "Small Text",
+      "label": "Срок выполнения / поставки"
+    },
+    {
+      "fieldname": "payment_terms",
+      "fieldtype": "Small Text",
+      "label": "Условия оплаты"
+    },
+    {
+      "fieldname": "section_break_items",
+      "fieldtype": "Section Break",
+      "label": "Позиции"
+    },
+    {
+      "fieldname": "items",
+      "fieldtype": "Table",
+      "label": "Цены по позициям",
+      "options": "Subcontract Proposal Item"
+    },
+    {
+      "fieldname": "section_break_notes",
+      "fieldtype": "Section Break",
+      "label": "Заметки"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Small Text",
+      "label": "Внутренние заметки"
+    },
+    {
+      "fieldname": "contact_phone",
+      "fieldtype": "Data",
+      "label": "Контакт (тел./email)"
+    },
+    {
+      "fieldname": "attachment_file",
+      "fieldtype": "Attach",
+      "label": "Файл от подрядчика (КП)"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "email": 1, "export": 1, "share": 1, "report": 1
+    },
+    {
+      "role": "Главный инженер",
+      "read": 1, "write": 1, "create": 1, "print": 1, "report": 1
+    },
+    {
+      "role": "Снабженец",
+      "read": 1, "write": 1, "create": 1, "print": 1, "report": 1
+    }
+  ],
+  "sort_field": "total_amount",
+  "sort_order": "ASC",
+  "naming_rule": "Expression"
+}

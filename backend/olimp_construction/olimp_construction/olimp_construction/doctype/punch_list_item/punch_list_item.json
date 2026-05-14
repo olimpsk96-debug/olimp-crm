@@ -1,0 +1,211 @@
+{
+  "actions": [],
+  "autoname": "format:PL-{YYYY}-{#####}",
+  "creation": "2026-05-13 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "title",
+    "project",
+    "item_type",
+    "urgency",
+    "status",
+    "location",
+    "assignee",
+    "column_break_1",
+    "reported_by",
+    "reported_date",
+    "due_date",
+    "completed_date",
+    "section_break_desc",
+    "description",
+    "solution_notes",
+    "section_break_attach",
+    "photo_before",
+    "photo_after",
+    "column_break_attach",
+    "cost_estimate",
+    "next_reminder_sent"
+  ],
+  "fields": [
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Что нужно сделать",
+      "length": 500,
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "project",
+      "fieldtype": "Link",
+      "label": "Проект",
+      "options": "Construction Project",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "item_type",
+      "fieldtype": "Select",
+      "label": "Тип",
+      "options": "Дефект\nДоделка\nЗамечание заказчика\nКорректировка проекта\nПодготовка к сдаче",
+      "default": "Доделка",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "urgency",
+      "fieldtype": "Select",
+      "label": "Срочность",
+      "options": "Низкая\nСредняя\nВысокая\nКритично",
+      "default": "Средняя",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Статус",
+      "options": "Открыто\nВ работе\nВыполнено\nПринято заказчиком\nОтменено",
+      "default": "Открыто",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "location",
+      "fieldtype": "Data",
+      "label": "Локация (где на объекте)"
+    },
+    {
+      "fieldname": "assignee",
+      "fieldtype": "Data",
+      "label": "Ответственный (ФИО)",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "reported_by",
+      "fieldtype": "Data",
+      "label": "Кем выявлено"
+    },
+    {
+      "fieldname": "reported_date",
+      "fieldtype": "Date",
+      "label": "Дата выявления",
+      "default": "Today"
+    },
+    {
+      "fieldname": "due_date",
+      "fieldtype": "Date",
+      "label": "Срок устранения"
+    },
+    {
+      "fieldname": "completed_date",
+      "fieldtype": "Date",
+      "label": "Дата выполнения",
+      "read_only": 1
+    },
+    {
+      "fieldname": "section_break_desc",
+      "fieldtype": "Section Break",
+      "label": "Описание"
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Small Text",
+      "label": "Описание (что и почему нужно сделать)"
+    },
+    {
+      "fieldname": "solution_notes",
+      "fieldtype": "Small Text",
+      "label": "Что сделано (заполняет исполнитель)"
+    },
+    {
+      "fieldname": "section_break_attach",
+      "fieldtype": "Section Break",
+      "label": "Фото и стоимость"
+    },
+    {
+      "fieldname": "photo_before",
+      "fieldtype": "Attach Image",
+      "label": "Фото до"
+    },
+    {
+      "fieldname": "photo_after",
+      "fieldtype": "Attach Image",
+      "label": "Фото после"
+    },
+    {
+      "fieldname": "column_break_attach",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "cost_estimate",
+      "fieldtype": "Currency",
+      "label": "Стоимость работ, ₽",
+      "precision": "2"
+    },
+    {
+      "fieldname": "next_reminder_sent",
+      "fieldtype": "Date",
+      "hidden": 1
+    }
+  ],
+  "index_web_pages_for_search": 1,
+  "links": [],
+  "modified": "2026-05-13 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Olimp Construction",
+  "name": "Punch List Item",
+  "naming_rule": "Expression",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "create": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Прораб",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "create": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Главный инженер",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "read": 1,
+      "report": 1,
+      "role": "Инженер ОТ-ТБ"
+    }
+  ],
+  "sort_field": "reported_date",
+  "sort_order": "DESC",
+  "states": [],
+  "title_field": "title",
+  "track_changes": 1
+}

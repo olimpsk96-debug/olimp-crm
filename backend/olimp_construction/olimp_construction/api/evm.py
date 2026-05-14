@@ -180,3 +180,112 @@ def _empty_forecast(project: str, reason: str) -> dict:
         "health": {"level": "unknown", "label": "Нет данных", "color": "var(--text-tertiary)"},
         "warnings": [reason],
     }
+
+
+# ───────────────────────── EVM Snapshot / S-curve ───────────────────────────
+
+
+def save_snapshot(project: str) -> str | None:
+    """Сохраняет текущие EVM-метрики проекта в `EVM Snapshot`. Один снимок в день.
+
+    Используется ежедневным cron `save_daily_evm_snapshots()` и при запросе
+    `get_trend(force_refresh=True)`.
+    """
+    fc = get_forecast(project)
+    today_iso = nowdate()
+    name = f"EVMS-{project}-{today_iso}"
+
+    # Если снимок за сегодня уже есть — перезапишем (актуальный конец дня)
+    if frappe.db.exists("EVM Snapshot", name):
+        doc = frappe.get_doc("EVM Snapshot", name)
+    else:
+        doc = frappe.new_doc("EVM Snapshot")
+        doc.project = project
+        doc.snapshot_date = today_iso
+
+    doc.health_level = (fc.get("health") or {}).get("level", "unknown")
+    doc.completion_pct = fc.get("completion_pct", 0)
+    doc.bac = fc.get("bac", 0)
+    doc.ac = fc.get("ac", 0)
+    doc.ev = fc.get("ev", 0)
+    doc.pv = fc.get("pv", 0)
+    doc.eac = fc.get("eac", 0)
+    doc.vac = fc.get("vac", 0)
+    doc.etc = fc.get("etc", 0)
+    doc.cpi = fc.get("cpi", 0)
+    doc.spi = fc.get("spi", 0)
+    doc.tcpi = fc.get("tcpi", 0)
+    doc.save(ignore_permissions=True)
+    return doc.name
+
+
+@frappe.whitelist()
+def save_daily_evm_snapshots() -> dict:
+    """Daily cron: сохраняет EVM-снимки по всем активным проектам.
+
+    Активные = status в ('В работе', 'Запланирован'). Если у проекта не задан
+    `planned_cost`/`contract_amount`, снимок не создаётся (вернётся reason в warnings).
+    """
+    active_statuses = ("В работе", "Запланирован")
+    rows = frappe.get_all(
+        "Construction Project",
+        filters={"status": ["in", active_statuses]},
+        pluck="name",
+    )
+    saved, skipped = [], []
+    for project in rows:
+        try:
+            name = save_snapshot(project)
+            if name:
+                saved.append(name)
+        except Exception as exc:
+            frappe.log_error(f"EVM snapshot failed for {project}: {exc}", "evm_snapshot")
+            skipped.append(project)
+    frappe.db.commit()
+    return {"saved": saved, "skipped": skipped, "count": len(saved)}
+
+
+@frappe.whitelist()
+def get_trend(project: str, days: int = 90) -> dict:
+    """Возвращает историю EVM-снимков за последние N дней для построения S-curve.
+
+    Если за сегодня снимка нет — создаёт его на лету (чтобы график всегда был
+    актуален при первом открытии страницы проекта).
+    """
+    frappe.has_permission("Construction Project", "read", doc=project, throw=True)
+
+    days = int(days) if days else 90
+    if not frappe.db.exists("EVM Snapshot", f"EVMS-{project}-{nowdate()}"):
+        try:
+            save_snapshot(project)
+            frappe.db.commit()
+        except Exception:
+            pass
+
+    rows = frappe.db.sql(
+        """SELECT snapshot_date, bac, ac, ev, pv, eac,
+                  cpi, spi, tcpi, completion_pct, health_level
+             FROM `tabEVM Snapshot`
+            WHERE project = %s
+              AND snapshot_date >= DATE_SUB(CURDATE(), INTERVAL %s DAY)
+            ORDER BY snapshot_date ASC""",
+        (project, days),
+        as_dict=True,
+    )
+    series = [
+        {
+            "date": str(r["snapshot_date"]),
+            "bac": flt(r["bac"]),
+            "ac": flt(r["ac"]),
+            "ev": flt(r["ev"]),
+            "pv": flt(r["pv"]),
+            "eac": flt(r["eac"]),
+            "cpi": flt(r["cpi"]),
+            "spi": flt(r["spi"]),
+            "tcpi": flt(r["tcpi"]),
+            "completion_pct": flt(r["completion_pct"]),
+            "health_level": r["health_level"],
+        }
+        for r in rows
+    ]
+    return {"project": project, "days": days, "count": len(series), "series": series}

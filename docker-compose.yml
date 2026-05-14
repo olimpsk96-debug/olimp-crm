@@ -96,6 +96,17 @@ services:
     ports:
       - "8000:8000"
     entrypoint: ["/scripts/docker-entrypoint-backend.sh"]
+    command:
+      - "/home/frappe/frappe-bench/env/bin/gunicorn"
+      - "--chdir=/home/frappe/frappe-bench/sites"
+      - "--bind=0.0.0.0:8000"
+      - "--threads=4"
+      - "--workers=2"
+      - "--worker-class=gthread"
+      - "--worker-tmp-dir=/dev/shm"
+      - "--timeout=120"
+      - "--preload"
+      - "frappe.app:application"
     depends_on:
       mariadb:
         condition: service_healthy
@@ -113,6 +124,8 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_DIRECTOR_CHAT_ID: ${TELEGRAM_DIRECTOR_CHAT_ID}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      QDRANT_URL: http://qdrant:6333
     volumes:
       - erpnext_sites:/home/frappe/frappe-bench/sites
       - erpnext_assets:/home/frappe/frappe-bench/assets

@@ -1,0 +1,194 @@
+{
+  "name": "Subcontract Bid Request",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "format:BR-{YYYY}-{#####}",
+  "title_field": "title",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Что отправляем на тендер",
+      "reqd": 1,
+      "in_list_view": 1,
+      "bold": 1,
+      "description": "Например: «АКЗ резервуара РВС-1000 — пескоструй + грунт + эмаль»"
+    },
+    {
+      "fieldname": "project",
+      "fieldtype": "Link",
+      "label": "Проект",
+      "options": "Construction Project",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "estimate",
+      "fieldtype": "Link",
+      "label": "Смета (источник)",
+      "options": "Estimate"
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Статус",
+      "options": "Черновик\nОтправлено\nПриём предложений\nСравнение\nПрисуждён\nОтменён",
+      "default": "Черновик",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "work_type",
+      "fieldtype": "Select",
+      "label": "Вид работ",
+      "options": "\nАКЗ\nКровля\nПромальп\nМонолит\nУсиление\nКомплексный",
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "section_break_dates",
+      "fieldtype": "Section Break",
+      "label": "Сроки"
+    },
+    {
+      "fieldname": "sent_date",
+      "fieldtype": "Date",
+      "label": "Дата отправки"
+    },
+    {
+      "fieldname": "deadline_date",
+      "fieldtype": "Date",
+      "label": "Дедлайн приёма предложений",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "column_break_dates",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "work_start_date",
+      "fieldtype": "Date",
+      "label": "Желаемое начало работ"
+    },
+    {
+      "fieldname": "work_end_date",
+      "fieldtype": "Date",
+      "label": "Желаемое окончание"
+    },
+    {
+      "fieldname": "section_break_amounts",
+      "fieldtype": "Section Break",
+      "label": "Финансы (авто)"
+    },
+    {
+      "fieldname": "total_target_amount",
+      "fieldtype": "Currency",
+      "label": "Наша оценка, ₽",
+      "read_only": 1,
+      "precision": "2",
+      "description": "Сумма наших ед.цен по позициям — целевой бюджет на субподряд"
+    },
+    {
+      "fieldname": "best_proposal_amount",
+      "fieldtype": "Currency",
+      "label": "Лучшее предложение, ₽",
+      "read_only": 1,
+      "precision": "2"
+    },
+    {
+      "fieldname": "column_break_amounts",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "savings_amount",
+      "fieldtype": "Currency",
+      "label": "Экономия, ₽",
+      "read_only": 1,
+      "precision": "2"
+    },
+    {
+      "fieldname": "savings_pct",
+      "fieldtype": "Percent",
+      "label": "Экономия, %",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "awarded_to",
+      "fieldtype": "Link",
+      "label": "Победитель (Supplier)",
+      "options": "Supplier",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "section_break_items",
+      "fieldtype": "Section Break",
+      "label": "Позиции для тендера"
+    },
+    {
+      "fieldname": "items",
+      "fieldtype": "Table",
+      "label": "Позиции",
+      "options": "Subcontract Bid Item",
+      "reqd": 1
+    },
+    {
+      "fieldname": "section_break_desc",
+      "fieldtype": "Section Break",
+      "label": "Описание для подрядчиков"
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Text Editor",
+      "label": "Условия и требования"
+    },
+    {
+      "fieldname": "section_break_meta",
+      "fieldtype": "Section Break",
+      "label": "Сводка по предложениям"
+    },
+    {
+      "fieldname": "proposals_count",
+      "fieldtype": "Int",
+      "label": "Получено предложений",
+      "read_only": 1
+    },
+    {
+      "fieldname": "column_break_meta",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "created_by_full_name",
+      "fieldtype": "Data",
+      "label": "Кем создан (ФИО)"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "email": 1, "export": 1, "share": 1, "report": 1
+    },
+    {
+      "role": "Главный инженер",
+      "read": 1, "write": 1, "create": 1, "print": 1, "report": 1
+    },
+    {
+      "role": "Снабженец",
+      "read": 1, "write": 1, "create": 1, "print": 1, "report": 1
+    },
+    {
+      "role": "Тендерный менеджер",
+      "read": 1, "report": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "naming_rule": "Expression"
+}

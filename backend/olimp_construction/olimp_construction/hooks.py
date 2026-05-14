@@ -238,6 +238,8 @@ scheduler_events = {
         "olimp_construction.tasks.check_safety_clearance_expiry",
         "olimp_construction.tasks.check_crm_followups",
         "olimp_construction.api.certification.check_certification_expiry",
+        "olimp_construction.api.evm.save_daily_evm_snapshots",
+        "olimp_construction.tasks.check_punch_list_overdue",
     ],
     "weekly": [
         "olimp_construction.tasks.update_customer_payment_patterns",
@@ -246,6 +248,9 @@ scheduler_events = {
     "cron": {
         "0 * * * *": [  # раз в час
             "olimp_construction.tasks.run_ai_recommendation_engine",
+        ],
+        "0 9 * * *": [  # 09:00 МСК — утренняя сводка директору
+            "olimp_construction.tasks.send_daily_director_digest",
         ],
     },
 }

@@ -152,6 +152,11 @@ PRINT_FORMATS = [
         "doc_type": "KS3 Act",
         "file": "kc_3_official/kc_3_official.html",
     },
+    {
+        "name": "КС-6 (общий журнал работ)",
+        "doc_type": "Work Log",
+        "file": "kc_6_official/kc_6_official.html",
+    },
 ]
 
 

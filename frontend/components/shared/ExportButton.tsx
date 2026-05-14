@@ -1,7 +1,7 @@
 "use client";
 
 interface Props {
-  spec: "tenders" | "projects" | "estimates" | "stock" | "certifications" | "ks2";
+  spec: "tenders" | "projects" | "estimates" | "stock" | "certifications" | "ks2" | "worklog";
   label?: string;
 }
 

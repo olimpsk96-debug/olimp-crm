@@ -8,10 +8,11 @@
 """
 from __future__ import annotations
 
+import os
 from datetime import timedelta
 
 import frappe
-from frappe.utils import add_days, flt, getdate, now_datetime
+from frappe.utils import add_days, flt, getdate, now_datetime, nowdate
 
 from olimp_construction.telegram_utils import (
     STATUSES_ACTIVE,
@@ -297,6 +298,79 @@ def run_ai_recommendation_engine() -> None:
     # Реализация в следующей итерации
 
 
+# ────────────────────────────── Punch List ───────────────────────────────────
+
+
+def check_punch_list_overdue() -> None:
+    """Daily: сводный Telegram о просроченных доделках.
+
+    Берёт все Punch List Item со status IN ('Открыто','В работе') и due_date < today.
+    Чтобы не спамить ежедневно — для каждого item смотрим next_reminder_sent:
+    напоминание уходит только если оно либо null, либо отправлено более 7 дней назад.
+    После успешной отправки next_reminder_sent проставляется в today.
+    """
+    try:
+        if not frappe.db.exists("DocType", "Punch List Item"):
+            frappe.logger().info("check_punch_list_overdue: DocType отсутствует — пропуск")
+            return
+
+        today_d = getdate()
+        cutoff = add_days(today_d, -7)  # напоминаем не чаще раза в неделю
+
+        items = frappe.db.sql(
+            """
+            SELECT name, title, assignee, due_date, urgency, project,
+                   next_reminder_sent
+            FROM `tabPunch List Item`
+            WHERE status IN ('Открыто', 'В работе')
+              AND due_date IS NOT NULL
+              AND due_date < %(today)s
+              AND (next_reminder_sent IS NULL OR next_reminder_sent <= %(cutoff)s)
+            ORDER BY due_date ASC
+            """,
+            {"today": str(today_d), "cutoff": str(cutoff)},
+            as_dict=True,
+        )
+
+        if not items:
+            frappe.logger().info("check_punch_list_overdue: 0 items requiring reminder")
+            return
+
+        lines: list[str] = [f"⚠️ <b>Просроченные доделки ({len(items)})</b>", ""]
+        for it in items[:20]:  # ограничение чтобы не разрывать Telegram-сообщение
+            days = (today_d - getdate(it["due_date"])).days
+            assignee = it.get("assignee") or "—"
+            urgency = it.get("urgency") or ""
+            urgency_mark = "🔴 " if urgency == "Критично" else ""
+            lines.append(
+                f"• {urgency_mark}{it['name']} — {it['title']} "
+                f"— отв. {assignee} — просрочено {days} {_days_word(days)}"
+            )
+
+        if len(items) > 20:
+            lines.append(f"\n…и ещё {len(items) - 20}")
+
+        text = "\n".join(lines)
+        sent = send_message(text)
+
+        # Обновляем next_reminder_sent чтобы не спамить ежедневно
+        if sent:
+            for it in items:
+                frappe.db.set_value(
+                    "Punch List Item", it["name"], "next_reminder_sent", str(today_d),
+                    update_modified=False,
+                )
+            frappe.db.commit()
+
+        frappe.logger().info(
+            f"Punch List overdue: {len(items)} items — "
+            f"{'отправлено' if sent else 'не отправлено (нет токена)'}"
+        )
+
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "check_punch_list_overdue")
+
+
 # ────────────────────────────── Маржа проекта ───────────────────────────────
 
 
@@ -380,6 +454,257 @@ def on_material_request_update_recalc_project(doc, method: str | None = None) ->
         recalculate_project_margin(proj)
     except Exception:
         frappe.log_error(frappe.get_traceback(), "on_material_request_update_recalc_project")
+
+
+# ────────────────────────────── Daily director digest ───────────────────────
+
+
+def _collect_hot_tenders() -> list[str]:
+    """Тендеры с дедлайном ≤ 3 дня и активным статусом."""
+    try:
+        today = getdate(nowdate())
+        cutoff = add_days(today, 3)
+        tenders = frappe.get_all(
+            "Tender",
+            filters={
+                "deadline_date": ["between", [today, cutoff]],
+                "status": ["in", list(STATUSES_ACTIVE)],
+            },
+            fields=["name", "title", "nmck", "deadline_date"],
+            order_by="deadline_date asc",
+        )
+        lines: list[str] = []
+        for t in tenders:
+            dl = t.get("deadline_date")
+            days_left = (getdate(dl) - today).days if dl else 0
+            nmck = t.get("nmck") or 0
+            nmck_fmt = f"{nmck / 1_000_000:.1f} млн ₽" if nmck else "—"
+            title = (t.get("title") or "").strip() or "—"
+            if len(title) > 60:
+                title = title[:57] + "…"
+            days_word = _days_word(days_left) if days_left > 0 else "сегодня"
+            days_part = f"{days_left} {days_word}" if days_left > 0 else "сегодня"
+            lines.append(f"• {t['name']} — {title} — {days_part} / {nmck_fmt}")
+        return lines
+    except Exception:
+        frappe.logger().warning(
+            f"digest _collect_hot_tenders failed: {frappe.get_traceback()}"
+        )
+        return []
+
+
+def _collect_red_evm() -> list[str]:
+    """Проекты с последним EVM Snapshot в красной зоне."""
+    try:
+        if not frappe.db.exists("DocType", "EVM Snapshot"):
+            return []
+        today = getdate(nowdate())
+        yesterday = add_days(today, -1)
+        # Берём последний снимок на проект (LATEST per project), при условии что
+        # его дата вчера/сегодня и health_level в красной зоне.
+        rows = frappe.db.sql(
+            """SELECT s.project, s.cpi, s.spi, s.health_level, s.snapshot_date
+               FROM `tabEVM Snapshot` s
+               INNER JOIN (
+                   SELECT project, MAX(snapshot_date) AS max_date
+                   FROM `tabEVM Snapshot`
+                   GROUP BY project
+               ) latest
+                 ON latest.project = s.project
+                AND latest.max_date = s.snapshot_date
+               WHERE s.snapshot_date IN (%s, %s)
+                 AND s.health_level IN ('warning', 'critical', 'disaster')
+               ORDER BY FIELD(s.health_level, 'disaster', 'critical', 'warning'),
+                        s.project ASC""",
+            (str(yesterday), str(today)),
+            as_dict=True,
+        )
+        labels = {
+            "warning": "warning",
+            "critical": "critical",
+            "disaster": "disaster",
+        }
+        lines: list[str] = []
+        for r in rows:
+            cpi = flt(r.get("cpi") or 0)
+            spi = flt(r.get("spi") or 0)
+            label = labels.get(r.get("health_level"), r.get("health_level") or "—")
+            lines.append(
+                f"• {r['project']} — CPI {cpi:.2f} / SPI {spi:.2f} — {label}"
+            )
+        return lines
+    except Exception:
+        frappe.logger().warning(
+            f"digest _collect_red_evm failed: {frappe.get_traceback()}"
+        )
+        return []
+
+
+def _collect_overdue_meeting_items() -> list[str]:
+    """Просроченные поручения с планёрок."""
+    try:
+        if not frappe.db.exists("DocType", "Meeting Item"):
+            return []
+        today = getdate(nowdate())
+        rows = frappe.db.sql(
+            """SELECT mi.topic, mi.responsible, mi.due_date, mi.status,
+                      mi.parent, DATEDIFF(%s, mi.due_date) AS days_overdue
+               FROM `tabMeeting Item` mi
+               INNER JOIN `tabMeeting` m ON m.name = mi.parent
+               WHERE mi.parenttype = 'Meeting'
+                 AND mi.status IN ('Открыто', 'В работе')
+                 AND mi.due_date IS NOT NULL
+                 AND mi.due_date < %s
+               ORDER BY mi.due_date ASC
+               LIMIT 10""",
+            (str(today), str(today)),
+            as_dict=True,
+        )
+        lines: list[str] = []
+        for r in rows:
+            topic = (r.get("topic") or "").strip() or "—"
+            if len(topic) > 60:
+                topic = topic[:57] + "…"
+            resp = (r.get("responsible") or "").strip() or "—"
+            days = int(r.get("days_overdue") or 0)
+            days_word = _days_word(days) if days > 0 else "день"
+            lines.append(
+                f"• {topic} — отв. {resp} — просрочено {days} {days_word}"
+            )
+        return lines
+    except Exception:
+        frappe.logger().warning(
+            f"digest _collect_overdue_meeting_items failed: {frappe.get_traceback()}"
+        )
+        return []
+
+
+def _collect_expiring_certs() -> list[str]:
+    """Аттестации с истечением в ближайшие 30 дней."""
+    try:
+        if not frappe.db.exists("DocType", "Employee Certification"):
+            return []
+        today = getdate(nowdate())
+        cutoff = add_days(today, 30)
+        rows = frappe.get_all(
+            "Employee Certification",
+            filters={
+                "expiry_date": ["between", [today, cutoff]],
+                "status": ["!=", "Архив"],
+            },
+            fields=["employee_name", "cert_type", "expiry_date"],
+            order_by="expiry_date asc",
+            limit=15,
+        )
+        lines: list[str] = []
+        for r in rows:
+            emp = (r.get("employee_name") or "—").strip()
+            cert = (r.get("cert_type") or "—").strip()
+            exp = r.get("expiry_date")
+            exp_fmt = getdate(exp).strftime("%d.%m.%Y") if exp else "—"
+            lines.append(f"• {emp} — {cert} до {exp_fmt}")
+        return lines
+    except Exception:
+        frappe.logger().warning(
+            f"digest _collect_expiring_certs failed: {frappe.get_traceback()}"
+        )
+        return []
+
+
+def _collect_stuck_material_requests() -> list[str]:
+    """Заявки со статусом «Закупается» поданные ≥ 14 дней назад."""
+    try:
+        if not frappe.db.exists("DocType", "Material Request"):
+            return []
+        today = getdate(nowdate())
+        cutoff = add_days(today, -14)
+        rows = frappe.db.sql(
+            """SELECT name, title, creation,
+                      DATEDIFF(%s, DATE(creation)) AS days_old
+               FROM `tabMaterial Request`
+               WHERE status = 'Закупается'
+                 AND DATE(creation) <= %s
+               ORDER BY creation ASC
+               LIMIT 10""",
+            (str(today), str(cutoff)),
+            as_dict=True,
+        )
+        lines: list[str] = []
+        for r in rows:
+            title = (r.get("title") or "").strip() or "—"
+            if len(title) > 60:
+                title = title[:57] + "…"
+            days = int(r.get("days_old") or 0)
+            days_word = _days_word(days)
+            lines.append(f"• {r['name']} — {title} — {days} {days_word} с подачи")
+        return lines
+    except Exception:
+        frappe.logger().warning(
+            f"digest _collect_stuck_material_requests failed: {frappe.get_traceback()}"
+        )
+        return []
+
+
+@frappe.whitelist()
+def send_daily_director_digest() -> dict:
+    """Daily 09:00 МСК: собирает утреннюю Telegram-сводку для директора.
+
+    Возвращает dict с информацией о том, что было собрано и отправлено
+    (полезно для ручного тестирования через API).
+    """
+    today = getdate(nowdate())
+    today_fmt = today.strftime("%d.%m.%Y")
+
+    sections: list[tuple[str, list[str]]] = [
+        ("🔥 <b>Горящие тендеры</b>", _collect_hot_tenders()),
+        ("📉 <b>Проекты в красной зоне EVM</b>", _collect_red_evm()),
+        ("📋 <b>Просроченные поручения с планёрок</b>", _collect_overdue_meeting_items()),
+        ("⏰ <b>Аттестации к продлению</b>", _collect_expiring_certs()),
+        ("📦 <b>Заявки в работе на склад</b>", _collect_stuck_material_requests()),
+    ]
+
+    counts = {
+        "hot_tenders": len(sections[0][1]),
+        "red_evm": len(sections[1][1]),
+        "overdue_meeting_items": len(sections[2][1]),
+        "expiring_certs": len(sections[3][1]),
+        "stuck_material_requests": len(sections[4][1]),
+    }
+
+    chat_id = os.getenv("TELEGRAM_DIRECTOR_CHAT_ID") or frappe.conf.get(
+        "telegram_director_chat_id"
+    )
+
+    if not any(lines for _label, lines in sections):
+        text = (
+            f"<b>📊 Сводка на {today_fmt}</b>\n\n"
+            f"✓ Утро тихое. Горящих задач нет."
+        )
+        sent = send_message(text, chat_id=chat_id)
+        frappe.logger().info(
+            f"director digest ({today_fmt}): empty — "
+            f"{'отправлено' if sent else 'не отправлено'}"
+        )
+        return {"ok": True, "empty": True, "sent": sent, "counts": counts}
+
+    parts: list[str] = [f"<b>📊 Сводка на {today_fmt}</b>"]
+    for label, lines in sections:
+        if not lines:
+            continue
+        parts.append("")
+        parts.append(label)
+        parts.extend(lines)
+
+    text = "\n".join(parts)
+    sent = send_message(text, chat_id=chat_id)
+    frappe.logger().info(
+        f"director digest ({today_fmt}): "
+        f"hot={counts['hot_tenders']} evm={counts['red_evm']} "
+        f"meeting={counts['overdue_meeting_items']} certs={counts['expiring_certs']} "
+        f"mr={counts['stuck_material_requests']} — "
+        f"{'отправлено' if sent else 'не отправлено'}"
+    )
+    return {"ok": True, "empty": False, "sent": sent, "counts": counts}
 
 
 # ────────────────────────────── Helpers ─────────────────────────────────────

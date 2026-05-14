@@ -90,7 +90,7 @@ def get_detail(name: str) -> dict:
         "Material Request",
         filters={"project": name},
         fields=["name", "title", "status", "total_estimated", "needed_by_date"],
-        order_by="modified desc",
+        order_by="`tabMaterial Request`.modified desc",
     )
     supply_total = sum(flt(s.get("total_estimated", 0)) for s in supply if s["status"] in ("Одобрена", "Закупается", "Получена"))
 

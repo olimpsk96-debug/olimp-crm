@@ -1,0 +1,206 @@
+{%- macro fmt_date(value) -%}
+{%- if value -%}{{ frappe.utils.formatdate(value, "dd.MM.yyyy") }}{%- else -%}&mdash;{%- endif -%}
+{%- endmacro -%}
+{%- macro yesno(value) -%}
+{%- if value -%}да{%- else -%}&mdash;{%- endif -%}
+{%- endmacro -%}
+
+<style>
+  @page { size: A4 landscape; margin: 1.2cm; }
+  body, .print-format { font-family: "Times New Roman", Times, serif; font-size: 9pt; color: #000; }
+  .kc6-page { width: 100%; }
+  h1.title {
+    text-align: center; font-size: 14pt; font-weight: 700;
+    margin: 6px 0 4px 0; letter-spacing: 0.5pt;
+  }
+  .subtitle { text-align: center; font-size: 9pt; margin-bottom: 14px; color: #222; }
+  .reg-note {
+    text-align: center; font-size: 8pt; color: #555; margin-bottom: 18px;
+  }
+  .title-block { margin-top: 18px; }
+  .title-block table { width: 100%; border-collapse: collapse; }
+  .title-block td { padding: 2px 4px; vertical-align: bottom; font-size: 10pt; }
+  .title-block .lbl { text-align: right; font-size: 8pt; color: #444; padding-right: 6px; white-space: nowrap; }
+  .title-block .val { border-bottom: 1px solid #000; }
+  .section-header {
+    text-align: center; font-weight: 700; font-size: 10pt;
+    margin: 18px 0 4px 0; text-transform: uppercase;
+  }
+  table.entries { width: 100%; border-collapse: collapse; margin-top: 6px; }
+  table.entries th, table.entries td {
+    border: 1px solid #000; padding: 4px 6px; font-size: 8.5pt; vertical-align: top;
+  }
+  table.entries th { background: #f0f0f0; font-weight: 700; text-align: center; }
+  table.entries td.c { text-align: center; }
+  table.entries td.flags { text-align: center; font-size: 8pt; }
+  table.entries td.desc { font-size: 8.5pt; }
+  table.entries td.muted { color: #555; font-size: 7.5pt; }
+  .summary {
+    margin-top: 16px; border: 1px solid #000; padding: 8px 12px;
+    font-size: 9pt;
+  }
+  .summary .row { display: block; margin: 2px 0; }
+  .summary b { font-weight: 700; }
+  .signatures { margin-top: 28px; width: 100%; border-collapse: collapse; }
+  .signatures td { width: 33%; padding: 8px 12px; font-size: 9pt; vertical-align: top; }
+  .signatures .role { font-weight: 700; margin-bottom: 16px; }
+  .sig-line { border-bottom: 1px solid #000; min-height: 14px; display: inline-block; min-width: 160px; }
+  .sig-caption { font-size: 7.5pt; color: #555; }
+  .mp { font-size: 8pt; color: #777; margin-top: 18px; }
+  .page-break { page-break-before: always; }
+</style>
+
+<div class="kc6-page">
+
+  <h1 class="title">ОБЩИЙ ЖУРНАЛ РАБОТ № {{ doc.name }}</h1>
+  <div class="subtitle">по строительству / реконструкции / капитальному ремонту объекта</div>
+  <div class="reg-note">
+    (форма по РД-11-05-2007, приказ Ростехнадзора № 7 от 12.01.2007 — общий журнал работ)
+  </div>
+
+  <div class="title-block">
+    <table>
+      <tr>
+        <td class="lbl" style="width: 22%;">Наименование объекта:</td>
+        <td class="val">{{ doc.title or "&nbsp;" }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Стройка (проект):</td>
+        <td class="val">{{ project_title or doc.project or "&nbsp;" }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Адрес стройки:</td>
+        <td class="val">{{ project_address or "&nbsp;" }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Застройщик (заказчик):</td>
+        <td class="val">{{ doc.customer_name or "&nbsp;" }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Представитель заказчика (тех.надзор):</td>
+        <td class="val">{{ doc.customer_representative or "&nbsp;" }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Лицо, осуществляющее строительство:</td>
+        <td class="val">{{ doc.contractor_name or "ООО «Олимп»" }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Ответственный производитель работ:</td>
+        <td class="val">{{ doc.contractor_responsible or "&nbsp;" }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Дата начала ведения журнала:</td>
+        <td class="val">{{ fmt_date(doc.started_date) }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Дата окончания ведения журнала:</td>
+        <td class="val">{{ fmt_date(doc.finished_date) }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Статус журнала:</td>
+        <td class="val">{{ doc.status or "&nbsp;" }}</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="summary">
+    <span class="row"><b>Сводка по журналу:</b></span>
+    <span class="row">Всего записей: <b>{{ doc.entries_count or 0 }}</b>
+      &nbsp;&nbsp; Чел.-дней: <b>{{ doc.total_workers_days or 0 }}</b>
+      &nbsp;&nbsp; Замечаний: <b>{{ doc.issues_count or 0 }}</b>
+      &nbsp;&nbsp; Скрытых работ (требуют акта): <b>{{ doc.hidden_works_count or 0 }}</b>
+    </span>
+  </div>
+
+  <div class="page-break"></div>
+
+  <div class="section-header">Раздел 3. Сведения о выполнении работ в процессе строительства</div>
+
+  <table class="entries">
+    <thead>
+      <tr>
+        <th style="width: 3%;">№<br>п/п</th>
+        <th style="width: 7%;">Дата</th>
+        <th style="width: 9%;">Метеоусловия<br>(погода / T°C / ветер)</th>
+        <th style="width: 7%;">Смена /<br>рабочих</th>
+        <th style="width: 32%;">Краткое описание выполненных работ,<br>объём, применённые материалы и техника</th>
+        <th style="width: 10%;">Ответственное<br>лицо</th>
+        <th style="width: 7%;">Скрытые<br>работы</th>
+        <th style="width: 15%;">Замечания технадзора /<br>отклонения от проекта</th>
+        <th style="width: 10%;">Подпись<br>технадзора</th>
+      </tr>
+      <tr>
+        <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th>
+      </tr>
+    </thead>
+    <tbody>
+      {%- set ns = namespace(idx=0) -%}
+      {%- for entry in (doc.entries or []) %}
+        {%- set ns.idx = ns.idx + 1 -%}
+        <tr>
+          <td class="c">{{ ns.idx }}</td>
+          <td class="c">{{ fmt_date(entry.entry_date) }}</td>
+          <td class="c">
+            {{ entry.weather or "&mdash;" }}<br>
+            {% if entry.temperature_c is not none and entry.temperature_c != 0 %}
+              {{ entry.temperature_c }}°C
+            {% endif %}
+            {% if entry.wind_ms %}<br>{{ "%.1f"|format(entry.wind_ms) }} м/с{% endif %}
+          </td>
+          <td class="c">
+            {{ entry.shift or "&mdash;" }}<br>
+            {{ entry.workers_count or 0 }} чел.
+          </td>
+          <td class="desc">
+            <b>{{ entry.works_description or "&mdash;" }}</b>
+            {% if entry.volume_done %}<br><span class="muted">Объём:</span> {{ entry.volume_done }}{% endif %}
+            {% if entry.equipment_used %}<br><span class="muted">Техника:</span> {{ entry.equipment_used }}{% endif %}
+            {% if entry.materials_used %}<br><span class="muted">Материалы:</span> {{ entry.materials_used }}{% endif %}
+          </td>
+          <td class="c">{{ entry.responsible or "&mdash;" }}</td>
+          <td class="flags">{{ yesno(entry.hidden_works) }}</td>
+          <td>
+            {% if entry.has_issues %}
+              {{ entry.issues_description or "есть замечания" }}
+            {% else %}
+              <span class="muted">&mdash;</span>
+            {% endif %}
+          </td>
+          <td class="c">{{ yesno(entry.inspector_signed) }}</td>
+        </tr>
+      {%- endfor %}
+      {% if not (doc.entries or []) %}
+        <tr>
+          <td colspan="9" class="c muted" style="padding: 20px;">записи в журнале отсутствуют</td>
+        </tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+  <table class="signatures">
+    <tr>
+      <td>
+        <div class="role">Ответственный производитель работ:</div>
+        <div>{{ doc.contractor_responsible or "&nbsp;" }}</div>
+        <div><span class="sig-line">&nbsp;</span></div>
+        <div class="sig-caption">подпись / расшифровка / дата</div>
+        <div class="mp">М.П.</div>
+      </td>
+      <td>
+        <div class="role">Представитель технадзора заказчика:</div>
+        <div>{{ doc.customer_representative or "&nbsp;" }}</div>
+        <div><span class="sig-line">&nbsp;</span></div>
+        <div class="sig-caption">подпись / расшифровка / дата</div>
+        <div class="mp">М.П.</div>
+      </td>
+      <td>
+        <div class="role">Журнал передан:</div>
+        <div>{{ doc.customer_name or "&nbsp;" }}</div>
+        <div><span class="sig-line">&nbsp;</span></div>
+        <div class="sig-caption">подпись / расшифровка / дата</div>
+        <div class="mp">М.П.</div>
+      </td>
+    </tr>
+  </table>
+
+</div>

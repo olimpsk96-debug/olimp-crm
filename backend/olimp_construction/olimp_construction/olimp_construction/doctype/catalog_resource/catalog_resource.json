@@ -124,6 +124,49 @@
       "label": "Категория"
     },
     {
+      "fieldname": "section_break_norms",
+      "fieldtype": "Section Break",
+      "label": "Нормативная часть (CWICR)",
+      "description": "Заполняется из расширенного импорта CWICR (поля labor/machine/energy)"
+    },
+    {
+      "fieldname": "labor_hours_per_unit",
+      "fieldtype": "Float",
+      "label": "Чел.-час / ед.",
+      "precision": "3",
+      "description": "Трудозатраты основных рабочих на единицу измерения"
+    },
+    {
+      "fieldname": "workers_count_per_unit",
+      "fieldtype": "Float",
+      "label": "Звено (чел.) / ед.",
+      "precision": "2",
+      "description": "Численность звена/бригады, выполняющего единицу работ"
+    },
+    {
+      "fieldname": "column_break_norms",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "machine_hours_per_unit",
+      "fieldtype": "Float",
+      "label": "Маш.-час / ед.",
+      "precision": "3",
+      "description": "Машинные часы основной техники на единицу работ"
+    },
+    {
+      "fieldname": "electricity_kwh_per_unit",
+      "fieldtype": "Float",
+      "label": "Электроэн. кВт·ч / ед.",
+      "precision": "3"
+    },
+    {
+      "fieldname": "machine_class_name",
+      "fieldtype": "Data",
+      "label": "Класс машин/оборудования",
+      "length": 200
+    },
+    {
       "fieldname": "section_break_usage",
       "fieldtype": "Section Break",
       "label": "Статистика использования"

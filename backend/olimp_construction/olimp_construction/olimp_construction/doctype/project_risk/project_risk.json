@@ -1,0 +1,189 @@
+{
+  "name": "Project Risk",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "format:RISK-{YYYY}-{#####}",
+  "title_field": "title",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Название риска",
+      "reqd": 1,
+      "in_list_view": 1,
+      "bold": 1,
+      "description": "Кратко: «Срыв поставки металла», «Дождливое лето», «Отказ подрядчика»"
+    },
+    {
+      "fieldname": "project",
+      "fieldtype": "Link",
+      "label": "Проект",
+      "options": "Construction Project",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "category",
+      "fieldtype": "Select",
+      "label": "Категория",
+      "options": "Финансовый\nТехнический\nСрочный\nКачество\nБезопасность\nРегуляторный\nПоставщик\nЗаказчик\nПогодный",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Статус",
+      "options": "Открыт\nВ работе\nСнижен\nЗакрыт\nРеализовался",
+      "default": "Открыт",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "owner_full_name",
+      "fieldtype": "Data",
+      "label": "Ответственный (ФИО)"
+    },
+    {
+      "fieldname": "detected_date",
+      "fieldtype": "Date",
+      "label": "Дата выявления",
+      "default": "Today"
+    },
+    {
+      "fieldname": "target_resolution_date",
+      "fieldtype": "Date",
+      "label": "Целевая дата закрытия"
+    },
+    {
+      "fieldname": "section_break_assessment",
+      "fieldtype": "Section Break",
+      "label": "Оценка"
+    },
+    {
+      "fieldname": "probability",
+      "fieldtype": "Select",
+      "label": "Вероятность",
+      "options": "1 — Очень низкая\n2 — Низкая\n3 — Средняя\n4 — Высокая\n5 — Очень высокая",
+      "default": "3 — Средняя",
+      "reqd": 1,
+      "in_list_view": 1,
+      "description": "1-5 от ВН до ВВ"
+    },
+    {
+      "fieldname": "impact",
+      "fieldtype": "Select",
+      "label": "Влияние",
+      "options": "1 — Минимальное\n2 — Низкое\n3 — Среднее\n4 — Высокое\n5 — Критическое",
+      "default": "3 — Среднее",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "risk_score",
+      "fieldtype": "Int",
+      "label": "Балл риска (P × I)",
+      "read_only": 1,
+      "in_list_view": 1,
+      "description": "От 1 до 25. Зона КРАСНАЯ: ≥15, ЖЁЛТАЯ: 8-14, ЗЕЛЁНАЯ: <8"
+    },
+    {
+      "fieldname": "column_break_assessment",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "impact_amount",
+      "fieldtype": "Currency",
+      "label": "Финансовый импакт, ₽",
+      "precision": "2",
+      "description": "Оценка потерь если риск реализуется (max-case)"
+    },
+    {
+      "fieldname": "contingency_amount",
+      "fieldtype": "Currency",
+      "label": "Резерв (контингенция), ₽",
+      "read_only": 1,
+      "precision": "2",
+      "in_list_view": 1,
+      "description": "= импакт × вероятность / 5 (ожидаемая стоимость риска)"
+    },
+    {
+      "fieldname": "section_break_response",
+      "fieldtype": "Section Break",
+      "label": "Реакция"
+    },
+    {
+      "fieldname": "response_strategy",
+      "fieldtype": "Select",
+      "label": "Стратегия",
+      "options": "Принять\nСнизить\nПередать\nИзбежать",
+      "default": "Снизить",
+      "description": "Принять = живём с риском; Снизить = меры; Передать = страховка/субподряд; Избежать = пересмотр объёма"
+    },
+    {
+      "fieldname": "mitigation_plan",
+      "fieldtype": "Small Text",
+      "label": "План снижения",
+      "description": "Что делаем чтобы риск не реализовался"
+    },
+    {
+      "fieldname": "column_break_response",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "trigger_events",
+      "fieldtype": "Small Text",
+      "label": "Индикаторы (триггеры)",
+      "description": "Что покажет что риск разворачивается (отслеживаемые события)"
+    },
+    {
+      "fieldname": "actual_outcome",
+      "fieldtype": "Small Text",
+      "label": "Фактический исход",
+      "description": "Заполняется при статусе «Закрыт» или «Реализовался»"
+    },
+    {
+      "fieldname": "section_break_extra",
+      "fieldtype": "Section Break",
+      "label": "Дополнительно"
+    },
+    {
+      "fieldname": "linked_estimate",
+      "fieldtype": "Link",
+      "label": "Связь со сметой",
+      "options": "Estimate",
+      "description": "Куда применили контингенцию (при использовании «Применить в смету»)"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Text",
+      "label": "Заметки"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "email": 1, "export": 1, "share": 1, "report": 1
+    },
+    {
+      "role": "Главный инженер",
+      "read": 1, "write": 1, "create": 1, "delete": 1, "print": 1, "report": 1
+    },
+    {
+      "role": "Тендерный менеджер",
+      "read": 1, "write": 1, "create": 1, "report": 1
+    }
+  ],
+  "sort_field": "risk_score",
+  "sort_order": "DESC",
+  "naming_rule": "Expression"
+}

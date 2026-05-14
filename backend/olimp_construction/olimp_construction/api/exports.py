@@ -20,6 +20,7 @@ from openpyxl.utils import get_column_letter
 
 KS2_PRINT_FORMAT = "КС-2 (унифицированная форма)"
 KS3_PRINT_FORMAT = "КС-3 (унифицированная форма)"
+KC6_PRINT_FORMAT = "КС-6 (общий журнал работ)"
 
 
 def _fmt_money(value) -> str:
@@ -41,20 +42,25 @@ def _fmt_date(value) -> str:
 
 
 def _render_html(doctype: str, name: str, print_format: str) -> str:
-    """Рендерит Print Format в HTML с подмешиванием project_title."""
+    """Рендерит Print Format в HTML с подмешиванием project_title и project_address."""
     if not frappe.db.exists("Print Format", print_format):
         frappe.throw(_(f"Print Format «{print_format}» не найден. Запустите setup_print_formats()."))
 
     doc = frappe.get_doc(doctype, name)
     project_title = ""
+    project_address = ""
     if doc.get("project") and frappe.db.exists("Construction Project", doc.project):
-        project_title = frappe.db.get_value("Construction Project", doc.project, "title") or doc.project
+        project_title, project_address = frappe.db.get_value(
+            "Construction Project", doc.project, ["title", "location"]
+        ) or ("", "")
+        project_title = project_title or doc.project
 
     pf = frappe.get_doc("Print Format", print_format)
     template = pf.html or ""
     rendered = frappe.render_template(template, {
         "doc": doc,
         "project_title": project_title,
+        "project_address": project_address,
         "frappe": frappe,
     })
 
@@ -70,11 +76,11 @@ def _render_html(doctype: str, name: str, print_format: str) -> str:
 """
 
 
-def _pdf_response(html: str, filename: str) -> None:
+def _pdf_response(html: str, filename: str, orientation: str = "Landscape") -> None:
     """Возвращает PDF клиенту через Frappe response."""
     pdf_bytes = get_pdf(html, options={
         "page-size": "A4",
-        "orientation": "Landscape" if "0322005" in html or "КС-2" in filename else "Portrait",
+        "orientation": orientation,
         "margin-top": "10mm",
         "margin-bottom": "10mm",
         "margin-left": "10mm",
@@ -92,7 +98,7 @@ def ks2_pdf(name: str) -> None:
     """Скачивание PDF КС-2 в гос.форме."""
     frappe.has_permission("KS2 Act", "read", doc=name, throw=True)
     html = _render_html("KS2 Act", name, KS2_PRINT_FORMAT)
-    _pdf_response(html, f"KS-2_{name}.pdf")
+    _pdf_response(html, f"KS-2_{name}.pdf", orientation="Landscape")
 
 
 @frappe.whitelist()
@@ -100,7 +106,15 @@ def ks3_pdf(name: str) -> None:
     """Скачивание PDF КС-3 в гос.форме."""
     frappe.has_permission("KS3 Act", "read", doc=name, throw=True)
     html = _render_html("KS3 Act", name, KS3_PRINT_FORMAT)
-    _pdf_response(html, f"KS-3_{name}.pdf")
+    _pdf_response(html, f"KS-3_{name}.pdf", orientation="Portrait")
+
+
+@frappe.whitelist()
+def worklog_pdf(name: str) -> None:
+    """Скачивание PDF общего журнала работ КС-6 (РД-11-05-2007)."""
+    frappe.has_permission("Work Log", "read", doc=name, throw=True)
+    html = _render_html("Work Log", name, KC6_PRINT_FORMAT)
+    _pdf_response(html, f"KS-6_{name}.pdf", orientation="Landscape")
 
 
 # ------------------------- Excel ------------------------------------
@@ -493,6 +507,193 @@ def ks3_excel(name: str) -> None:
     _excel_response(wb, f"KS-3_{doc.name}.xlsx")
 
 
+# ────────────────────────── КС-6: общий журнал работ ────────────────────────
+
+
+@frappe.whitelist()
+def worklog_excel(name: str) -> None:
+    """Excel-выгрузка общего журнала работ КС-6 (РД-11-05-2007)."""
+    frappe.has_permission("Work Log", "read", doc=name, throw=True)
+    doc = frappe.get_doc("Work Log", name)
+
+    project_title = ""
+    project_address = ""
+    if doc.project and frappe.db.exists("Construction Project", doc.project):
+        project_title, project_address = frappe.db.get_value(
+            "Construction Project", doc.project, ["title", "location"]
+        ) or ("", "")
+        project_title = project_title or doc.project
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "КС-6"
+
+    # 9 колонок госформы
+    widths = [4, 11, 14, 9, 38, 14, 8, 22, 10]
+    for i, w in enumerate(widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+    row = 1
+    # Титульный лист
+    ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=9)
+    cell = ws.cell(row=row, column=1, value=f"ОБЩИЙ ЖУРНАЛ РАБОТ № {doc.name}")
+    cell.font = Font(name="Times New Roman", size=14, bold=True)
+    cell.alignment = _ALIGN_CENTER
+    row += 1
+
+    ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=9)
+    cell = ws.cell(row=row, column=1,
+                   value="форма по РД-11-05-2007 (приказ Ростехнадзора № 7 от 12.01.2007)")
+    cell.font = Font(name="Times New Roman", size=9, italic=True)
+    cell.alignment = _ALIGN_CENTER
+    row += 2
+
+    meta = [
+        ("Наименование объекта:", doc.title or ""),
+        ("Стройка (проект):", project_title or doc.project or ""),
+        ("Адрес стройки:", project_address or ""),
+        ("Застройщик (заказчик):", doc.customer_name or ""),
+        ("Представитель заказчика (тех.надзор):", doc.customer_representative or ""),
+        ("Лицо, осуществляющее строительство:", doc.contractor_name or "ООО «Олимп»"),
+        ("Ответственный производитель работ:", doc.contractor_responsible or ""),
+        ("Дата начала ведения журнала:", _fmt_date(doc.started_date)),
+        ("Дата окончания ведения журнала:", _fmt_date(doc.finished_date)),
+        ("Статус журнала:", doc.status or ""),
+    ]
+    for label, value in meta:
+        ws.cell(row=row, column=1, value=label).font = Font(name="Times New Roman", size=9, italic=True)
+        ws.cell(row=row, column=1).alignment = Alignment(horizontal="right")
+        ws.merge_cells(start_row=row, start_column=2, end_row=row, end_column=9)
+        ws.cell(row=row, column=2, value=value).font = _FONT_BODY
+        row += 1
+
+    row += 1
+    # Сводка
+    ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=9)
+    cell = ws.cell(
+        row=row, column=1,
+        value=(
+            f"Сводка: записей {doc.entries_count or 0}, "
+            f"чел.-дней {doc.total_workers_days or 0}, "
+            f"замечаний {doc.issues_count or 0}, "
+            f"скрытых работ {doc.hidden_works_count or 0}"
+        ),
+    )
+    cell.font = Font(name="Times New Roman", size=10, bold=True)
+    cell.alignment = Alignment(horizontal="left")
+    cell.fill = _TOTAL_FILL
+    cell.border = _BORDER_ALL
+    row += 2
+
+    # Заголовок раздела 3
+    ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=9)
+    cell = ws.cell(row=row, column=1,
+                   value="Раздел 3. Сведения о выполнении работ в процессе строительства")
+    cell.font = Font(name="Times New Roman", size=11, bold=True)
+    cell.alignment = _ALIGN_CENTER
+    row += 1
+
+    headers = [
+        "№ п/п",
+        "Дата",
+        "Метеоусловия\n(погода / T°C / ветер)",
+        "Смена / рабочих",
+        "Краткое описание выполненных работ,\nобъём, материалы и техника",
+        "Ответственное лицо",
+        "Скрытые работы",
+        "Замечания технадзора /\nотклонения от проекта",
+        "Подпись технадзора",
+    ]
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=row, column=col, value=h)
+        cell.font = _FONT_HDR
+        cell.alignment = _ALIGN_CENTER
+        cell.fill = _HEADER_FILL
+        cell.border = _BORDER_ALL
+    ws.row_dimensions[row].height = 50
+    row += 1
+    for col in range(1, 10):
+        cell = ws.cell(row=row, column=col, value=col)
+        cell.alignment = _ALIGN_CENTER
+        cell.font = Font(name="Times New Roman", size=8, italic=True)
+        cell.border = _BORDER_ALL
+    row += 1
+
+    # Записи
+    for idx, entry in enumerate(doc.entries or [], 1):
+        meteo_parts = []
+        if entry.weather:
+            meteo_parts.append(entry.weather)
+        if entry.temperature_c not in (None, 0):
+            meteo_parts.append(f"{entry.temperature_c}°C")
+        if entry.wind_ms:
+            meteo_parts.append(f"{flt(entry.wind_ms):.1f} м/с")
+        meteo = " / ".join(meteo_parts) if meteo_parts else "—"
+
+        shift_workers = []
+        if entry.shift:
+            shift_workers.append(entry.shift)
+        shift_workers.append(f"{entry.workers_count or 0} чел.")
+        shift = "\n".join(shift_workers)
+
+        desc_parts = [entry.works_description or "—"]
+        if entry.volume_done:
+            desc_parts.append(f"Объём: {entry.volume_done}")
+        if entry.equipment_used:
+            desc_parts.append(f"Техника: {entry.equipment_used}")
+        if entry.materials_used:
+            desc_parts.append(f"Материалы: {entry.materials_used}")
+        desc = "\n".join(desc_parts)
+
+        ws.cell(row=row, column=1, value=idx).alignment = _ALIGN_CENTER
+        ws.cell(row=row, column=2, value=_fmt_date(entry.entry_date)).alignment = _ALIGN_CENTER
+        ws.cell(row=row, column=3, value=meteo).alignment = _ALIGN_CENTER
+        ws.cell(row=row, column=4, value=shift).alignment = _ALIGN_CENTER
+        ws.cell(row=row, column=5, value=desc).alignment = _ALIGN_LEFT
+        ws.cell(row=row, column=6, value=entry.responsible or "").alignment = _ALIGN_CENTER
+        ws.cell(row=row, column=7, value="да" if entry.hidden_works else "—").alignment = _ALIGN_CENTER
+        issues_value = ""
+        if entry.has_issues:
+            issues_value = entry.issues_description or "есть замечания"
+        ws.cell(row=row, column=8, value=issues_value or "—").alignment = _ALIGN_LEFT
+        ws.cell(row=row, column=9,
+                value="да" if entry.inspector_signed else "—").alignment = _ALIGN_CENTER
+
+        for col in range(1, 10):
+            ws.cell(row=row, column=col).font = _FONT_BODY
+            ws.cell(row=row, column=col).border = _BORDER_ALL
+        row += 1
+
+    if not (doc.entries or []):
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=9)
+        cell = ws.cell(row=row, column=1, value="записи в журнале отсутствуют")
+        cell.font = Font(name="Times New Roman", size=9, italic=True, color="888888")
+        cell.alignment = _ALIGN_CENTER
+        cell.border = _BORDER_ALL
+        row += 1
+
+    row += 2
+    # Подписи (3 колонки: производитель работ, технадзор, передача)
+    ws.cell(row=row, column=1, value="Ответственный производитель работ:").font = _FONT_HDR
+    ws.cell(row=row, column=5, value="Представитель технадзора заказчика:").font = _FONT_HDR
+    ws.cell(row=row, column=8, value="Журнал передан:").font = _FONT_HDR
+    row += 1
+    ws.cell(row=row, column=1, value=doc.contractor_responsible or "").font = _FONT_BODY
+    ws.cell(row=row, column=5, value=doc.customer_representative or "").font = _FONT_BODY
+    ws.cell(row=row, column=8, value=doc.customer_name or "").font = _FONT_BODY
+    row += 1
+    for col in (1, 5, 8):
+        ws.cell(row=row, column=col, value="_______________ / _______________").font = _FONT_BODY
+    row += 1
+    for col in (1, 5, 8):
+        ws.cell(row=row, column=col, value="подпись / расшифровка / дата").font = Font(size=8, italic=True)
+
+    # Freeze: шапка таблицы (находим row начала шапки = row - len(entries) - 2 - 3 итд — проще: A14)
+    ws.freeze_panes = "A2"
+
+    _excel_response(wb, f"KS-6_{doc.name}.xlsx")
+
+
 # ────────────────────────── Печать сметы ────────────────────────────────────
 
 
@@ -811,6 +1012,25 @@ _LIST_SPECS = {
             ("payment_received", "Получено, ₽", 14),
         ],
     },
+    "worklog": {
+        "doctype": "Work Log",
+        "sheet": "Журналы КС-6",
+        "filename": "WorkLog",
+        "columns": [
+            ("name", "Код", 14),
+            ("title", "Объект / название", 36),
+            ("status", "Статус", 18),
+            ("project", "Проект", 14),
+            ("customer_name", "Заказчик", 24),
+            ("contractor_responsible", "Отв. производитель работ", 24),
+            ("started_date", "Начат", 12),
+            ("finished_date", "Окончен", 12),
+            ("entries_count", "Записей", 10),
+            ("total_workers_days", "Чел.-дней", 11),
+            ("issues_count", "Замечаний", 11),
+            ("hidden_works_count", "Скрытых работ", 13),
+        ],
+    },
 }
 
 
@@ -818,7 +1038,7 @@ _LIST_SPECS = {
 def export_list(spec: str) -> None:
     """Универсальный Excel-экспорт списка одного из поддерживаемых DocType.
 
-    spec ∈ ('tenders','projects','estimates','stock','certifications','ks2').
+    spec ∈ ('tenders','projects','estimates','stock','certifications','ks2','worklog').
     """
     if spec not in _LIST_SPECS:
         frappe.throw(_(f"Неизвестный экспорт: {spec}. Доступно: {list(_LIST_SPECS.keys())}"))
@@ -857,7 +1077,8 @@ def export_list(spec: str) -> None:
     pct_fields = {"margin_pct", "real_margin_pct", "ks2_completion_pct"}
     date_fields = {"deadline_date", "start_date", "planned_end_date", "estimate_date",
                    "issue_date", "expiry_date", "last_movement_date", "act_date",
-                   "period_from", "period_to"}
+                   "period_from", "period_to", "started_date", "finished_date"}
+    int_fields = {"entries_count", "total_workers_days", "issues_count", "hidden_works_count"}
 
     for row_idx, row in enumerate(rows, 2):
         for col_idx, (fld, _label, _w) in enumerate(cfg["columns"], 1):
@@ -877,11 +1098,15 @@ def export_list(spec: str) -> None:
             elif fld in ("current_qty", "min_qty"):
                 cell.value = flt(val)
                 cell.number_format = '#,##0.000'
+            elif fld in int_fields:
+                cell.value = int(val) if str(val).strip() else 0
+                cell.number_format = '#,##0'
             else:
                 cell.value = str(val)
             cell.font = body_font
             cell.border = _BORDER_ALL
-            if fld in money_fields or fld in pct_fields or fld in ("current_qty", "min_qty"):
+            if (fld in money_fields or fld in pct_fields
+                    or fld in ("current_qty", "min_qty") or fld in int_fields):
                 cell.alignment = Alignment(horizontal="right")
 
     _excel_response(wb, f"{cfg['filename']}_{frappe.utils.nowdate()}.xlsx")

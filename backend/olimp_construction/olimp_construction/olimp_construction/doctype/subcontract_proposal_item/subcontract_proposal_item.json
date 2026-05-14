@@ -1,0 +1,63 @@
+{
+  "name": "Subcontract Proposal Item",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "istable": 1,
+  "editable_grid": 1,
+  "track_changes": 0,
+  "fields": [
+    {
+      "fieldname": "linked_bid_item",
+      "label": "Связь с Bid Item",
+      "fieldtype": "Data",
+      "read_only": 1,
+      "description": "ID строки в Subcontract Bid Request — для side-by-side сравнения"
+    },
+    {
+      "fieldname": "item_name",
+      "label": "Наименование работ",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "columns": 5,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "unit",
+      "label": "Ед.",
+      "fieldtype": "Data",
+      "columns": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "qty",
+      "label": "Кол-во",
+      "fieldtype": "Float",
+      "precision": "3",
+      "columns": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "supplier_unit_price",
+      "label": "Цена подрядчика",
+      "fieldtype": "Currency",
+      "columns": 2,
+      "in_list_view": 1,
+      "precision": "2"
+    },
+    {
+      "fieldname": "supplier_amount",
+      "label": "Сумма",
+      "fieldtype": "Currency",
+      "read_only": 1,
+      "columns": 2,
+      "in_list_view": 1,
+      "precision": "2"
+    },
+    {
+      "fieldname": "supplier_notes",
+      "label": "Комментарий подрядчика",
+      "fieldtype": "Small Text"
+    }
+  ],
+  "permissions": []
+}

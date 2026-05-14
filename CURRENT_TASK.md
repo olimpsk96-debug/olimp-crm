@@ -560,10 +560,130 @@
 
 **Версия: v1.9 · КС-6**
 
+## ✅ Сделано (Print Format КС-6, 13.05.2026)
+
+**Печать журнала КС-6 в гос.форме (РД-11-05-2007, Ростехнадзор):**
+- `print_format/kc_6_official/kc_6_official.html` — Jinja-шаблон A4 landscape: титульный лист (10 строк реквизитов: объект, стройка, адрес, заказчик, тех.надзор, подрядчик, прораб, даты, статус) + сводка + раздел 3 «Сведения о выполнении работ» (9 граф: №, дата, метеоусловия, смена/рабочих, описание работ + объём/техника/материалы, ответственное лицо, скрытые работы, замечания технадзора, подпись)
+- `api/setup.py` — добавлено `КС-6 (общий журнал работ)` в `PRINT_FORMATS`, регистрируется через `setup_print_formats()`
+- `api/exports.py` — `worklog_pdf(name)` через `get_pdf()` + `worklog_excel(name)` через openpyxl (9 колонок госформы, freeze panes A2, рамки, итоги по подписям в 3 колонках); `_render_html` теперь передаёт `project_address` (берётся из `Construction Project.location`); `_pdf_response` принимает `orientation` параметр
+- `_LIST_SPECS["worklog"]` — Excel-выгрузка списка журналов: код, объект, статус, проект, заказчик, отв.прораб, даты, авто-сводка (записей, чел.-дней, замечаний, скрытых работ); добавлен формат `int_fields`
+- Next.js: `/api/work-log/export?name=X&format=pdf|xlsx` (binary pass-through), кнопки «↓ PDF (КС-6, гос.форма)» / «↓ Excel» в шапке drawer, `<ExportButton spec="worklog">` в шапке `/work-log`
+- ExportButton extended: добавлен spec `worklog`
+- Тест: создан WL-2026-00001 (АКЗ РВС-1000, 2 записи: 1 — пескоструйная очистка, 2 — грунтовка ВЛ-02 со скрытыми работами и замечанием). PDF 30 КБ × 2 страницы ✓, Excel 7.3 КБ ✓, list-export 5.7 КБ ✓
+- TypeScript 0 ошибок
+
+**Версия: v2.0 · КС-6 на печать**
+
+## ✅ Сделано (исследование DDC + 4 модуля, 13.05.2026)
+
+**Исследование репозиториев datadrivenconstruction:**
+- DDC CWICR (Apache 2.0 + CC BY 4.0) — 55 719 позиций × 85 полей, 4 готовых n8n workflow (text/photo/PDF/CAD), Qdrant snapshot RU_STPETERSBURG 1.2GB
+- OpenConstructionERP (AGPL-3.0 — берём только идеи) — EVM с S-curve, Tendering bid packages + side-by-side, Punch List, PDF Markup, Monte Carlo
+- DDC Skills for AI Agents (MIT) — 221 SKILL.md, бесплатная книга «Data-Driven Construction» 2-е изд. 2025
+- Аудит: что у нас УЖЕ есть (CWICR импорт 6670 С-Пб, Cost Catalog 21 ГЭСН, Change Order, EVM точечный), чего НЕТ (BIM, semantic search Qdrant, коммерческие subтендеры, Punch List, S-curve, нормативная часть CWICR)
+
+**Внедрены 4 быстрые победы (Блок A + B4):**
+
+**A1 — Расширение Catalog Resource нормативной частью CWICR:**
+- `catalog_resource.json` +5 полей: `labor_hours_per_unit` (чел.-час), `workers_count_per_unit` (звено), `machine_hours_per_unit` (маш.-час), `electricity_kwh_per_unit`, `machine_class_name`
+- migrate прошёл, все 6670 строк теперь имеют нормативные слоты (пустые, ждут расширенного импорта CWICR)
+
+**A2 — EVM Snapshot + S-curve:**
+- DocType `EVM Snapshot` (project + snapshot_date + 12 метрик), autoname `EVMS-{project}-{date}`
+- `api/evm.py::save_snapshot` + `save_daily_evm_snapshots` (daily cron в hooks.py) + `get_trend(project, days)`
+- Next.js route `/api/evm/trend`, React-компонент `<EVMTrendChart>` в карточке проекта: SVG 600×90 с двумя линиями (CPI синяя, SPI фиолетовая), пунктир «1.0», подписи ΔCPI/ΔSPI и диапазон дат
+- Тест: первый снимок создан для PR-2026-0001, get_trend отдаёт корректную series
+
+**A3 — Daily-report Telegram сводка (09:00):**
+- `tasks.send_daily_director_digest()` — 5 разделов: горящие тендеры (≤3д), красные EVM (warning/critical/disaster), просроченные поручения с планёрок (Meeting Item.due_date < today), истекающие аттестации (≤30д), застрявшие Material Request (status=Закупается, создано >14д назад)
+- 5 helper-функций `_collect_*` с try/except + frappe.logger().warning
+- Защита от отсутствующих DocType через `frappe.db.exists("DocType", ...)`
+- Telegram HTML-форматирование (НЕ markdown — урок 2026-05-13)
+- Cron `"0 9 * * *"` в hooks.scheduler_events.cron, существующий AI engine `"0 * * * *"` сохранён
+- Тест: curl POST → `{ok:true, empty:true, sent:true, counts:{...}}` (на тестовых данных пусто → «✓ Утро тихое»)
+
+**B4 — Punch List (список недоделок к сдаче):**
+- DocType `Punch List Item` (autoname `PL-{YYYY}-{#####}`): title, project, item_type (5 типов: Дефект/Доделка/Замечание заказчика/Корректировка проекта/Подготовка к сдаче), urgency (4 уровня), status (5 статусов), location, assignee, reported_by/date, due_date, completed_date (авто), photo_before/after (Attach Image), cost_estimate, next_reminder_sent
+- `before_save` (на ПАРЕНТЕ — child-before_save ненадёжен): авто-completed_date при статусе «Выполнено»
+- `api/punchlist.py`: get_list / get_detail / get_stats / save_item / set_status / get_overdue
+- Daily cron `check_punch_list_overdue` — Telegram директору раз в неделю про просроченные доделки
+- Frontend `/punch-list`: 5 KPI-кнопок-фильтров (всего / открыто / в работе / просрочено красная / критично оранжевая), debounce-поиск 300мс, селекты project/urgency/item_type, таблица с цветовыми тегами, drawer создания + drawer детали с upload фото до/после (base64) и сменой статуса
+- Sidebar: «Доделки» после «Журнал КС-6»
+- Тест: создан PL-2026-00003, get_stats отдаёт корректные счётчики
+- **Новый подводный камень** (записан в CLAUDE.md р.18, см. ниже): `frappe.get_all(order_by=...)` не принимает `CASE WHEN`/`FIELD()` — для кастомной сортировки нужен `frappe.db.sql`; после правки api-модуля нужен `docker restart olimp_backend` (gunicorn кэширует модули, `bench clear-cache` не сбрасывает)
+
+**Все проверки прошли:** TypeScript 0 ошибок · bench migrate OK · 3 endpoint-а отвечают корректно (punchlist.get_stats, send_daily_director_digest, evm.get_trend).
+
+**Версия: v2.1 · DDC-импульс**
+
+## ✅ Сделано (Субподряд + Infra-fix, 13–14.05.2026)
+
+**Модуль «Субподряд» (Блок C из DDC) — полностью закрыт:**
+- 4 DocType: `Subcontract Bid Request` / `Bid Item` (autoname `BR-{YYYY}-{#####}`) + `Subcontract Proposal` / `Proposal Item` (`SP-{YYYY}-{#####}`)
+- Авторасчёт в `before_save` родителей: `total_target_amount`, `total_amount`, `vs_target_pct`, `best_proposal_amount`, `savings_amount`, `savings_pct`, snapshot `supplier_name_snapshot` (защита от переименований Supplier), `on_update` Proposal триггерит пересчёт сводок в BR
+- `api/subcontract.py` 8 endpoints: `get_list / get_stats / get_detail` (с вложенными proposals), `save_bid_request`, `create_from_estimate` (pre-fill из сметы), `save_proposal` (+ Telegram директору о новом КП), `compare_proposals` (side-by-side: строки Bid Item × колонки Proposals + метка `cheapest_proposal` на самом дешёвом), `set_winner` (присуждение: победитель → «Выбрано», остальные → «Отклонено»)
+- Frontend: `/subcontract-bids` со списком + 4 KPI (Всего / Активные / Присуждено / Экономия суммарно), фильтры, цветовые статусы, ярлыки «просрочено N д»; `<SubcontractBidDrawer>` с inline-таблицей позиций (live-расчёт суммы); `<ProposalComparisonView>` модалка side-by-side с зелёной подсветкой самого дешёвого по строке и кнопкой «Выбрать» в каждой колонке; вложенный `<AddProposalDrawer>` с автокомплитом подрядчика (через `/api/suppliers` → `frappe.client.get_list`)
+- Сайдбар: «Субподряд» после «Снабжение»
+- Тест: BR-2026-00004 «АКЗ резервуара РВС-2000» 1.06 млн ₽ + 2 КП (88.8% и 99.2%) → экономия 119 000 ₽ (11.2%)
+
+**Infra-fix (3 критичных бага после ребута WSL — записаны в CLAUDE.md р.18):**
+1. `docker-compose.yml` сервис `backend` теперь имеет явный `command:` со всей строкой gunicorn — без этого `docker compose up -d` пересоздавал контейнер без CMD → крэш-loop → 502 везде
+2. `sites/apps.txt` + `apps.json` дополнены `olimp_construction` — без этого все `frappe.get_doc(...)` падали с «Модуль Olimp Construction не найден» (карточки проектов/смет/тендеров не открывались)
+3. `api/project.get_detail` — для `Material Request` указан явный префикс таблицы в `order_by` (`` `tabMaterial Request`.modified ``), иначе SQL падал с `Column 'modified' is ambiguous`
+- Smoke: 24/24 backend endpoint + 20/20 frontend страниц зелёные
+
+**Версия v3.2 · Subcontract + Infra-fix**
+
+## ✅ Сделано (Gantt + Риски + Semantic Search, 14.05.2026)
+
+Три новых модуля закрыты одной сессией (frontend + backend + DocType + миграция):
+
+**1. Графики работ (Gantt) — Фаза 5 (частично):**
+- DocType `Schedule Task` (autoname `ST-{YYYY}-{#####}`): title, project, parent_task (для разделов), is_section, is_critical, status (Запланирована/В работе/Выполнена/Отменена), start_date, end_date, duration_days (read_only, авто), progress, assignee, subcontractor, order_idx, predecessor, estimate_item_link, notes
+- `before_save` авто: `duration_days = end-start+1`; progress≥100 → статус «Выполнена»; progress 0<x<100 при «Запланирована» → «В работе»; запрет self-parent
+- `api/schedule.py` 6 endpoints: `get_tasks(project)` с авто-сводкой разделов (min start/max end по детям + weighted progress по длительности), `get_summary` (total/planned/in_progress/done/overdue/critical_count/avg_progress), `save_task`, `delete_task` (detach детей), `set_progress`, `set_dates` (drag-and-drop)
+- Frontend `/schedule` — список проектов (активные/прочие); `/schedule/[project]` — Gantt-диаграмма
+- `<GanttChart>` 336 строк: timeline по дням (DAY_PX=28), шапка-месяцы + дни, линия «сегодня», выходные затемнены; критический путь — красная подсветка с меткой «КП»; разделы — отдельный фон, прогресс рассчитывается агрегированно; цвета баров по статусу (done/inWork/planned/critical)
+- `<TaskDrawer>` — создание/правка задачи (тип «задача»/«раздел», даты, исполнитель, КП, прогресс)
+- Сайдбар: «Графики»
+- Тест: 12 задач в БД, 6 на критическом пути, 1 в работе, средний прогресс 20%
+
+**2. Реестр рисков (Project Risk):**
+- DocType `Project Risk` (autoname `RISK-{YYYY}-{#####}`): title, project, category (9 типов: Финансовый/Технический/Срочный/Качество/Безопасность/Регуляторный/Поставщик/Заказчик/Погодный), status (Открыт/В работе/Снижен/Закрыт/Реализовался), owner_full_name, detected_date, target_resolution_date, **probability** 1-5, **impact** 1-5, risk_score (read_only = P×I), impact_amount, **contingency_amount** (read_only, ожидаемая стоимость = impact × probability/5), response_strategy (Принять/Снизить/Передать/Избежать), mitigation_plan, trigger_events, actual_outcome, linked_estimate (Estimate), notes
+- `api/risks.py` 6 endpoints: get_list (с фильтрами + сортировка по score DESC), get_summary (KPI + распределение по зонам: красная ≥15, жёлтая 8-14, зелёная <8), get_matrix (5×5 — каждая ячейка с count + items для рендера тепловой карты), save_risk, delete_risk, **apply_to_estimate** (добавляет позицию `RISK-{name}` с contingency_amount в выбранную смету + проставляет linked_estimate)
+- Frontend `/risks`: KPI-бар, фильтры project/category/status/min_score, таблица с цветными зонами; `<RiskDrawer>` создание/правка с live-расчётом контингенции; `<RiskMatrix>` — модалка-сетка 5×5 (probability × impact), цвет ячейки по score, клик показывает риски в ячейке
+- Сайдбар: «Риски»
+- Тест: 8 рисков в БД, 1 в красной зоне, 6 в жёлтой, 1 в зелёной, суммарная контингенция 1.484М ₽
+
+**3. Семантический поиск каталога ресурсов (Qdrant + OpenAI):**
+- Новый модуль `ai_services/` — `qdrant_client.py` (обёртка `olimp_catalog` коллекции, 1536-dim, Cosine) + `embeddings.py` (`text-embedding-3-small`, batch до 1024)
+- `api/semantic_search.py` 3 endpoints: `get_status` (статистика индекса + total_in_db), `reindex_catalog(reset=0, batch_size=96)` — батчевая индексация всех 6670 Catalog Resource (1 ресурс ≈ 15 токенов → ~$0.002 на весь каталог), `search(query, limit, category?, resource_type?)` — vector search с фильтрами
+- Text для embedding: `resource_name · parent_category · parent_collection · resource_type`
+- Frontend `<AISearchModal>` (231 строк): ⌘K-подобная модалка, debounced поиск, отображение score 0-1, кнопка «выбрать» (передаёт `SemanticHit` через `onPick`); подключён в `/resources` (просмотр) и `EstimateDrawer` (выбор → автофилл позиции)
+- API routes: `GET /api/semantic-search?query=...`, `GET /api/semantic-search/status`, `POST /api/semantic-search/reindex`
+- `requirements.txt`: `qdrant-client>=1.7.0`, `openai>=1.50.0`
+- `docker-compose.yml`: `OPENAI_API_KEY` + `QDRANT_URL=http://qdrant:6333` переданы в backend
+- ⚠️ **Нужно пополнить OpenAI** — ключ пустой в .env, до его установки индексация недоступна. После: один POST на `/api/semantic-search/reindex` (1 минута, ~$0.002), Qdrant поднимет коллекцию автоматически
+
+**Все проверки:** TypeScript 0 ошибок · `bench migrate` OK · 5 endpoints отвечают (schedule.get_summary, risks.get_summary, semantic_search.get_status, subcontract.get_stats, punchlist.get_stats)
+
+**Версия v3.3 · Gantt + Риски + Semantic**
+
 ## 📋 Следующие задачи
 
-- [ ] **Print Format КС-6** — печать журнала в гос.форме (Ростехнадзор)
-- [ ] **Графики работ (Gantt)** — Фаза 5 из роадмапа, есть HTML-прототип 05_gantt_schedule.html
+**Блок B (средние):**
+- [ ] **PDF Markup** — react-pdf-annotator для актирования + сохранение разметки в JSON
+- [ ] **Telegram-бот "оценка по описанию"** — текст → Claude Haiku → черновик сметы (требует пополнить Anthropic)
+
+**Блок C (большие):**
+- [x] ~~Subcontractor Bid Request / Proposal~~ — ✅ закрыт 14.05.2026
+- [x] ~~Semantic search через Qdrant + OpenAI embeddings~~ — ✅ закрыт 14.05.2026 (нужно пополнить OpenAI чтобы запустить reindex)
+- [ ] **Полный CWICR импорт 55K** — загрузить snapshot С-Петербург (1.2GB) или расширить до всех регионов
+- [ ] **Фото→смета** (n8n_2 адаптация) — Claude Vision определяет работы по фото объекта
+
+**Блок D (опциональное):**
+- [ ] **AI-Assistant запуск (Фаза 7)** — после пополнения Anthropic
+- [ ] **Графики работ (Gantt)** — Фаза 5, есть HTML-прототип 05_gantt_schedule.html
 - [ ] **Пополнить баланс Anthropic** → AI-ассистент заработает автоматически
 - [ ] **Импорт базы реальных клиентов** из старой системы
 - [ ] **Активировать TenderGuru n8n workflow** после первого ручного теста API
@@ -571,6 +691,12 @@
 ---
 
 ## 📝 Заметки
+
+### Сессия 9 — 14.05.2026
+**Что сделано:**
+- Завершены 3 модуля (без коммита со вчера): Gantt-графики, Реестр рисков, Семантический поиск Qdrant
+- Smoke-тест 5 endpoint: все зелёные (schedule: 12 задач/6 КП, risks: 8 рисков/1 красная зона, semantic: 6670 в БД, subcontract: 1+2, punchlist: 1)
+- TypeScript: 0 ошибок · OPENAI_API_KEY всё ещё пустой — нужно пополнить чтобы запустить reindex_catalog
 
 ### Сессия 7 — 11.05.2026
 **Что сделано:**

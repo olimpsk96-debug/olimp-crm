@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { ExportButton } from "@/components/shared/ExportButton";
 
 type WorkLogStatus = "Ведётся" | "Закрыт" | "Передан заказчику";
 
@@ -77,11 +78,14 @@ export default function WorkLogPage() {
             Исполнительная документация по 87-ПП РФ — записи по дням с погодой, объёмами, замечаниями
           </p>
         </div>
-        <button onClick={() => setShowCreate(true)} style={{
-          padding: "9px 16px", borderRadius: 10, border: "none",
-          background: "var(--accent)", color: "white",
-          fontWeight: 500, fontSize: 13, cursor: "pointer",
-        }}>+ Новый журнал</button>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <ExportButton spec="worklog" label="↓ Excel" />
+          <button onClick={() => setShowCreate(true)} style={{
+            padding: "9px 16px", borderRadius: 10, border: "none",
+            background: "var(--accent)", color: "white",
+            fontWeight: 500, fontSize: 13, cursor: "pointer",
+          }}>+ Новый журнал</button>
+        </div>
       </div>
 
       <div style={{ background: "var(--bg-elevated)", borderRadius: 12, border: "1px solid var(--border-subtle)", overflow: "hidden" }}>
@@ -276,6 +280,26 @@ function LogDrawer({ name, onClose, onChanged }: { name: string; onClose: () => 
               </p>
             </div>
             <button onClick={onClose} style={closeBtn}>✕</button>
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+            <a
+              href={`/api/work-log/export?name=${encodeURIComponent(data.name)}&format=pdf`}
+              style={{
+                padding: "7px 12px", borderRadius: 8,
+                border: "1px solid var(--accent)", color: "var(--accent)",
+                background: "transparent", textDecoration: "none",
+                fontSize: 12, fontWeight: 500,
+              }}
+            >↓ PDF (КС-6, гос.форма)</a>
+            <a
+              href={`/api/work-log/export?name=${encodeURIComponent(data.name)}&format=xlsx`}
+              style={{
+                padding: "7px 12px", borderRadius: 8,
+                border: "1px solid var(--success)", color: "var(--success)",
+                background: "transparent", textDecoration: "none",
+                fontSize: 12, fontWeight: 500,
+              }}
+            >↓ Excel</a>
           </div>
         </div>
 

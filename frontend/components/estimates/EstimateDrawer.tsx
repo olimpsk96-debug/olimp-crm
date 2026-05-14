@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import type { Estimate, EstimateItem, EstimateStatus } from "@/types/estimate";
+import AISearchModal, { type SemanticHit } from "@/components/search/AISearchModal";
 
 interface Props {
   name: string | null;
@@ -48,6 +49,8 @@ export function EstimateDrawer({ name, onClose, onUpdated }: Props) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set());
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiNotice, setAiNotice] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
 
@@ -221,7 +224,25 @@ export function EstimateDrawer({ name, onClose, onUpdated }: Props) {
               >
                 {importing ? "Импорт..." : "Импорт XML"}
               </button>
+
+              <button
+                onClick={() => setAiOpen(true)}
+                style={{
+                  fontSize: 11.5, padding: "3px 10px", borderRadius: 7,
+                  border: "1px solid rgba(168,139,250,0.4)", background: "rgba(168,139,250,0.08)",
+                  color: "#a78bfa", cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: 4,
+                }}
+              >
+                <span>🤖</span> AI-поиск расценки
+              </button>
             </div>
+          )}
+          {aiNotice && (
+            <div style={{
+              marginTop: 8, padding: "6px 10px", borderRadius: 7, fontSize: 11.5,
+              background: "rgba(34,197,94,0.1)", color: "var(--success)",
+            }}>{aiNotice}</div>
           )}
         </div>
 
@@ -375,6 +396,21 @@ export function EstimateDrawer({ name, onClose, onUpdated }: Props) {
           </>
         )}
       </div>
+
+      {aiOpen && (
+        <AISearchModal
+          onClose={() => setAiOpen(false)}
+          onPick={(hit: SemanticHit) => {
+            // Копируем в буфер обмена в формате, удобном для вставки в смету
+            const txt = `${hit.resource_name}\t${hit.unit}\t${hit.price_avg}\t${hit.resource_code}`;
+            navigator.clipboard?.writeText(txt).then(() => {
+              setAiNotice(`Скопировано: ${hit.resource_name} (${hit.price_avg} ₽/${hit.unit})`);
+              setTimeout(() => setAiNotice(null), 4000);
+            });
+            setAiOpen(false);
+          }}
+        />
+      )}
     </>
   );
 }

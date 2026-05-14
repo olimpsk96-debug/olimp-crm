@@ -237,6 +237,32 @@ function OverviewTab({ project }: { project: ProjectDetail }) {
         <EVMBlock projectName={project.name} />
       </div>
 
+      {/* График работ */}
+      <div style={{ ...panelStyle, gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <h3 style={{ ...panelHead, marginBottom: 4 }}>График работ</h3>
+          <p style={{ fontSize: 12, color: "var(--text-tertiary)", margin: 0 }}>
+            Gantt-диаграмма проекта · разделы, задачи, критический путь
+          </p>
+        </div>
+        <Link href={`/schedule/${encodeURIComponent(project.name)}`} style={{ ...btnPrimary, textDecoration: "none", display: "inline-block" }}>
+          Открыть график →
+        </Link>
+      </div>
+
+      {/* Реестр рисков */}
+      <div style={{ ...panelStyle, gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <h3 style={{ ...panelHead, marginBottom: 4 }}>Реестр рисков</h3>
+          <p style={{ fontSize: 12, color: "var(--text-tertiary)", margin: 0 }}>
+            Идентифицированные риски проекта с матрицей P×I и расчётом контингенции
+          </p>
+        </div>
+        <Link href={`/risks?project=${encodeURIComponent(project.name)}`} style={{ ...btnPrimary, textDecoration: "none", display: "inline-block" }}>
+          Открыть риски →
+        </Link>
+      </div>
+
       {/* Тендер */}
       {project.tender && (
         <div style={{ ...panelStyle, gridColumn: "1 / -1" }}>
@@ -534,6 +560,85 @@ function EVMBlock({ projectName }: { projectName: string }) {
         EV = {fmtM(data.ev)} (выполнено по плановой стоимости) · PV = {fmtM(data.pv)} (должно было быть к этой дате)
         {data.co_approved > 0 && ` · CO одобрено: ${fmtM(data.co_approved)}`}
       </p>
+
+      {/* S-curve тренд CPI/SPI за 90 дней */}
+      <EVMTrendChart projectName={projectName} />
+    </div>
+  );
+}
+
+interface EVMTrendPoint {
+  date: string;
+  bac: number; ac: number; ev: number; pv: number; eac: number;
+  cpi: number; spi: number; tcpi: number;
+  completion_pct: number;
+  health_level: string;
+}
+
+function EVMTrendChart({ projectName }: { projectName: string }) {
+  const [series, setSeries] = useState<EVMTrendPoint[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/evm/trend?project=${encodeURIComponent(projectName)}&days=90`)
+      .then(r => r.json())
+      .then(d => setSeries(Array.isArray(d.series) ? d.series : []))
+      .finally(() => setLoaded(true));
+  }, [projectName]);
+
+  if (!loaded) return null;
+  if (series.length < 2) {
+    return (
+      <p style={{ marginTop: 12, fontSize: 10.5, color: "var(--text-tertiary)", fontStyle: "italic" }}>
+        Тренд CPI/SPI: накапливаем историю — будет виден через несколько дней.
+      </p>
+    );
+  }
+
+  const W = 600, H = 90, P = 6;
+  const n = series.length;
+  const xs = (i: number) => P + (i / (n - 1 || 1)) * (W - 2 * P);
+  // y=H для значения 0.7, y=0 для значения 1.3 — 1.0 в центре
+  const y = (v: number) => {
+    const clamped = Math.max(0.7, Math.min(1.3, v || 1));
+    return (1.3 - clamped) / 0.6 * (H - 2 * P) + P;
+  };
+  const cpiPath = series.map((p, i) => `${i === 0 ? "M" : "L"}${xs(i).toFixed(1)} ${y(p.cpi).toFixed(1)}`).join(" ");
+  const spiPath = series.map((p, i) => `${i === 0 ? "M" : "L"}${xs(i).toFixed(1)} ${y(p.spi).toFixed(1)}`).join(" ");
+  const last = series[series.length - 1]!;
+  const first = series[0]!;
+  const cpiDelta = (last.cpi - first.cpi).toFixed(3);
+  const spiDelta = (last.spi - first.spi).toFixed(3);
+
+  return (
+    <div style={{ marginTop: 14, padding: "12px 14px", background: "var(--bg-base)", border: "1px solid var(--border-subtle)", borderRadius: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
+        <span style={{ fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "monospace" }}>
+          Тренд CPI / SPI за {n} {n === 1 ? "день" : n < 5 ? "дня" : "дней"}
+        </span>
+        <span style={{ fontSize: 10, color: "var(--text-tertiary)", fontFamily: "monospace" }}>
+          ΔCPI {Number(cpiDelta) >= 0 ? "+" : ""}{cpiDelta} · ΔSPI {Number(spiDelta) >= 0 ? "+" : ""}{spiDelta}
+        </span>
+      </div>
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: "block" }}>
+        {/* Линия "1.0" (норма) */}
+        <line x1={P} x2={W - P} y1={y(1.0)} y2={y(1.0)} stroke="var(--border-subtle)" strokeWidth="1" strokeDasharray="3,3" />
+        <text x={W - P - 2} y={y(1.0) - 2} fontSize="8" fill="var(--text-tertiary)" textAnchor="end" fontFamily="monospace">1.0</text>
+        {/* CPI */}
+        <path d={cpiPath} fill="none" stroke="#3b82f6" strokeWidth="1.6" />
+        {/* SPI */}
+        <path d={spiPath} fill="none" stroke="#a855f7" strokeWidth="1.6" />
+        {/* Точки на конце */}
+        <circle cx={xs(n - 1)} cy={y(last.cpi)} r="2.5" fill="#3b82f6" />
+        <circle cx={xs(n - 1)} cy={y(last.spi)} r="2.5" fill="#a855f7" />
+      </svg>
+      <div style={{ display: "flex", gap: 14, marginTop: 4 }}>
+        <span style={{ fontSize: 10, fontFamily: "monospace", color: "#3b82f6" }}>— CPI {last.cpi.toFixed(2)}</span>
+        <span style={{ fontSize: 10, fontFamily: "monospace", color: "#a855f7" }}>— SPI {last.spi.toFixed(2)}</span>
+        <span style={{ fontSize: 10, color: "var(--text-tertiary)", fontFamily: "monospace", marginLeft: "auto" }}>
+          {first.date} → {last.date}
+        </span>
+      </div>
     </div>
   );
 }

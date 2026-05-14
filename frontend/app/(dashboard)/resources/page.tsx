@@ -2,6 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { CatalogResource, ResourceStats, ResourceType } from "@/types/resource";
+import AISearchModal from "@/components/search/AISearchModal";
+
+interface IndexStatus {
+  qdrant: { exists: boolean; points_count?: number; status?: string };
+  total_in_db: number;
+  collection_name: string;
+  synced: boolean;
+}
 
 const TYPE_LABELS: Record<ResourceType, { label: string; color: string; emoji: string }> = {
   "Material":          { label: "Материалы",       color: "var(--accent)",     emoji: "🧱" },
@@ -22,6 +30,39 @@ export default function ResourcesPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<ResourceType | "">("");
   const [collectionFilter, setCollectionFilter] = useState<string>("");
+  const [aiOpen, setAiOpen] = useState(false);
+  const [indexStatus, setIndexStatus] = useState<IndexStatus | null>(null);
+  const [reindexing, setReindexing] = useState(false);
+  const [reindexResult, setReindexResult] = useState<string | null>(null);
+
+  const loadIndexStatus = useCallback(() => {
+    fetch("/api/semantic-search/status").then(r => r.json()).then(d => {
+      if (d && !d.error) setIndexStatus(d);
+    });
+  }, []);
+
+  useEffect(() => { loadIndexStatus(); }, [loadIndexStatus]);
+
+  async function runReindex() {
+    if (!confirm("Запустить переиндексацию каталога? Стоимость через OpenAI ~$0.002 (text-embedding-3-small).")) return;
+    setReindexing(true); setReindexResult(null);
+    try {
+      const r = await fetch("/api/semantic-search/reindex", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const d = await r.json();
+      if (!r.ok || d.error) {
+        setReindexResult(`Ошибка: ${d.error || r.status}`);
+      } else {
+        setReindexResult(`Готово: проиндексировано ${d.processed}/${d.total}`);
+        loadIndexStatus();
+      }
+    } finally {
+      setReindexing(false);
+    }
+  }
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search.trim()), 300);
@@ -46,12 +87,65 @@ export default function ResourcesPage() {
 
   return (
     <div style={{ padding: 32, maxWidth: 1500, margin: "0 auto" }}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 600, letterSpacing: "-0.02em", margin: 0 }}>База ресурсов CWICR</h1>
-        <p style={{ fontSize: 13, color: "var(--text-tertiary)", margin: "4px 0 0" }}>
-          {stats?.total ?? 0} материалов / оборудования / труда из открытой базы DDC CWICR (С.-Пб, CC BY 4.0)
-        </p>
+      <div style={{ marginBottom: 18, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div>
+          <h1 style={{ fontSize: 24, fontWeight: 600, letterSpacing: "-0.02em", margin: 0 }}>База ресурсов CWICR</h1>
+          <p style={{ fontSize: 13, color: "var(--text-tertiary)", margin: "4px 0 0" }}>
+            {stats?.total ?? 0} материалов / оборудования / труда из открытой базы DDC CWICR (С.-Пб, CC BY 4.0)
+          </p>
+        </div>
+        <button
+          onClick={() => setAiOpen(true)}
+          style={{
+            padding: "10px 18px", fontSize: 13, fontWeight: 500,
+            background: "linear-gradient(135deg, #a78bfa, #60a5fa)", color: "white",
+            border: "none", borderRadius: 10, cursor: "pointer",
+            display: "flex", alignItems: "center", gap: 8,
+          }}>
+          <span>🤖</span> AI-поиск по смыслу
+        </button>
       </div>
+
+      {/* AI-индекс блок */}
+      {indexStatus && (
+        <div style={{
+          padding: "10px 14px", marginBottom: 14, borderRadius: 10,
+          background: indexStatus.synced ? "rgba(34,197,94,0.06)" : "rgba(168,139,250,0.06)",
+          border: `1px solid ${indexStatus.synced ? "rgba(34,197,94,0.3)" : "rgba(168,139,250,0.3)"}`,
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap",
+        }}>
+          <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+            <span style={{ marginRight: 6 }}>{indexStatus.synced ? "✓" : "⚡"}</span>
+            <span style={{ fontFamily: "monospace", fontWeight: 500 }}>
+              AI-индекс: {indexStatus.qdrant.points_count ?? 0} / {indexStatus.total_in_db}
+            </span>
+            <span style={{ marginLeft: 8, color: "var(--text-tertiary)" }}>
+              {indexStatus.synced
+                ? "синхронизирован — можно использовать AI-поиск"
+                : "не синхронизирован — индексация даст полноценный AI-поиск"}
+            </span>
+          </div>
+          <button
+            onClick={runReindex}
+            disabled={reindexing}
+            style={{
+              padding: "6px 14px", fontSize: 12, fontWeight: 500,
+              background: indexStatus.synced ? "var(--bg-elevated)" : "var(--accent)",
+              color: indexStatus.synced ? "var(--text-secondary)" : "white",
+              border: "1px solid " + (indexStatus.synced ? "var(--border-subtle)" : "var(--accent)"),
+              borderRadius: 8, cursor: reindexing ? "wait" : "pointer", opacity: reindexing ? 0.6 : 1,
+            }}>
+            {reindexing ? "Индексация..." : indexStatus.synced ? "Переиндексировать" : "Запустить индексацию"}
+          </button>
+        </div>
+      )}
+      {reindexResult && (
+        <div style={{ padding: "8px 14px", marginBottom: 14, borderRadius: 8, fontSize: 12,
+                      background: reindexResult.startsWith("Ошибка") ? "rgba(248,113,113,0.1)" : "rgba(34,197,94,0.1)",
+                      color: reindexResult.startsWith("Ошибка") ? "var(--danger)" : "var(--success)" }}>
+          {reindexResult}
+        </div>
+      )}
 
       {/* Stats by type */}
       {stats && (
@@ -166,6 +260,13 @@ export default function ResourcesPage() {
         Boiko, A. (2022-2026). DDC CWICR — Construction Work Items, Costs & Resources. DataDrivenConstruction. Лицензия CC BY 4.0.
         Цены даны для С.-Пб; для Свердловской обл. использовать `regional_factor` в записи ресурса.
       </p>
+
+      {aiOpen && (
+        <AISearchModal
+          initialQuery={search.length >= 2 ? search : ""}
+          onClose={() => setAiOpen(false)}
+        />
+      )}
     </div>
   );
 }
