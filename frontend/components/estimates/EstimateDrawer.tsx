@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import type { Estimate, EstimateItem, EstimateStatus } from "@/types/estimate";
 import AISearchModal, { type SemanticHit } from "@/components/search/AISearchModal";
+import DecomposeWorkModal from "@/components/estimates/DecomposeWorkModal";
 
 interface Props {
   name: string | null;
@@ -51,6 +52,7 @@ export function EstimateDrawer({ name, onClose, onUpdated }: Props) {
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set());
   const [aiOpen, setAiOpen] = useState(false);
   const [aiNotice, setAiNotice] = useState<string | null>(null);
+  const [decomposeOpen, setDecomposeOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
 
@@ -223,6 +225,18 @@ export function EstimateDrawer({ name, onClose, onUpdated }: Props) {
                 style={{ fontSize: 11.5, padding: "3px 10px", borderRadius: 7, border: "1px solid var(--border-subtle)", background: "transparent", color: "var(--text-secondary)", cursor: importing ? "wait" : "pointer", opacity: importing ? 0.5 : 1 }}
               >
                 {importing ? "Импорт..." : "Импорт XML"}
+              </button>
+
+              <button
+                onClick={() => setDecomposeOpen(true)}
+                style={{
+                  fontSize: 11.5, padding: "3px 10px", borderRadius: 7,
+                  border: "1px solid rgba(234,88,12,0.4)", background: "rgba(234,88,12,0.08)",
+                  color: "var(--accent)", cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: 4,
+                }}
+              >
+                <span>🪄</span> AI-смета
               </button>
 
               <button
@@ -408,6 +422,23 @@ export function EstimateDrawer({ name, onClose, onUpdated }: Props) {
               setTimeout(() => setAiNotice(null), 4000);
             });
             setAiOpen(false);
+          }}
+        />
+      )}
+
+      {decomposeOpen && estimate && (
+        <DecomposeWorkModal
+          estimateName={estimate.name}
+          onClose={() => setDecomposeOpen(false)}
+          onApplied={() => {
+            setDecomposeOpen(false);
+            setAiNotice("Этапы добавлены в смету");
+            setTimeout(() => setAiNotice(null), 4000);
+            // Перезагрузим смету чтобы увидеть новые строки
+            fetch(`/api/estimates/${encodeURIComponent(estimate.name)}`)
+              .then((r) => r.json())
+              .then((d) => setEstimate(d))
+              .catch(() => {});
           }}
         />
       )}

@@ -1,0 +1,132 @@
+{
+  "name": "Work Template",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "field:template_id",
+  "title_field": "title",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "template_id",
+      "fieldtype": "Data",
+      "label": "ID шаблона",
+      "reqd": 1,
+      "unique": 1,
+      "in_list_view": 1,
+      "description": "Латиницей, snake_case: akz_rvs_2000, cfrp_slab, fire_protection_steel"
+    },
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Название работы",
+      "reqd": 1,
+      "in_list_view": 1,
+      "bold": 1,
+      "description": "АКЗ резервуара РВС / Усиление плиты углеволокном / Огнезащита м/к"
+    },
+    {
+      "fieldname": "category",
+      "fieldtype": "Select",
+      "label": "Категория",
+      "options": "АКЗ\nОгнезащита\nУсиление конструкций\nМонтаж м/к\nПромальп\nКровля\nПолы\nОтделка\nЗемляные работы\nБетонные работы\nДемонтаж\nПрочее",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "reqd": 1
+    },
+    {
+      "fieldname": "base_unit",
+      "fieldtype": "Data",
+      "label": "Базовая ед.",
+      "reqd": 1,
+      "in_list_view": 1,
+      "description": "м², м³, т, шт — основная единица для расчёта объёма"
+    },
+    {
+      "fieldname": "typical_volume_min",
+      "fieldtype": "Float",
+      "label": "Типовой объём (от)",
+      "precision": "2"
+    },
+    {
+      "fieldname": "typical_volume_max",
+      "fieldtype": "Float",
+      "label": "Типовой объём (до)",
+      "precision": "2"
+    },
+    {
+      "fieldname": "section_break_keywords",
+      "fieldtype": "Section Break",
+      "label": "Триггеры для AI"
+    },
+    {
+      "fieldname": "keywords",
+      "fieldtype": "Small Text",
+      "label": "Ключевые слова",
+      "reqd": 1,
+      "description": "Через запятую — по этим словам AI/Qdrant найдут шаблон. Пример: усиление, углеволокно, углеткань, CFRP, плита, перекрытие"
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Small Text",
+      "label": "Описание / условия применения",
+      "description": "Когда применять, что нужно от заказчика, какие условия"
+    },
+    {
+      "fieldname": "section_break_stages",
+      "fieldtype": "Section Break",
+      "label": "Этапы работ"
+    },
+    {
+      "fieldname": "stages",
+      "fieldtype": "Table",
+      "label": "Этапы",
+      "options": "Work Stage Template",
+      "reqd": 1
+    },
+    {
+      "fieldname": "section_break_meta",
+      "fieldtype": "Section Break",
+      "label": "Метаданные"
+    },
+    {
+      "fieldname": "source",
+      "fieldtype": "Select",
+      "label": "Источник",
+      "options": "Ручной ввод\nИмпорт из CWICR\nAI-генерация (черновик)\nИмпорт из ГЭСН",
+      "default": "Ручной ввод"
+    },
+    {
+      "fieldname": "is_verified",
+      "fieldtype": "Check",
+      "label": "Проверен",
+      "default": 1,
+      "description": "Если 0 — шаблон только для предложения AI, не используется в финальной смете напрямую"
+    },
+    {
+      "fieldname": "usage_count",
+      "fieldtype": "Int",
+      "label": "Использован раз",
+      "read_only": 1,
+      "default": 0
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "email": 1, "export": 1, "share": 1, "report": 1
+    },
+    {
+      "role": "Главный инженер",
+      "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1
+    },
+    {
+      "role": "Тендерный менеджер",
+      "read": 1, "report": 1
+    }
+  ],
+  "sort_field": "usage_count",
+  "sort_order": "DESC",
+  "naming_rule": "By fieldname"
+}
