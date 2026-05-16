@@ -222,6 +222,10 @@ custom_fields: dict[str, list[dict]] = {
             "insert_after": "supplier_specialization",
         },
     ],
+    # ─── OCE / OLIMP.STACK интеграционные поля ───────────────────────────
+    # Добавляются скриптом olimp_construction.install.sync_oce_fields
+    # (вызывается отдельно при необходимости — не каждую migrate).
+    # См. файл backend/.../install_oce.py и docs/OLIMP_STACK_PLAN.md
 }
 
 # Фикстуры

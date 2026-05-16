@@ -1,0 +1,66 @@
+# =============================================================================
+# Caddyfile для OLIMP.ESTIMATE
+# =============================================================================
+# Основной 443 порт занят ERPNext, поэтому OCE слушает на 8443
+# с TLS-терминацией через Let's Encrypt
+# Можно также проксировать через основной Caddy/Traefik ERPNext-стека
+# =============================================================================
+
+estimate.olimp-ural.ru:443 {
+    # TLS автоматически через Let's Encrypt
+    tls dima@olimp-ural.ru
+
+    # API роуты идут на backend
+    handle /api/* {
+        reverse_proxy oce-backend:8000 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            
+            # Большие чертежи могут загружаться долго
+            transport http {
+                read_timeout 300s
+                write_timeout 300s
+            }
+        }
+    }
+    
+    # WebSocket для realtime-обновлений в Gantt
+    handle /ws/* {
+        reverse_proxy oce-backend:8000
+    }
+    
+    # Всё остальное — статика фронта
+    handle {
+        reverse_proxy oce-frontend:80
+    }
+    
+    # Безопасность
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # Разрешаем embedding чертежей через PDF.js
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com;"
+    }
+    
+    # Логи
+    log {
+        output file /data/access.log {
+            roll_size 10mb
+            roll_keep 5
+        }
+        format json
+    }
+    
+    # Лимиты на upload (чертежи могут быть тяжёлыми)
+    request_body {
+        max_size 500MB
+    }
+}
+
+# Редирект с www
+www.estimate.olimp-ural.ru:443 {
+    redir https://estimate.olimp-ural.ru{uri} permanent
+}

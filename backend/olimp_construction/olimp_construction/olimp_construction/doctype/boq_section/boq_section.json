@@ -1,0 +1,54 @@
+{
+  "name": "BOQ Section",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "istable": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "section_code",
+      "fieldtype": "Data",
+      "label": "Код раздела",
+      "in_list_view": 1,
+      "columns": 1,
+      "reqd": 1,
+      "description": "Например: 1, 1.1, 2.3"
+    },
+    {
+      "fieldname": "section_name",
+      "fieldtype": "Data",
+      "label": "Название раздела",
+      "in_list_view": 1,
+      "columns": 3,
+      "reqd": 1
+    },
+    {
+      "fieldname": "parent_section",
+      "fieldtype": "Data",
+      "label": "Родительский раздел",
+      "description": "Код родительского раздела для иерархии"
+    },
+    {
+      "fieldname": "subtotal",
+      "fieldtype": "Currency",
+      "label": "Сумма по разделу",
+      "in_list_view": 1,
+      "columns": 2,
+      "read_only": 1
+    },
+    {
+      "fieldname": "positions_count",
+      "fieldtype": "Int",
+      "label": "Позиций",
+      "in_list_view": 1,
+      "columns": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "oce_section_id",
+      "fieldtype": "Data",
+      "label": "OCE ID",
+      "read_only": 1
+    }
+  ]
+}

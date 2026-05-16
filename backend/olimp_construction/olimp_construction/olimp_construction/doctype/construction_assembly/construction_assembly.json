@@ -1,0 +1,125 @@
+{
+  "name": "Construction Assembly",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "field:assembly_code",
+  "title_field": "assembly_name",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "assembly_code",
+      "fieldtype": "Data",
+      "label": "Код сборки",
+      "reqd": 1,
+      "unique": 1,
+      "in_list_view": 1,
+      "description": "Например: AKZ-G3-M2, METALL-MONT-T, OGNE-R90-M2"
+    },
+    {
+      "fieldname": "assembly_name",
+      "fieldtype": "Data",
+      "label": "Название",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "category",
+      "fieldtype": "Select",
+      "label": "Категория работ",
+      "options": "АКЗ / Огнезащита\nУсиление углеволокном\nМонтаж металлоконструкций\nКровельные работы\nБетонные работы\nПромальп\nСварка\nДемонтаж\nЗемляные работы\nПрочее",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "unit",
+      "fieldtype": "Data",
+      "label": "Ед. изм. сборки",
+      "reqd": 1,
+      "description": "На что нормирована: м², т, шт, м³"
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "labor_hours",
+      "fieldtype": "Float",
+      "label": "Чел-часов на ед.",
+      "precision": "2"
+    },
+    {
+      "fieldname": "base_rate",
+      "fieldtype": "Currency",
+      "label": "Базовая себестоимость",
+      "read_only": 1,
+      "description": "Расчёт по items"
+    },
+    {
+      "fieldname": "market_rate",
+      "fieldtype": "Currency",
+      "label": "Рыночная цена УрФО",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "margin_percent",
+      "fieldtype": "Percent",
+      "label": "Маржа, %",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "items_section",
+      "fieldtype": "Section Break",
+      "label": "Состав сборки"
+    },
+    {
+      "fieldname": "items",
+      "fieldtype": "Table",
+      "label": "Ресурсы",
+      "options": "Assembly Item"
+    },
+    {
+      "fieldname": "notes_section",
+      "fieldtype": "Section Break",
+      "label": "Описание",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Text",
+      "label": "Описание технологии"
+    },
+    {
+      "fieldname": "applicable_objects",
+      "fieldtype": "Small Text",
+      "label": "Где применяется",
+      "description": "Перечисление типовых объектов: НТМК, СВЕЗА, и т.д."
+    },
+    {
+      "fieldname": "is_active",
+      "fieldtype": "Check",
+      "label": "Активна",
+      "default": "1",
+      "in_list_view": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "report": 1
+    },
+    {
+      "role": "Главный инженер",
+      "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1
+    },
+    {
+      "role": "Тендерный менеджер",
+      "read": 1, "report": 1
+    }
+  ],
+  "sort_field": "assembly_code",
+  "sort_order": "ASC",
+  "naming_rule": "By fieldname"
+}

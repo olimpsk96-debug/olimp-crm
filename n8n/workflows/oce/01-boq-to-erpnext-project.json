@@ -1,0 +1,169 @@
+{
+  "name": "OLIMP: BOQ Won → ERPNext Project",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "boq-to-erpnext",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook: BOQ Won",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [240, 300],
+      "webhookId": "boq-to-erpnext"
+    },
+    {
+      "parameters": {
+        "url": "=http://oce-backend:8000/api/boqs/{{$json.body.boq_id}}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": false
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "fetch-boq",
+      "name": "Fetch BOQ from OCE",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "oce-api-token",
+          "name": "OCE API Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Преобразование BOQ из OCE-формата в ERPNext Project payload\n\nconst boq = $input.first().json;\n\n// Базовый проект\nconst project = {\n  doctype: 'Project',\n  project_name: boq.project.name,\n  project_type: 'External',\n  status: 'Open',\n  customer: boq.project.client_erpnext_id,  // должно быть замаплено заранее\n  expected_start_date: boq.project.start_date,\n  expected_end_date: boq.project.end_date,\n  estimated_costing: boq.grand_total,\n  cost_center: 'Стройка - ОЛИМП',\n  company: 'ООО \"Олимп\"',\n  \n  // Bridge fields\n  custom_oce_project_id: boq.project.id,\n  custom_oce_boq_id: boq.id,\n  custom_oce_boq_version: boq.version,\n  custom_oce_link: `https://estimate.olimp-ural.ru/projects/${boq.project.id}`,\n  custom_oce_last_sync: new Date().toISOString(),\n};\n\n// Задачи из секций BOQ\nconst tasks = boq.sections.map((section, idx) => {\n  // Распределяем сроки секций пропорционально стоимости\n  const totalProgress = boq.sections.slice(0, idx).reduce((s, c) => s + c.subtotal, 0);\n  const progressRatio = totalProgress / boq.total_amount;\n  const projectDays = Math.ceil(\n    (new Date(boq.project.end_date) - new Date(boq.project.start_date)) / 86400000\n  );\n  \n  const sectionDays = Math.ceil(projectDays * (section.subtotal / boq.total_amount));\n  const startOffset = Math.ceil(projectDays * progressRatio);\n  \n  const startDate = new Date(boq.project.start_date);\n  startDate.setDate(startDate.getDate() + startOffset);\n  const endDate = new Date(startDate);\n  endDate.setDate(endDate.getDate() + sectionDays);\n  \n  return {\n    doctype: 'Task',\n    subject: `${section.section_code}. ${section.section_name}`,\n    status: 'Open',\n    exp_start_date: startDate.toISOString().split('T')[0],\n    exp_end_date: endDate.toISOString().split('T')[0],\n    expected_time: sectionDays * 8,  // часы\n    description: `Раздел из BOQ ${boq.id}. Сумма раздела: ${section.subtotal.toLocaleString('ru-RU')} ₽`,\n    custom_oce_activity_id: section.id,\n  };\n});\n\n// Material Requests из позиций типа \"материал\"\nconst materialPositions = boq.positions.filter(p => \n  p.resource_type === 'material' && p.item_code\n);\n\nconst materialRequests = materialPositions.map(p => ({\n  doctype: 'Material Request',\n  material_request_type: 'Purchase',\n  schedule_date: boq.project.start_date,\n  items: [{\n    item_code: p.item_code,\n    qty: p.quantity,\n    uom: p.uom,\n    rate: p.unit_rate,\n    description: p.description,\n  }],\n  custom_oce_boq_position_id: p.id,\n}));\n\nreturn [{\n  json: {\n    project,\n    tasks,\n    material_requests: materialRequests,\n    summary: {\n      project_name: project.project_name,\n      budget: project.estimated_costing,\n      tasks_count: tasks.length,\n      mr_count: materialRequests.length,\n    }\n  }\n}];"
+      },
+      "id": "transform-data",
+      "name": "Transform: BOQ → ERPNext payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://erpnext-backend:8000/api/resource/Project",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.project) }}",
+        "options": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "create-project",
+      "name": "Create Project in ERPNext",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "erpnext-api-token",
+          "name": "ERPNext API Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "split-tasks",
+      "name": "Split Tasks",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://erpnext-backend:8000/api/resource/Task",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({...$json, project: $('Create Project in ERPNext').first().json.data.name}) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "create-tasks",
+      "name": "Create Tasks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 400],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "erpnext-api-token",
+          "name": "ERPNext API Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chat_id\": \"{{$env.TELEGRAM_CHAT_ID_DIRECTOR}}\",\n  \"text\": \"✅ <b>Новый проект создан в ERPNext</b>\\n\\n📋 <b>{{$('Transform: BOQ → ERPNext payload').first().json.summary.project_name}}</b>\\n💰 Бюджет: {{$('Transform: BOQ → ERPNext payload').first().json.summary.budget}} ₽\\n📊 Задач: {{$('Transform: BOQ → ERPNext payload').first().json.summary.tasks_count}}\\n📦 Заявок на материалы: {{$('Transform: BOQ → ERPNext payload').first().json.summary.mr_count}}\\n\\n🔗 https://erp.olimp-ural.ru/app/project/{{$('Create Project in ERPNext').first().json.data.name}}\",\n  \"parse_mode\": \"HTML\"\n}"
+      },
+      "id": "telegram-notify",
+      "name": "Telegram: Уведомить директора",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"ok\",\n  \"project_id\": \"{{$('Create Project in ERPNext').first().json.data.name}}\",\n  \"oce_link\": \"https://estimate.olimp-ural.ru/projects/{{$('Webhook: BOQ Won').first().json.body.project_id}}\"\n}"
+      },
+      "id": "respond",
+      "name": "Respond to OCE",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1560, 200]
+    }
+  ],
+  "connections": {
+    "Webhook: BOQ Won": {
+      "main": [[{"node": "Fetch BOQ from OCE", "type": "main", "index": 0}]]
+    },
+    "Fetch BOQ from OCE": {
+      "main": [[{"node": "Transform: BOQ → ERPNext payload", "type": "main", "index": 0}]]
+    },
+    "Transform: BOQ → ERPNext payload": {
+      "main": [[
+        {"node": "Create Project in ERPNext", "type": "main", "index": 0},
+        {"node": "Split Tasks", "type": "main", "index": 0}
+      ]]
+    },
+    "Create Project in ERPNext": {
+      "main": [[{"node": "Telegram: Уведомить директора", "type": "main", "index": 0}]]
+    },
+    "Split Tasks": {
+      "main": [[{"node": "Create Tasks", "type": "main", "index": 0}]]
+    },
+    "Create Tasks": {
+      "main": [[{"node": "Split Tasks", "type": "main", "index": 0}]]
+    },
+    "Telegram: Уведомить директора": {
+      "main": [[{"node": "Respond to OCE", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "errorWorkflow": "olimp-error-handler"
+  },
+  "tags": ["olimp", "boq", "erpnext", "integration"]
+}

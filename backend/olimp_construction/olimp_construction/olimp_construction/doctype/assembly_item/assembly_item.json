@@ -1,0 +1,71 @@
+{
+  "name": "Assembly Item",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "istable": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "resource_type",
+      "fieldtype": "Select",
+      "label": "Тип",
+      "options": "material\nlabor\nequipment\nsubcontract",
+      "in_list_view": 1,
+      "columns": 1,
+      "default": "material"
+    },
+    {
+      "fieldname": "catalog_resource",
+      "fieldtype": "Link",
+      "label": "Ресурс CWICR",
+      "options": "Catalog Resource",
+      "in_list_view": 1,
+      "columns": 2,
+      "description": "Ссылка на справочник материалов/труда/оборудования"
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Data",
+      "label": "Описание",
+      "in_list_view": 1,
+      "columns": 2,
+      "description": "Если нет в CWICR — название текстом"
+    },
+    {
+      "fieldname": "qty_per_unit",
+      "fieldtype": "Float",
+      "label": "Кол-во на ед. сборки",
+      "reqd": 1,
+      "in_list_view": 1,
+      "columns": 1,
+      "precision": "4"
+    },
+    {
+      "fieldname": "unit",
+      "fieldtype": "Data",
+      "label": "Ед.",
+      "in_list_view": 1,
+      "columns": 1
+    },
+    {
+      "fieldname": "rate",
+      "fieldtype": "Currency",
+      "label": "Цена",
+      "in_list_view": 1,
+      "columns": 1
+    },
+    {
+      "fieldname": "amount",
+      "fieldtype": "Currency",
+      "label": "Сумма",
+      "in_list_view": 1,
+      "columns": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Data",
+      "label": "Примечание"
+    }
+  ]
+}

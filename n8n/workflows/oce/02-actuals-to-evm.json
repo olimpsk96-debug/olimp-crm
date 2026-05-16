@@ -1,0 +1,190 @@
+{
+  "name": "OLIMP: ERPNext Actuals → OCE EVM (nightly)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{"field": "cronExpression", "expression": "0 23 * * *"}]
+        }
+      },
+      "id": "cron-trigger",
+      "name": "Cron: каждый вечер 23:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://erpnext-backend:8000/api/resource/Project",
+        "qs": {
+          "filters": "[[\"status\",\"=\",\"Open\"],[\"custom_oce_boq_id\",\"!=\",\"\"]]",
+          "fields": "[\"name\",\"custom_oce_project_id\",\"custom_oce_boq_id\",\"estimated_costing\",\"expected_start_date\",\"expected_end_date\"]",
+          "limit_page_length": "100"
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "fetch-active-projects",
+      "name": "Fetch Active Projects from ERPNext",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "id": "split-projects",
+      "name": "Split Projects",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Собираем факт расходов по проекту из разных DocType:\n// 1. Закупки (Purchase Invoice)\n// 2. КС-2 от субподрядчиков (через Purchase Invoice с subcontract)\n// 3. Зарплата работников, аллоцированная на проект\n// 4. Прочие расходы (Journal Entry)\n\nconst project = $input.first().json;\n\nreturn [{\n  json: {\n    erpnext_project: project.name,\n    oce_project_id: project.custom_oce_project_id,\n    oce_boq_id: project.custom_oce_boq_id,\n    budget: project.estimated_costing,\n    queries: {\n      purchase_invoices: {\n        url: 'http://erpnext-backend:8000/api/resource/Purchase Invoice',\n        filters: JSON.stringify([['project', '=', project.name], ['docstatus', '=', 1]])\n      },\n      timesheets: {\n        url: 'http://erpnext-backend:8000/api/resource/Timesheet',\n        filters: JSON.stringify([['parent_project', '=', project.name], ['docstatus', '=', 1]])\n      },\n      journal_entries: {\n        url: 'http://erpnext-backend:8000/api/resource/Journal Entry Account',\n        filters: JSON.stringify([['project', '=', project.name], ['docstatus', '=', 1]])\n      }\n    }\n  }\n}];"
+      },
+      "id": "build-queries",
+      "name": "Build Actuals Queries",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{$json.queries.purchase_invoices.url}}",
+        "qs": {
+          "filters": "={{$json.queries.purchase_invoices.filters}}",
+          "fields": "[\"name\",\"grand_total\",\"posting_date\",\"supplier\"]",
+          "limit_page_length": "200"
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "fetch-purchase",
+      "name": "Fetch Purchase Invoices",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "url": "={{$('Build Actuals Queries').first().json.queries.timesheets.url}}",
+        "qs": {
+          "filters": "={{$('Build Actuals Queries').first().json.queries.timesheets.filters}}",
+          "fields": "[\"name\",\"total_billable_amount\",\"start_date\",\"employee\"]",
+          "limit_page_length": "200"
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "fetch-timesheets",
+      "name": "Fetch Timesheets",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Агрегация факта для EVM-расчёта\nconst projectData = $('Build Actuals Queries').first().json;\nconst purchases = $('Fetch Purchase Invoices').first().json.data || [];\nconst timesheets = $('Fetch Timesheets').first().json.data || [];\n\nconst actualCost = \n  purchases.reduce((sum, pi) => sum + (pi.grand_total || 0), 0) +\n  timesheets.reduce((sum, ts) => sum + (ts.total_billable_amount || 0), 0);\n\n// Определяем процент готовности по последней дате\nconst allDates = [\n  ...purchases.map(p => new Date(p.posting_date)),\n  ...timesheets.map(t => new Date(t.start_date))\n];\nconst lastActivity = allDates.length > 0 ? new Date(Math.max(...allDates)) : new Date();\n\nreturn [{\n  json: {\n    oce_project_id: projectData.oce_project_id,\n    oce_boq_id: projectData.oce_boq_id,\n    report_date: new Date().toISOString().split('T')[0],\n    actual_cost: actualCost,\n    actual_cost_by_source: {\n      purchases: purchases.reduce((sum, pi) => sum + pi.grand_total, 0),\n      labor: timesheets.reduce((sum, ts) => sum + ts.total_billable_amount, 0)\n    },\n    transactions_count: purchases.length + timesheets.length,\n    last_activity_date: lastActivity.toISOString().split('T')[0],\n    budget: projectData.budget,\n    burn_rate_percent: (actualCost / projectData.budget) * 100\n  }\n}];"
+      },
+      "id": "aggregate-actuals",
+      "name": "Aggregate Actuals",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://oce-backend:8000/api/projects/{{$json.oce_project_id}}/actuals",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "push-to-oce",
+      "name": "POST Actuals → OCE",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict"},
+          "conditions": [
+            {
+              "id": "evm-alert",
+              "leftValue": "={{$json.evm.eac}}",
+              "rightValue": "={{$json.budget * 1.05}}",
+              "operator": {"type": "number", "operation": "gt"}
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "check-overrun",
+      "name": "Бюджет превышен >5%?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chat_id\": \"{{$env.TELEGRAM_CHAT_ID_DIRECTOR}}\",\n  \"text\": \"🚨 <b>EVM-АЛЕРТ: превышение бюджета</b>\\n\\n📋 Проект OCE: {{$json.oce_project_id}}\\n💰 Бюджет: {{$json.budget.toLocaleString('ru-RU')}} ₽\\n📊 SPI: {{$json.evm.spi.toFixed(2)}}\\n📊 CPI: {{$json.evm.cpi.toFixed(2)}}\\n⚠️ EAC: {{$json.evm.eac.toLocaleString('ru-RU')}} ₽ (+{{((($json.evm.eac / $json.budget) - 1) * 100).toFixed(1)}}%)\\n\\n🔗 https://estimate.olimp-ural.ru/projects/{{$json.oce_project_id}}\",\n  \"parse_mode\": \"HTML\"\n}"
+      },
+      "id": "telegram-alert",
+      "name": "Telegram ALERT",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2000, 200]
+    }
+  ],
+  "connections": {
+    "Cron: каждый вечер 23:00": {
+      "main": [[{"node": "Fetch Active Projects from ERPNext", "type": "main", "index": 0}]]
+    },
+    "Fetch Active Projects from ERPNext": {
+      "main": [[{"node": "Split Projects", "type": "main", "index": 0}]]
+    },
+    "Split Projects": {
+      "main": [[{"node": "Build Actuals Queries", "type": "main", "index": 0}]]
+    },
+    "Build Actuals Queries": {
+      "main": [[
+        {"node": "Fetch Purchase Invoices", "type": "main", "index": 0},
+        {"node": "Fetch Timesheets", "type": "main", "index": 0}
+      ]]
+    },
+    "Fetch Purchase Invoices": {
+      "main": [[{"node": "Aggregate Actuals", "type": "main", "index": 0}]]
+    },
+    "Fetch Timesheets": {
+      "main": [[{"node": "Aggregate Actuals", "type": "main", "index": 0}]]
+    },
+    "Aggregate Actuals": {
+      "main": [[{"node": "POST Actuals → OCE", "type": "main", "index": 0}]]
+    },
+    "POST Actuals → OCE": {
+      "main": [[{"node": "Бюджет превышен >5%?", "type": "main", "index": 0}]]
+    },
+    "Бюджет превышен >5%?": {
+      "main": [
+        [{"node": "Telegram ALERT", "type": "main", "index": 0}],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "tags": ["olimp", "evm", "erpnext", "oce", "nightly"]
+}

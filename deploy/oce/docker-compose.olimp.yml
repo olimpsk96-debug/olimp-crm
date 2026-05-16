@@ -1,0 +1,184 @@
+# =============================================================================
+# OLIMP.ESTIMATE — preconstruction layer над ERPNext
+# =============================================================================
+# Подключается к существующему docker-compose.yml ERPNext через external network.
+# AGPL-3.0 код изолирован: общение с ERPNext только через REST API + n8n.
+#
+# Запуск:
+#   1. Убедись, что сеть olimp_network существует в основном compose
+#   2. docker compose -f docker-compose.yml -f docker-compose.olimp.yml up -d
+#
+# Доступ:
+#   - OCE Frontend:  https://estimate.olimp-ural.ru
+#   - OCE API:       http://oce-backend:8000 (внутри сети)
+#   - LanceDB:       embedded в oce-backend
+# =============================================================================
+
+version: "3.9"
+
+services:
+  # ---------------------------------------------------------------------------
+  # OpenConstructionERP — Backend (FastAPI)
+  # ---------------------------------------------------------------------------
+  oce-backend:
+    image: ghcr.io/datadrivenconstruction/openconstructionerp-backend:latest
+    # альтернатива — собирать локально из форка:
+    # build:
+    #   context: ./vendor/OpenConstructionERP/backend
+    #   dockerfile: Dockerfile
+    container_name: olimp-oce-backend
+    restart: unless-stopped
+    environment:
+      # БД (изолированный Postgres, не трогаем MariaDB ERPNext)
+      DATABASE_URL: postgresql+asyncpg://oce:${OCE_DB_PASSWORD}@oce-postgres:5432/oce_db
+      
+      # Vector DB для AI Cost Advisor (embedded LanceDB по умолчанию)
+      VECTOR_DB_BACKEND: lancedb
+      VECTOR_DB_PATH: /data/lancedb
+      
+      # LLM-провайдер (используем существующий Anthropic ключ)
+      LLM_PROVIDER: anthropic
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      LLM_MODEL: claude-opus-4-7
+      
+      # Embedding модель для semantic search по сметным позициям
+      EMBEDDING_MODEL: text-embedding-3-large
+      EMBEDDING_DIMENSIONS: 3072
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      
+      # Регион и стандарты (для УрФО — только ГЭСН/ФЕР)
+      DEFAULT_REGION: RU-URAL
+      DEFAULT_STANDARD: GESN
+      DEFAULT_CURRENCY: RUB
+      DEFAULT_VAT_RATE: 20
+      DEFAULT_LANGUAGE: ru
+      
+      # Интеграция с ERPNext через n8n webhook
+      N8N_WEBHOOK_BOQ_EXPORT: http://n8n:5678/webhook/boq-to-erpnext
+      N8N_WEBHOOK_ACTUAL_IMPORT: http://n8n:5678/webhook/erpnext-actuals
+      
+      # MinIO для хранения файлов (чертежи, PDF, экспорты)
+      S3_ENDPOINT: http://minio:9000
+      S3_BUCKET: olimp-estimate
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      
+      # Security
+      SECRET_KEY: ${OCE_SECRET_KEY}
+      JWT_ALGORITHM: HS256
+      JWT_EXPIRES_MINUTES: 480
+      
+      # Отключаем телеметрию upstream
+      TELEMETRY_ENABLED: "false"
+      
+    volumes:
+      - oce_data:/data
+      - oce_uploads:/app/uploads
+      - ./oce-custom/branding:/app/branding:ro  # лого Олимпа, цвета
+      - ./oce-custom/cost-db:/app/cost-db:ro    # выгрузки из Гранд-Сметы
+    
+    depends_on:
+      oce-postgres:
+        condition: service_healthy
+    
+    networks:
+      - olimp_network
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ---------------------------------------------------------------------------
+  # OpenConstructionERP — Frontend (React/Vite, отдаётся через nginx)
+  # ---------------------------------------------------------------------------
+  oce-frontend:
+    image: ghcr.io/datadrivenconstruction/openconstructionerp-frontend:latest
+    container_name: olimp-oce-frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_BASE_URL: https://estimate.olimp-ural.ru/api
+      VITE_BRAND_NAME: "ОЛИМП.СМЕТА"
+      VITE_LOGO_PATH: /branding/logo-olimp.svg
+      VITE_DEFAULT_LOCALE: ru
+    depends_on:
+      - oce-backend
+    networks:
+      - olimp_network
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL для OCE (отдельно от MariaDB ERPNext)
+  # ---------------------------------------------------------------------------
+  oce-postgres:
+    image: postgres:16-alpine
+    container_name: olimp-oce-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: oce_db
+      POSTGRES_USER: oce
+      POSTGRES_PASSWORD: ${OCE_DB_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=ru_RU.UTF-8"
+    volumes:
+      - oce_postgres_data:/var/lib/postgresql/data
+      - ./scripts/oce-postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - olimp_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oce -d oce_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Опционально: Qdrant для вынесенного vector search
+  # (если LanceDB embedded станет узким местом при объёмах >100K позиций)
+  # Закомментировано — включить, если LanceDB не справится
+  # ---------------------------------------------------------------------------
+  # oce-qdrant:
+  #   image: qdrant/qdrant:latest
+  #   container_name: olimp-oce-qdrant
+  #   restart: unless-stopped
+  #   volumes:
+  #     - oce_qdrant_data:/qdrant/storage
+  #   networks:
+  #     - olimp_network
+
+  # ---------------------------------------------------------------------------
+  # Reverse proxy для estimate.olimp-ural.ru
+  # (если используешь Caddy/Traefik в основном compose — добавь сюда labels)
+  # ---------------------------------------------------------------------------
+  oce-caddy:
+    image: caddy:2-alpine
+    container_name: olimp-oce-caddy
+    restart: unless-stopped
+    ports:
+      - "8443:443"   # на хосте слушаем 8443, основной 443 у ERPNext
+    volumes:
+      - ./scripts/Caddyfile.oce:/etc/caddy/Caddyfile:ro
+      - oce_caddy_data:/data
+      - oce_caddy_config:/config
+    depends_on:
+      - oce-frontend
+      - oce-backend
+    networks:
+      - olimp_network
+
+volumes:
+  oce_data:
+    name: olimp_oce_data
+  oce_uploads:
+    name: olimp_oce_uploads
+  oce_postgres_data:
+    name: olimp_oce_postgres_data
+  # oce_qdrant_data:
+  #   name: olimp_oce_qdrant_data
+  oce_caddy_data:
+    name: olimp_oce_caddy_data
+  oce_caddy_config:
+    name: olimp_oce_caddy_config
+
+networks:
+  olimp_network:
+    external: true
+    name: olimp_network  # должна быть создана основным compose

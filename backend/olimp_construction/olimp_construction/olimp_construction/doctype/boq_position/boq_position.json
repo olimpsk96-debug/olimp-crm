@@ -1,0 +1,121 @@
+{
+  "name": "BOQ Position",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "istable": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "position_code",
+      "fieldtype": "Data",
+      "label": "Код",
+      "in_list_view": 1,
+      "columns": 1,
+      "description": "Код ГЭСН/ФЕР или внутренний"
+    },
+    {
+      "fieldname": "section_code",
+      "fieldtype": "Data",
+      "label": "Раздел",
+      "in_list_view": 1,
+      "columns": 1
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Small Text",
+      "label": "Наименование работ",
+      "in_list_view": 1,
+      "columns": 3,
+      "reqd": 1
+    },
+    {
+      "fieldname": "assembly",
+      "fieldtype": "Link",
+      "label": "Сборка",
+      "options": "Construction Assembly",
+      "description": "Если позиция типовая — ссылка на Construction Assembly"
+    },
+    {
+      "fieldname": "catalog_resource",
+      "fieldtype": "Link",
+      "label": "Ресурс CWICR",
+      "options": "Catalog Resource",
+      "description": "Связь со справочником материалов CWICR"
+    },
+    {
+      "fieldname": "unit",
+      "fieldtype": "Data",
+      "label": "Ед.",
+      "in_list_view": 1,
+      "columns": 1,
+      "reqd": 1
+    },
+    {
+      "fieldname": "quantity",
+      "fieldtype": "Float",
+      "label": "Кол-во",
+      "in_list_view": 1,
+      "columns": 1,
+      "reqd": 1,
+      "precision": "3"
+    },
+    {
+      "fieldname": "unit_rate",
+      "fieldtype": "Currency",
+      "label": "Цена",
+      "in_list_view": 1,
+      "columns": 1,
+      "reqd": 1
+    },
+    {
+      "fieldname": "total",
+      "fieldtype": "Currency",
+      "label": "Сумма",
+      "in_list_view": 1,
+      "columns": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "resource_type",
+      "fieldtype": "Select",
+      "label": "Тип ресурса",
+      "options": "material\nlabor\nequipment\nsubcontract\ncomposite",
+      "default": "composite"
+    },
+    {
+      "fieldname": "labor_cost",
+      "fieldtype": "Currency",
+      "label": "Труд",
+      "read_only": 1
+    },
+    {
+      "fieldname": "material_cost",
+      "fieldtype": "Currency",
+      "label": "Материалы",
+      "read_only": 1
+    },
+    {
+      "fieldname": "equipment_cost",
+      "fieldtype": "Currency",
+      "label": "Техника",
+      "read_only": 1
+    },
+    {
+      "fieldname": "subcontract_cost",
+      "fieldtype": "Currency",
+      "label": "Субподряд",
+      "read_only": 1
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Small Text",
+      "label": "Примечание"
+    },
+    {
+      "fieldname": "oce_position_id",
+      "fieldtype": "Data",
+      "label": "OCE ID",
+      "read_only": 1
+    }
+  ]
+}

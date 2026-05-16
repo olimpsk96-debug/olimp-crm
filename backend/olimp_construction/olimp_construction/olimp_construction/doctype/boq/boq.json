@@ -1,0 +1,227 @@
+{
+  "name": "BOQ",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "format:BOQ-{YYYY}-{#####}",
+  "title_field": "title",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Название сметы",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "project",
+      "fieldtype": "Link",
+      "label": "Проект",
+      "options": "Construction Project",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "customer",
+      "fieldtype": "Link",
+      "label": "Заказчик",
+      "options": "Customer",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "estimate_link",
+      "fieldtype": "Link",
+      "label": "Связанная Estimate",
+      "options": "Estimate",
+      "description": "Если BOQ создаётся из существующей сметы"
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "version",
+      "fieldtype": "Int",
+      "label": "Версия",
+      "default": "1",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Статус",
+      "options": "Draft\nSubmitted\nWon\nLost\nArchived",
+      "default": "Draft",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "boq_date",
+      "fieldtype": "Date",
+      "label": "Дата сметы",
+      "default": "Today",
+      "reqd": 1
+    },
+    {
+      "fieldname": "valid_until",
+      "fieldtype": "Date",
+      "label": "Действует до"
+    },
+    {
+      "fieldname": "sections_section",
+      "fieldtype": "Section Break",
+      "label": "Разделы сметы"
+    },
+    {
+      "fieldname": "sections",
+      "fieldtype": "Table",
+      "label": "Секции",
+      "options": "BOQ Section"
+    },
+    {
+      "fieldname": "positions_section",
+      "fieldtype": "Section Break",
+      "label": "Позиции"
+    },
+    {
+      "fieldname": "positions",
+      "fieldtype": "Table",
+      "label": "Позиции BOQ",
+      "options": "BOQ Position"
+    },
+    {
+      "fieldname": "totals_section",
+      "fieldtype": "Section Break",
+      "label": "Итоги"
+    },
+    {
+      "fieldname": "direct_cost",
+      "fieldtype": "Currency",
+      "label": "Прямые затраты",
+      "read_only": 1
+    },
+    {
+      "fieldname": "overhead_percent",
+      "fieldtype": "Percent",
+      "label": "Накладные, %",
+      "default": "8"
+    },
+    {
+      "fieldname": "overhead_amount",
+      "fieldtype": "Currency",
+      "label": "Накладные, ₽",
+      "read_only": 1
+    },
+    {
+      "fieldname": "profit_percent",
+      "fieldtype": "Percent",
+      "label": "Плановая прибыль, %",
+      "default": "15"
+    },
+    {
+      "fieldname": "profit_amount",
+      "fieldtype": "Currency",
+      "label": "Прибыль, ₽",
+      "read_only": 1
+    },
+    {
+      "fieldname": "column_break_2",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "contingency_percent",
+      "fieldtype": "Percent",
+      "label": "Резерв на риски, %",
+      "default": "5"
+    },
+    {
+      "fieldname": "contingency_amount",
+      "fieldtype": "Currency",
+      "label": "Резерв, ₽",
+      "read_only": 1
+    },
+    {
+      "fieldname": "subtotal_before_vat",
+      "fieldtype": "Currency",
+      "label": "Итого без НДС",
+      "read_only": 1,
+      "bold": 1
+    },
+    {
+      "fieldname": "vat_percent",
+      "fieldtype": "Percent",
+      "label": "НДС, %",
+      "default": "20"
+    },
+    {
+      "fieldname": "vat_amount",
+      "fieldtype": "Currency",
+      "label": "НДС, ₽",
+      "read_only": 1
+    },
+    {
+      "fieldname": "grand_total",
+      "fieldtype": "Currency",
+      "label": "ВСЕГО с НДС",
+      "read_only": 1,
+      "bold": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "integration_section",
+      "fieldtype": "Section Break",
+      "label": "Интеграция OCE",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "oce_boq_id",
+      "fieldtype": "Data",
+      "label": "OCE BOQ ID",
+      "read_only": 1,
+      "description": "UUID сметы в OpenConstructionERP при синхронизации"
+    },
+    {
+      "fieldname": "oce_link",
+      "fieldtype": "Data",
+      "label": "Ссылка в OCE",
+      "read_only": 1
+    },
+    {
+      "fieldname": "oce_last_sync",
+      "fieldtype": "Datetime",
+      "label": "Последняя синхронизация",
+      "read_only": 1
+    },
+    {
+      "fieldname": "notes_section",
+      "fieldtype": "Section Break",
+      "label": "Примечания",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Long Text",
+      "label": "Примечания"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "report": 1
+    },
+    {
+      "role": "Главный инженер",
+      "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1
+    },
+    {
+      "role": "Тендерный менеджер",
+      "read": 1, "write": 1, "create": 1, "report": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "naming_rule": "Expression"
+}
