@@ -145,6 +145,73 @@ def bulk_apply_markup(estimate: str, markup_pct: float = 15) -> dict:
 
 
 @frappe.whitelist()
+def apply_measurements(estimate: str, rows: list | str) -> dict:
+    """Применить обмерный лист в смету.
+
+    rows: список {item_name, unit, formula, length, width, height, count, total, notes}
+    На каждую строку добавляется позиция Estimate Item с qty=total и пометкой
+    «📐 Из обмеров: формула». Цена не подставляется (пользователь укажет
+    в EstimateGrid или применит через Apply Assembly).
+    """
+    frappe.has_permission("Estimate", "write", doc=estimate, throw=True)
+
+    import json as _json
+    if isinstance(rows, str):
+        rows = _json.loads(rows)
+    if not isinstance(rows, list):
+        frappe.throw("rows должен быть списком")
+
+    doc = frappe.get_doc("Estimate", estimate)
+
+    # Раздел-метка
+    doc.append("items", {
+        "is_section": 1,
+        "section_title": f"📐 Обмеры ({len(rows)} позиций)",
+        "item_name": f"📐 Обмеры",
+    })
+
+    added = 0
+    for r in rows:
+        if not isinstance(r, dict):
+            continue
+        item_name = (r.get("item_name") or "").strip()
+        if not item_name:
+            continue
+        qty = float(r.get("total") or 0)
+        if qty <= 0:
+            continue
+
+        formula = (r.get("formula") or "").strip()
+        length = r.get("length") or 0
+        width = r.get("width") or 0
+        height = r.get("height") or 0
+        count = r.get("count") or 0
+        notes_parts = []
+        if formula:
+            notes_parts.append(f"Формула: {formula}")
+        if length and width:
+            notes_parts.append(f"{length}×{width}" + (f"×{height}" if height else "") + (f", n={count}" if count else ""))
+        notes_str = " · ".join(notes_parts)
+
+        doc.append("items", {
+            "is_section": 0,
+            "item_name": item_name,
+            "unit": (r.get("unit") or "")[:30],
+            "qty": qty,
+            "base_unit_price": 0,
+            "base_amount": 0,
+            "our_unit_price": 0,
+            "our_amount": 0,
+            "notes": f"📐 Из обмеров. {notes_str}"[:1000] if notes_str else "📐 Из обмеров",
+        })
+        added += 1
+
+    doc.save(ignore_permissions=False)
+    frappe.db.commit()
+    return {"ok": True, "added": added, "total_items": len(doc.items or [])}
+
+
+@frappe.whitelist()
 def create_proposal_from_estimate(estimate: str, title: str = "",
                                    template: str = "") -> dict:
     """Создаёт Construction Proposal на базе сметы с авто-вставкой EstimateTable.

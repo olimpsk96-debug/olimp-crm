@@ -11,6 +11,7 @@ const EstimateGrid = dynamic(
   { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "var(--text-tertiary)" }}>Загрузка таблицы…</div> },
 );
 import { ApplyAssemblyModal } from "@/components/estimate/ApplyAssemblyModal";
+import { MeasurementSheet } from "@/components/estimate/MeasurementSheet";
 
 interface GridRow {
   name?: string;
@@ -220,10 +221,7 @@ export default function EstimateGridPage() {
       ) : tab === "works" ? (
         <EstimateGrid rows={rows} onChange={(next: GridRow[]) => { setRows(next); setDirty(true); }} />
       ) : tab === "measurements" ? (
-        <div style={{ padding: 30, textAlign: "center", color: "var(--text-tertiary)", border: "1px dashed var(--border-subtle)", borderRadius: 10 }}>
-          📐 Обмерный лист — в разработке (v6.2.1).<br/>
-          <div style={{ fontSize: 11, marginTop: 6 }}>Здесь будет: длина × ширина × количество = объём, авто-вставка в позиции работ.</div>
-        </div>
+        <MeasurementSheet estimate={name} onApplied={() => { reload(); setTab("works"); }} />
       ) : (
         <div style={{ padding: 30, textAlign: "center", color: "var(--text-tertiary)", border: "1px dashed var(--border-subtle)", borderRadius: 10 }}>
           📦 Ресурсный план — в разработке (v6.2.2).<br/>

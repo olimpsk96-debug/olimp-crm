@@ -27,6 +27,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ nam
     save_batch: "save_items_batch",
     apply_markup: "bulk_apply_markup",
     create_proposal: "create_proposal_from_estimate",
+    apply_measurements: "apply_measurements",
   };
   const method = methodMap[action];
   if (!method) return NextResponse.json({ error: `Unknown action ${action}` }, { status: 400 });
@@ -41,6 +42,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ nam
   } else if (action === "create_proposal") {
     if (body.title) p.set("title", body.title);
     if (body.template) p.set("template", body.template);
+  } else if (action === "apply_measurements") {
+    p.set("rows", JSON.stringify(body.rows || []));
   }
 
   const r = await fetch(
