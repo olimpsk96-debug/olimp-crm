@@ -1,0 +1,88 @@
+{
+  "name": "Crew Allocation",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "format:CA-{YYYY}-{#####}",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "crew_name",
+      "fieldtype": "Data",
+      "label": "Бригада / звено",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "project",
+      "fieldtype": "Link",
+      "label": "Проект",
+      "options": "Construction Project",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "week_start",
+      "fieldtype": "Date",
+      "label": "Начало недели (Пн)",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "allocated_pct",
+      "fieldtype": "Percent",
+      "label": "Загрузка %",
+      "default": "100",
+      "reqd": 1,
+      "in_list_view": 1,
+      "description": "Сколько процентов времени бригады занято этим проектом в эту неделю"
+    },
+    {
+      "fieldname": "planned_hours",
+      "fieldtype": "Float",
+      "label": "Плановые часы",
+      "precision": "1",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "workers_count",
+      "fieldtype": "Int",
+      "label": "Кол-во рабочих в бригаде"
+    },
+    {
+      "fieldname": "section_notes",
+      "fieldtype": "Section Break",
+      "label": "Примечания",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "task_description",
+      "fieldtype": "Small Text",
+      "label": "Какие работы"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1, "print": 1, "report": 1
+    },
+    {
+      "role": "Главный инженер",
+      "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1
+    },
+    {
+      "role": "Прораб",
+      "read": 1, "report": 1
+    }
+  ],
+  "sort_field": "week_start",
+  "sort_order": "DESC",
+  "naming_rule": "Expression"
+}
