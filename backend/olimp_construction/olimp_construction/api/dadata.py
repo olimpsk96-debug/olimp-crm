@@ -16,6 +16,98 @@ import requests
 
 
 DADATA_URL = "https://suggestions.dadata.ru/suggestions/api/4_1/rs/findById/party"
+EGRUL_FALLBACK_URL = "https://egrul.itsoft.ru/{inn}.json"
+
+
+def _lookup_via_egrul(inn: str) -> dict:
+    """Резервный путь — egrul.itsoft.ru (бесплатно, без регистрации).
+
+    Отдаёт сырые данные ФНС из ЕГРЮЛ в JSON. Парсим в наш формат.
+    """
+    try:
+        r = requests.get(EGRUL_FALLBACK_URL.format(inn=inn),
+                        timeout=8, allow_redirects=True)
+        if r.status_code == 404:
+            return {"ok": False, "message": "Компания с таким ИНН не найдена в ЕГРЮЛ"}
+        r.raise_for_status()
+        data = r.json()
+    except requests.RequestException as e:
+        return {"ok": False, "message": f"egrul.itsoft.ru недоступен: {str(e)[:120]}"}
+    except ValueError:
+        return {"ok": False, "message": "ЕГРЮЛ вернул не-JSON"}
+
+    # Структура ФНС: СвЮЛ / СвИП
+    root_key = "СвЮЛ" if "СвЮЛ" in data else "СвИП" if "СвИП" in data else None
+    if not root_key:
+        return {"ok": False, "message": "Неизвестная структура ответа ЕГРЮЛ"}
+    root = data[root_key]
+    attrs = root.get("@attributes") or {}
+    nameyl = (root.get("СвНаимЮЛ") or {}).get("@attributes") or {}
+    address_root = root.get("СвАдресЮЛ") or {}
+    address_parts = []
+
+    # Адрес собираем из частей
+    if isinstance(address_root, dict):
+        # АдресРФ может быть вложенным
+        addr_rf = address_root.get("АдресРФ") or address_root
+        if isinstance(addr_rf, dict):
+            ad = addr_rf.get("@attributes") or {}
+            for fld in ("Индекс", "Город", "НаимРегион", "Улица", "Дом", "Корпус", "Кварт"):
+                v = ad.get(fld) or (addr_rf.get(fld, {}) or {}).get("@attributes", {}).get("Наим")
+                if v:
+                    address_parts.append(str(v))
+    address_value = ", ".join(address_parts) if address_parts else ""
+
+    # Руководитель — структура СведДолжнФЛ
+    manager_name = ""
+    manager_post = ""
+    sved_dol = root.get("СведДолжнФЛ") or root.get("СвРукЮЛ")
+    if isinstance(sved_dol, list) and sved_dol:
+        sved_dol = sved_dol[0]
+    if isinstance(sved_dol, dict):
+        fl = sved_dol.get("СвФЛ", {}).get("@attributes", {})
+        if fl:
+            manager_name = " ".join([fl.get("Фамилия", ""), fl.get("Имя", ""), fl.get("Отчество", "")]).strip()
+        post = sved_dol.get("СвДолжн", {}).get("@attributes", {})
+        if post:
+            manager_post = post.get("НаимДолжн", "")
+
+    # ОКВЭД
+    okved_data = (root.get("СвОКВЭД") or {}).get("СвОКВЭДОсн", {}).get("@attributes", {})
+    okved_code = okved_data.get("КодОКВЭД", "")
+    okved_name = okved_data.get("НаимОКВЭД", "")
+
+    # Статус компании
+    sved_status = (root.get("СвСтатус") or {}).get("@attributes", {})
+    state = sved_status.get("НаимСтатус", "")
+
+    is_individual = root_key == "СвИП"
+    full_name = (nameyl.get("НаимЮЛПолн") or nameyl.get("НаимЮЛСокр")
+                 or attrs.get("ПолнФИОИП") or "").strip()
+    short_name = nameyl.get("НаимЮЛСокр") or full_name
+
+    return {
+        "ok": True,
+        "source": "egrul.itsoft.ru",  # пометка чтобы UI видел
+        "inn": attrs.get("ИНН") or inn,
+        "kpp": attrs.get("КПП"),
+        "ogrn": attrs.get("ОГРН") or attrs.get("ОГРНИП"),
+        "type": "INDIVIDUAL" if is_individual else "LEGAL",
+        "name_full": full_name,
+        "name_short": short_name,
+        "value": short_name,
+        "okved": f"{okved_code} {okved_name}".strip() if okved_code else "",
+        "address_value": address_value,
+        "address_unrestricted": address_value,
+        "manager_name": manager_name,
+        "manager_post": manager_post,
+        "state": state,
+        "state_actuality_date": attrs.get("ДатаВып"),
+        "registration_date": attrs.get("ДатаОГРН") or attrs.get("ДатаОГРНИП"),
+        "liquidation_date": None,
+        "branch_type": None,
+        "employee_count": None,
+    }
 
 
 @frappe.whitelist()
@@ -32,34 +124,37 @@ def lookup_by_inn(inn: str) -> dict:
         frappe.throw("ИНН должен быть 10 (юрлицо) или 12 (ИП) цифр")
 
     api_key = os.getenv("DADATA_API_KEY", "").strip()
-    if not api_key:
-        frappe.throw(
-            "DADATA_API_KEY не задан в .env. "
-            "Зарегистрируйся бесплатно на https://dadata.ru/profile/ "
-            "и добавь ключ в .env. Лимит 10 000 запросов/день бесплатно."
-        )
 
-    try:
-        r = requests.post(
-            DADATA_URL,
-            json={"query": inn, "type": "LEGAL" if len(inn) == 10 else "INDIVIDUAL"},
-            headers={
-                "Authorization": f"Token {api_key}",
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-            },
-            timeout=8,
-        )
-        r.raise_for_status()
-    except requests.HTTPError as e:
-        frappe.throw(f"DaData ошибка {e.response.status_code}: {e.response.text[:200]}")
-    except requests.RequestException as e:
-        frappe.throw(f"DaData недоступен: {str(e)[:200]}")
-
-    data = r.json()
-    suggestions = data.get("suggestions") or []
-    if not suggestions:
-        return {"ok": False, "message": "Компания с таким ИНН не найдена"}
+    # Пробуем DaData (если есть ключ) — если упало с SUGGESTIONS disabled,
+    # fallback на egrul.itsoft.ru (бесплатно, без регистрации)
+    if api_key:
+        try:
+            r = requests.post(
+                DADATA_URL,
+                json={"query": inn, "type": "LEGAL" if len(inn) == 10 else "INDIVIDUAL"},
+                headers={
+                    "Authorization": f"Token {api_key}",
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                },
+                timeout=8,
+            )
+            r.raise_for_status()
+            data = r.json()
+            suggestions = data.get("suggestions") or []
+            if suggestions:
+                # ОК — обрабатываем ниже
+                pass
+            else:
+                return {"ok": False, "message": "Компания с таким ИНН не найдена в DaData"}
+        except (requests.HTTPError, requests.RequestException) as e:
+            # DaData недоступна (403/timeout) — пробуем fallback
+            frappe.logger().info(f"DaData недоступна ({e}), fallback на egrul.itsoft.ru")
+            fb = _lookup_via_egrul(inn)
+            return fb
+    else:
+        # Ключа нет — сразу через egrul.itsoft.ru
+        return _lookup_via_egrul(inn)
 
     s = suggestions[0]
     info = s.get("data") or {}
@@ -69,6 +164,7 @@ def lookup_by_inn(inn: str) -> dict:
 
     return {
         "ok": True,
+        "source": "dadata.ru",
         "inn": info.get("inn"),
         "kpp": info.get("kpp"),
         "ogrn": info.get("ogrn"),
