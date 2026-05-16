@@ -669,17 +669,80 @@
 
 **Версия v3.3 · Gantt + Риски + Semantic**
 
+## ✅ Сделано (v3.4 — post-аудит fixes, 14.05.2026)
+
+После 3 параллельных subagent-аудитов (Schedule / Risks / Semantic Search) — 80+ замечаний, 7 ключевых пофикшено:
+
+1. **`risks.apply_to_estimate` идемпотентность** — повторный вызов обновляет существующую строку RISK-{name}, не создаёт дубль + теперь заполняется `base_unit_price` (раньше `margin_pct` искажался)
+2. **`save_risk` / `save_task` permission order** — `has_permission(create)` перенесено ПОСЛЕ определения операции; роли с write=1, create=0 теперь могут апдейтить
+3. **`Schedule Task.validate`** — throw если `end_date < start_date`
+4. **`Schedule Task.before_save`** — статус возвращается в «Запланирована» при `progress=0` (раньше залипал в «В работе»)
+5. **`Project Risk.validate`** — throw на отрицательный `impact_amount`
+6. **`_parse_level`** (Python + TS) — поддержка обычного дефиса `-` и `—` (раньше падал на обычном → score=0 → риск исчезал)
+7. **`semantic_search.reindex_catalog`** — только System Manager + clamp limit ∈ [1..50]
+8. **RiskDrawer** — добавлено поле notes (раньше нередактируемо)
+
+3 новых записи в CLAUDE.md §18: __pycache__ после ребута WSL, apply_to_estimate дубль, permission order.
+
+**Коммит:** d08f57b
+
+## ✅ Сделано (v3.5 — AI-декомпозиция работы, 14.05.2026)
+
+Главная фича сессии: **пишешь «усиление плиты углеволокном 120 м²» — система раскладывает на 9 этапов с объёмами и нормами**.
+
+Архитектура hybrid (templates + AI fallback):
+- DocType `Work Template` + `Work Stage Template` (child table)
+- `api/ai/decompose_work.py`: keyword-match шаблонов → fallback на Claude Haiku если нет шаблона
+- `api/ai/seed_work_templates.py`: seed 5 базовых шаблонов под профиль ОЛИМП (АКЗ РВС / CFRP / огнезащита / монтаж м/к / промальп)
+- Frontend `<DecomposeWorkModal>` 250 строк: input → предпросмотр этапов с бейджем ШАБЛОН/AI → кнопка «✓ Добавить в смету»
+- Кнопка «🪄 AI-смета» в шапке EstimateDrawer
+- Next.js route `/api/estimates/decompose`
+
+Смок-тест: 3 кейса (АКЗ РВС-2000 1800м² → 1305 чел.-час · огнезащита R90 350м² → 251 чел.-час · видеонаблюдение → AI fallback → корректная ошибка о пустом балансе).
+
+**Коммит:** c4dc78f
+
+## ✅ Сделано (v3.6 — 5 улучшений decompose, 14.05.2026)
+
+После проверки концепции — все 5 запланированных улучшений в одном коммите:
+
+1. **Расширение seed**: 5 → 20 шаблонов в 10 категориях (АКЗ x3, огнезащита x2, усиление x2, монтаж м/к x2, промальп x2, кровля x2, полы x2, бетон, демонтаж, прочее x3)
+2. **Qdrant semantic search**: универсальные `ensure_collection / upsert_points / search_collection` в `ai_services/qdrant_client.py` + коллекция `olimp_work_templates` + `api/ai/work_templates_index.py` (get_status / reindex / search). decompose_work сначала спрашивает Qdrant (если score≥0.45), fallback на keyword. Без OPENAI_API_KEY работает на keyword.
+3. **Modular Chain-of-Thought** (preprints.org Oct 2025): 3 шага вместо одного — classify → extract → decompose. Снижает галлюцинации в 3-5×. Функция `_ai_decompose_cot`.
+4. **Stages → Catalog Resource** (автоцена): если этап шаблона привязан к `catalog_resource`, в декомпозицию приходит `unit_price + amount`. При применении в смету: `base_unit_price = price_avg`, `our_unit_price = base × 1.15` (стандартная 15% наценка).
+5. **Decomposition Feedback**: новый DocType (description, template_used, source, was_applied, was_edited_after, rating 👍/👌/👎, decomposition_json, user_diff_json). Автосохранение в decompose_work. Endpoint `rate_feedback`. После «Добавить в смету» открывается экран с 3 кнопками оценки.
+
+**Коммит:** 13b517b
+
+## ✅ Сделано (v3.7 — расширения AI-декомпозиции, 14.05.2026)
+
+Все 5 продолжений:
+
+1. **Auto-link CWICR (экспериментально)**: `api/ai/autolink_resources.py` через rapidfuzz. ⚠️ Прямой match названий этапов на CWICR-ресурсы даёт мусорные привязки (этапы=работы, CWICR=ресурсы). Оставлено как helper, рекомендуется ручная привязка в админке.
+2. **Расширение шаблонов (20 → 47)**: +27 шаблонов в `seed_work_templates_ext.py` (земляные, фундаменты, кладка, гидроизоляция, утепление, перегородки, штукатурка, окраска, полы, окна-двери, инженерные сети, скатные кровли, химанкеры, инъекция трещин)
+3. **Дашборд `/decomposition-stats`**: 8 KPI (всего, шаблон vs AI, CSAT, оценки), топ-10 шаблонов по good/bad, запросы без шаблона (нужно создать), активность пользователей, лента событий. Пункт «Аналитика AI» в сайдбаре.
+4. **Track estimate edits**: `track_diff(feedback_id, current_items)` вычисляет added/removed/modified строк сметы относительно AI-генерации. Сохраняется в Decomposition Feedback.user_diff_json.
+5. **Auto-suggest new template** (cron weekly): `analyze_clusters` группирует похожие запросы без шаблона (rapidfuzz token_sort_ratio≥75%), кластер ≥3 → создаёт черновик через `create_template_from_cluster` (is_verified=0, требует верификации). Cron weekly: `suggest_templates` пишет сводку в Error Log.
+
+Smoke-test: 47 шаблонов · 11 категорий · TypeScript 0 ошибок · все endpoints отвечают.
+
+**Коммит:** a859c38 · **Версия v3.7**
+
 ## 📋 Следующие задачи
 
 **Блок B (средние):**
 - [ ] **PDF Markup** — react-pdf-annotator для актирования + сохранение разметки в JSON
+- [ ] **Webhook /api/leads** — приём заявок с сайта в Deal (без AI, можно сразу)
 - [ ] **Telegram-бот "оценка по описанию"** — текст → Claude Haiku → черновик сметы (требует пополнить Anthropic)
+- [ ] **Работа со шаблонами в Next.js UI** — сейчас Work Template редактируется только в админке Frappe
 
 **Блок C (большие):**
 - [x] ~~Subcontractor Bid Request / Proposal~~ — ✅ закрыт 14.05.2026
 - [x] ~~Semantic search через Qdrant + OpenAI embeddings~~ — ✅ закрыт 14.05.2026 (нужно пополнить OpenAI чтобы запустить reindex)
+- [x] ~~AI-декомпозиция работы → этапы сметы (47 шаблонов)~~ — ✅ закрыт 14.05.2026
 - [ ] **Полный CWICR импорт 55K** — загрузить snapshot С-Петербург (1.2GB) или расширить до всех регионов
 - [ ] **Фото→смета** (n8n_2 адаптация) — Claude Vision определяет работы по фото объекта
+- [ ] **Разделить stage.resources** — модель этапа: материалы (Material → CWICR) + труд (Labor → CWICR), вместо одного catalog_resource
 
 **Блок D (опциональное):**
 - [ ] **AI-Assistant запуск (Фаза 7)** — после пополнения Anthropic
@@ -691,6 +754,22 @@
 ---
 
 ## 📝 Заметки
+
+### Сессия 10 — 14.05.2026 (вечер)
+**Что сделано:**
+- v3.4: post-аудит fixes (8 пунктов) — apply_to_estimate идемпотентность, permission order, валидация дат, _parse_level любой дефис, защита reindex_catalog, поле notes в RiskDrawer
+- v3.5: AI-декомпозиция работ → этапы сметы (DocType Work Template + Stage, 5 базовых шаблонов, кнопка 🪄 AI-смета в EstimateDrawer)
+- v3.6: 5 улучшений (Qdrant search, Modular CoT, автоцена из CWICR, Decomposition Feedback, экран оценки 👍/👌/👎)
+- v3.7: расширение до 47 шаблонов, дашборд /decomposition-stats, track_diff, auto-suggest new template
+- 3 новых подводных камня в CLAUDE.md §18
+
+**Текущий стек:**
+- 47 Work Templates в 11 категориях
+- Decomposition Feedback с track_diff
+- Аналитика AI на /decomposition-stats
+- Cron weekly: suggest_templates
+
+**Блокеры:** ANTHROPIC_API_KEY и OPENAI_API_KEY пусты в .env → AI fallback / Qdrant reindex недоступны.
 
 ### Сессия 9 — 14.05.2026
 **Что сделано:**

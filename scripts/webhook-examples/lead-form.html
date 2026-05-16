@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Заявка — ООО «Олимп»</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+         max-width: 520px; margin: 40px auto; padding: 20px;
+         background: #f7f7f8; color: #1a1a1a; }
+  h1 { font-size: 24px; margin: 0 0 6px; }
+  p.lead { color: #666; margin: 0 0 24px; font-size: 14px; }
+  label { display: block; font-size: 12px; color: #555;
+          text-transform: uppercase; letter-spacing: 0.05em;
+          font-family: monospace; margin: 14px 0 4px; }
+  input, textarea, select {
+    width: 100%; padding: 11px 13px; font-size: 14px;
+    border: 1px solid #ddd; border-radius: 8px;
+    background: white; outline: none;
+  }
+  input:focus, textarea:focus, select:focus { border-color: #EA580C; }
+  textarea { resize: vertical; min-height: 80px; font-family: inherit; }
+  button {
+    margin-top: 18px; width: 100%; padding: 13px 20px;
+    background: #EA580C; color: white; border: none; border-radius: 8px;
+    font-size: 15px; font-weight: 500; cursor: pointer;
+  }
+  button:hover { background: #c2410c; }
+  .hp { position: absolute; left: -9999px; opacity: 0; }
+  .msg { margin-top: 14px; padding: 12px; border-radius: 8px; font-size: 13px; }
+  .msg.ok  { background: rgba(34,197,94,0.12); color: #15803D; border: 1px solid #22c55e; }
+  .msg.err { background: rgba(248,113,113,0.10); color: #dc2626; border: 1px solid #f87171; }
+</style>
+</head>
+<body>
+
+<h1>Промышленное строительство — ООО «Олимп»</h1>
+<p class="lead">Оставьте заявку — позвоним в течение часа в рабочее время.</p>
+
+<form id="leadForm">
+  <label>Ваше имя *</label>
+  <input name="name" required maxlength="100">
+
+  <label>Телефон *</label>
+  <input name="phone" type="tel" required placeholder="+7..." maxlength="20">
+
+  <label>Email</label>
+  <input name="email" type="email" maxlength="140">
+
+  <label>Компания</label>
+  <input name="company" maxlength="140">
+
+  <label>Тема обращения</label>
+  <input name="subject" placeholder="АКЗ резервуара / огнезащита м/к / промальп фасад" maxlength="140">
+
+  <label>Описание задачи</label>
+  <textarea name="description" maxlength="2000"></textarea>
+
+  <!-- Honeypot для ботов -->
+  <input class="hp" name="website" type="text" tabindex="-1" autocomplete="off">
+
+  <!-- UTM-метки (заполняются автоматически из URL) -->
+  <input type="hidden" name="utm_source" id="utm_source">
+  <input type="hidden" name="utm_medium" id="utm_medium">
+  <input type="hidden" name="utm_campaign" id="utm_campaign">
+
+  <button type="submit">Отправить заявку</button>
+  <div id="msg" class="msg" style="display:none"></div>
+</form>
+
+<script>
+  // UTM-метки из URL
+  const url = new URL(window.location.href);
+  ['utm_source','utm_medium','utm_campaign'].forEach(k => {
+    const v = url.searchParams.get(k);
+    if (v) document.getElementById(k).value = v;
+  });
+
+  // Эндпоинт — заменить на свой
+  const ENDPOINT = 'http://erp.olimp-ural.ru/api/method/olimp_construction.api.webhook.leads.create_lead';
+
+  document.getElementById('leadForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('msg');
+    const form = e.target;
+    const btn = form.querySelector('button');
+    btn.disabled = true; btn.textContent = 'Отправляем...';
+    msg.style.display = 'none';
+
+    const data = new URLSearchParams(new FormData(form));
+
+    try {
+      const r = await fetch(ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: data,
+      });
+      const j = await r.json();
+      const result = j.message ?? j;
+
+      if (result.ok) {
+        msg.className = 'msg ok';
+        msg.textContent = result.message || 'Заявка принята, мы свяжемся с вами.';
+        msg.style.display = 'block';
+        form.reset();
+      } else {
+        msg.className = 'msg err';
+        msg.textContent = (result.error || result.exception || 'Ошибка отправки');
+        msg.style.display = 'block';
+      }
+    } catch (err) {
+      msg.className = 'msg err';
+      msg.textContent = 'Ошибка сети: ' + err.message;
+      msg.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Отправить заявку';
+    }
+  });
+</script>
+
+</body>
+</html>
