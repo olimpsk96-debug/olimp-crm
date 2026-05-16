@@ -1,0 +1,30 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# System deps для playwright (Crawl4AI), pillow, ffmpeg
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    git \
+    ffmpeg \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Playwright browsers (для Crawl4AI и tiktok-uploader)
+RUN playwright install chromium --with-deps
+
+# Download Silero TTS RU model на этапе сборки (опционально, кеш ~150MB)
+# RUN python -c "import torch; torch.hub.load('snakers4/silero-models', 'silero_tts', language='ru', speaker='v4_ru')"
+
+COPY . /app
+
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+
+EXPOSE 8100
+
+CMD ["uvicorn", "pipeline.app:app", "--host", "0.0.0.0", "--port", "8100"]

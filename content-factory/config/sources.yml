@@ -1,0 +1,124 @@
+# Источники для discovery-агента (поиск идей и трендов)
+# Используется orchestrator/daily_discovery.py
+# Обновлено под реальный профиль ОЛИМП (промышленный альпинизм + 74 услуги)
+
+meta:
+  updated: "2026-05-17"
+  schedule_cron: "0 6 * * *"  # каждый день в 06:00 МСК
+
+sources:
+
+  yandex_wordstat:
+    enabled: true
+    method: "Yandex Direct forecast API"
+    env_token: YANDEX_DIRECT_TOKEN
+    seed_keywords_from: "config/keywords.yml"
+    regions: [54]  # Свердловская область
+    extract: ["frequency", "regional_breakdown", "related_queries"]
+
+  google_trends:
+    enabled: true
+    method: "DataForSEO via OpenSEO"
+    env_login: DATAFORSEO_LOGIN
+    env_password: DATAFORSEO_PASSWORD
+    geo: "RU-SVE"
+    timeframe: "today 90-d"
+
+  serp_top10:
+    enabled: true
+    method: "Crawl4AI"
+    engines: ["yandex.ru", "google.com"]
+    seed_keywords_from: "config/keywords.yml"
+    per_keyword: 10
+    extract: ["title", "h1", "url", "snippet", "structured_data", "yandex_neuro_answer"]
+
+  # КОНКУРЕНТЫ — реальные из аудита промальп ниши Екатеринбурга
+  competitors:
+    enabled: true
+    method: "Crawl4AI sitemap + RSS"
+    domains:
+      ekb_promalp:
+        - alp-ur.ru          # Алп-Ур, с 1999, 12 услуг
+        - na-vysote.pro      # На Высоте, 100+ услуг, 900 проектов
+        - promalp-z.ru       # Зенит, рейтинг 5.0
+        - uralmen.ru         # Урал Мен, бесплатный осмотр
+        - promalp66.com      # Промальп 66
+        - aris66.ru
+        - prom66.ru
+        - intel-stroymontag.ru
+      rf_general_promalp:
+        - promalp.ru
+        - alpinism-russia.ru
+        - sk-vysota.ru
+      antikor_industrial:
+        - ozrm.ru
+        - vecfort.ru
+        - akz1.ru
+    frequency: weekly
+    extract: ["new_articles", "updated_articles", "internal_linking", "schema_org"]
+
+  reddit_pikabu_vc:
+    enabled: true
+    method: "YARS"
+    sources:
+      - reddit: ["r/Construction", "r/AskEngineers", "r/structure"]
+      - pikabu: ["stroyka", "remont", "alpinism"]
+      - vc.ru: ["stroitelstvo", "remont"]
+    queries:
+      - "промышленный альпинизм"
+      - "герметизация швов"
+      - "ремонт фасада"
+      - "мойка фасада"
+      - "уборка снега с крыши"
+      - "альпинисты"
+
+  tenderok:
+    enabled: true
+    method: "tenderok.ru API"
+    env_key: TENDEROK_API_KEY
+    filters:
+      okpd2:
+        - "43.99"      # Работы строительные специализированные (вкл. промальп)
+        - "43.91.19"   # Кровельные работы
+        - "33.20.41"   # Установка и монтаж рекламы
+        - "25.11.10"   # Металлоконструкции
+        - "43.99.50"   # Подъёмные и такелажные работы
+        - "43.91"      # Работы кровельные
+        - "43.34"      # Покраска и стекольные работы
+      regions: ["66", "74", "72", "59", "86", "89"]  # Свердл/Челяб/Тюмень/Пермь/ХМАО/ЯНАО
+      keywords_any: ["альпинизм", "высотн", "герметизац", "фасад", "кровл", "акз", "антикоррозион", "такелаж", "снег", "сосульк"]
+
+  ai_visibility:
+    enabled: true
+    method: "sharozdawa/ai-visibility"
+    brands_env: AI_VIS_BRANDS
+    engines: ["chatgpt", "perplexity", "claude", "gemini", "yandex_neuro"]
+    queries:
+      - "лучшая компания промышленного альпинизма Екатеринбург"
+      - "промальп Екатеринбург отзывы"
+      - "герметизация швов в Екатеринбурге цена"
+      - "мойка фасада стоимость Свердловская область"
+      - "ремонт кровли альпинистами Урал"
+      - "антикоррозийная обработка металлоконструкций подрядчик"
+
+# Приоритизация идей в очереди
+prioritization:
+  weights:
+    keyword_volume: 0.30       # частота из Wordstat
+    competitor_gap: 0.25       # тема которую конкуренты не покрывают (анализ из competitors)
+    seasonality_match: 0.15    # совпадение с текущим кварталом
+    tender_demand: 0.15        # есть ли актуальные тендеры по теме
+    ai_visibility_miss: 0.10   # ИИ нас не цитирует на этот запрос
+    own_content_gap: 0.05      # у нас на сайте ещё нет статьи на эту тему
+  min_score_to_publish: 0.40
+  max_per_week: 5
+  max_per_day: 2
+
+# RAG-источники для writer-агента
+rag_sources:
+  - { collection: "own_content", description: "74 услуги + 31 статья + 7 портфолио с сайта promalp-ural.ru", seed_script: "scripts/seed_qdrant_own_content.py" }
+  - { collection: "norms_sp", description: "СП по высотным работам, фасадам, кровле, АКЗ", seed_script: "scripts/seed_qdrant_norms.py" }
+  - { collection: "norms_gost", description: "ГОСТ 9.402 АКЗ, ГОСТ Р 56329 промальп и др." }
+  - { collection: "norms_rd", description: "Приказ 782н (правила охраны труда на высоте)" }
+  - { collection: "cases", description: "Собственные кейсы ОЛИМП с цифрами" }
+  - { collection: "competitors", description: "Снэпшоты экспертных статей конкурентов для gap-анализа" }

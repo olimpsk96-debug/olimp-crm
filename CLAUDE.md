@@ -857,6 +857,52 @@ class Equipment(Document):
 | Telegram-бот | `TELEGRAM_BOT.md` |
 | Архитектурные решения | `ARCHITECTURE.md` |
 | Текущая задача | `CURRENT_TASK.md` |
+| **Content Factory** (SEO/SMM автоматизация) | [content-factory/CONTENT_FACTORY.md](content-factory/CONTENT_FACTORY.md) |
+| Content Factory — стек OSS | [content-factory/docs/OSS_STACK.md](content-factory/docs/OSS_STACK.md) |
+
+---
+
+## 16.1. 🆕 Content Factory (контент-завод ОЛИМП)
+
+Подсистема для автоматической генерации SEO-статей, изображений, видео и публикации на promalp-ural.ru + Telegram + Instagram + TikTok с аналитикой и автообновлением.
+
+**Расположение:** [content-factory/](content-factory/) внутри этого репо.
+
+**Стек 2026 (после ресерч-фазы):**
+- Оркестрация: CrewAI (MVP) → LangGraph (refresh-loop)
+- LLM: Claude Opus 4.7 (writer), Sonnet 4.6 (research/edit), Haiku 4.5 (fact-check)
+- Research: GPT Researcher + Crawl4AI + Qdrant RAG (own_content + норматива)
+- Images: ComfyUI + FLUX.1 [schnell]
+- Video: reelsmaker + LTX-Video + Silero TTS RU
+- SMM: Postiz (центр) + aiogram + instagrapi + tiktok-uploader
+- WP: REST API + Application Passwords
+- SEO/AEO: Rank Math/Yoast + AutoGEO + Schemify
+- Analytics: GSC + GA4 + Метрика + AI-visibility
+
+**Подключение к стеку olimp-erp:** Шарит Qdrant, MinIO, Redis, n8n. Свой PostgreSQL (`content-pg:5433`).
+
+**Запуск:**
+```bash
+cp content-factory/.env.content.example content-factory/.env.content
+# заполнить ключи
+bash content-factory/scripts/bootstrap.sh
+```
+
+**Точки входа:**
+- `python -m orchestrator.generate_article --topic-id comm_01` — сгенерировать статью
+- `python -m orchestrator.publish --slug ...` — опубликовать в WP + Telegram
+- `python -m orchestrator.daily_discovery` (в плане) — обновить очередь идей
+- `python -m orchestrator.weekly_analytics` (в плане) — собрать метрики
+- `python -m orchestrator.refresh_loop` (в плане) — авто-обновление просевших статей
+
+**Фазы:**
+- F1 Каркас ✅ (sources, keywords, topics, brand_voice, docker-compose, schemas, промпты)
+- F2 MVP writer ✅ (CrewAI команда, generate_article.py, publish.py)
+- F3 Visual + видео ⚪ (ComfyUI workflows + reelsmaker pipeline)
+- F4 Instagram + TikTok ⚪ (instagrapi + tiktok-uploader адаптеры)
+- F5 Analytics + Refresh-loop ⚪ (GSC + GA4 + LangGraph stateful loop)
+
+**КЛЮЧЕВОЙ ПРИНЦИП:** контент-завод НЕ публикует сам по умолчанию. `DRAFT_MODE=true` в `.env.content` → всё идёт в review-чат Telegram + draft на WP. Для full-auto — отдельно выставить `AUTO_PUBLISH_*=true` флаги.
 
 ---
 

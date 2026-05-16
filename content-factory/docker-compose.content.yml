@@ -1,0 +1,176 @@
+# Content Factory — стек контейнеров
+# Подключается ПОВЕРХ существующего docker-compose.dev.yml в olimp-erp
+# Запуск:
+#   docker compose -f docker-compose.dev.yml -f content-factory/docker-compose.content.yml --env-file content-factory/.env.content up -d
+
+services:
+
+  # Основной воркер: CrewAI + GPT Researcher + LangGraph
+  content-pipeline:
+    build:
+      context: ./content-factory
+      dockerfile: Dockerfile.pipeline
+    container_name: content-pipeline
+    restart: unless-stopped
+    env_file:
+      - ./content-factory/.env.content
+    environment:
+      - QDRANT_URL=http://qdrant:6333
+      - MINIO_ENDPOINT=minio:9000
+      - REDIS_URL=redis://redis:6379/3
+      - POSTGRES_URL=postgresql://content:${CONTENT_PG_PASSWORD:-content_pwd}@content-pg:5432/content
+    volumes:
+      - ./content-factory:/app
+      - content_data:/data
+    ports:
+      - "8100:8100"
+    depends_on:
+      - content-pg
+    networks:
+      - olimp_net
+
+  # Discovery-агент: cron на сбор трендов
+  content-discovery:
+    build:
+      context: ./content-factory
+      dockerfile: Dockerfile.discovery
+    container_name: content-discovery
+    restart: unless-stopped
+    env_file:
+      - ./content-factory/.env.content
+    environment:
+      - QDRANT_URL=http://qdrant:6333
+      - POSTGRES_URL=postgresql://content:${CONTENT_PG_PASSWORD:-content_pwd}@content-pg:5432/content
+      - REDIS_URL=redis://redis:6379/3
+    volumes:
+      - ./content-factory:/app
+      - content_data:/data
+    ports:
+      - "8101:8101"
+    depends_on:
+      - content-pg
+    networks:
+      - olimp_net
+
+  # ComfyUI для генерации изображений (FLUX-модели)
+  # GPU optional — для production-нагрузки нужна видеокарта; для MVP fallback на OpenAI gpt-image-1
+  content-comfyui:
+    image: yanwk/comfyui-boot:cu124-slim
+    container_name: content-comfyui
+    restart: unless-stopped
+    environment:
+      - CLI_ARGS=--listen 0.0.0.0 --port 8188
+    volumes:
+      - comfyui_models:/root/ComfyUI/models
+      - comfyui_input:/root/ComfyUI/input
+      - comfyui_output:/root/ComfyUI/output
+      - ./content-factory/comfyui_workflows:/workflows
+    ports:
+      - "8188:8188"
+    networks:
+      - olimp_net
+    # GPU support — раскомментировать если есть NVIDIA GPU
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  # Faceless-video pipeline (reelsmaker)
+  content-reelsmaker:
+    build:
+      context: ./content-factory
+      dockerfile: Dockerfile.reelsmaker
+    container_name: content-reelsmaker
+    restart: unless-stopped
+    env_file:
+      - ./content-factory/.env.content
+    environment:
+      - MINIO_ENDPOINT=minio:9000
+      - COMFYUI_URL=http://content-comfyui:8188
+    volumes:
+      - ./content-factory:/app
+      - content_data:/data
+      - reels_cache:/cache
+    ports:
+      - "8102:8102"
+    networks:
+      - olimp_net
+
+  # Postiz — single-source-of-truth для мульти-публикации
+  content-postiz:
+    image: ghcr.io/gitroomhq/postiz-app:latest
+    container_name: content-postiz
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://postiz:${POSTIZ_PG_PASSWORD:-postiz_pwd}@content-pg:5432/postiz
+      - REDIS_URL=redis://redis:6379/4
+      - JWT_SECRET=${POSTIZ_JWT_SECRET}
+      - MAIN_URL=${POSTIZ_MAIN_URL:-http://localhost:5000}
+      - FRONTEND_URL=${POSTIZ_MAIN_URL:-http://localhost:5000}
+      - NEXT_PUBLIC_BACKEND_URL=${POSTIZ_MAIN_URL:-http://localhost:5000}/api
+      - STORAGE_PROVIDER=local
+      - UPLOAD_DIRECTORY=/uploads
+    volumes:
+      - postiz_uploads:/uploads
+    ports:
+      - "5000:5000"
+    depends_on:
+      - content-pg
+    networks:
+      - olimp_net
+
+  # Analytics worker (GSC, GA4, Метрика, AI-visibility)
+  content-analytics:
+    build:
+      context: ./content-factory
+      dockerfile: Dockerfile.analytics
+    container_name: content-analytics
+    restart: unless-stopped
+    env_file:
+      - ./content-factory/.env.content
+    environment:
+      - POSTGRES_URL=postgresql://content:${CONTENT_PG_PASSWORD:-content_pwd}@content-pg:5432/content
+      - REDIS_URL=redis://redis:6379/3
+    volumes:
+      - ./content-factory:/app
+      - content_data:/data
+    ports:
+      - "8103:8103"
+    depends_on:
+      - content-pg
+    networks:
+      - olimp_net
+
+  # Отдельная Postgres для контент-завода (idea_queue, publications, metrics, postiz)
+  content-pg:
+    image: postgres:16-alpine
+    container_name: content-pg
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=content
+      - POSTGRES_PASSWORD=${CONTENT_PG_PASSWORD:-content_pwd}
+      - POSTGRES_MULTIPLE_DATABASES=content,postiz
+    volumes:
+      - content_pg_data:/var/lib/postgresql/data
+      - ./content-factory/storage/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh
+      - ./content-factory/storage/schemas.sql:/docker-entrypoint-initdb.d/01-content-schema.sql
+    ports:
+      - "5433:5432"
+    networks:
+      - olimp_net
+
+volumes:
+  content_data:
+  content_pg_data:
+  comfyui_models:
+  comfyui_input:
+  comfyui_output:
+  reels_cache:
+  postiz_uploads:
+
+networks:
+  olimp_net:
+    external: true  # сеть существующего olimp-erp docker-compose

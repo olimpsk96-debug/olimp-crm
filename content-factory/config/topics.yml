@@ -1,0 +1,233 @@
+# Топ контент-идей для блога ОЛИМП на 2026
+# Источник: CLAUDE.md promalp (контент-план) + ресерч ниши 2026
+# Приоритеты: P1 — pillar-статьи, P2 — экспертные, P3 — соцсети
+
+meta:
+  updated: "2026-05-17"
+  source: "контент-план promalp + ресерч 2026 + gap-анализ конкурентов"
+  target_publication_velocity: "5 статей/неделя на сайт + 2-3 поста/день в Telegram + 3-5 Reel/неделю"
+
+topics:
+
+  # P1 — коммерческие (готовить первыми, главный источник лидов)
+  commercial:
+    priority: P1
+    description: "Коммерческие статьи с CTA на замер — главный конверсионный пайплайн"
+    items:
+      - id: comm_01
+        title: "Герметизация межпанельных швов: технология, материалы, цены 2026"
+        cluster: germetizaciya
+        target_keywords: ["герметизация межпанельных швов екатеринбург", "тёплый шов цена"]
+        target_length: 3000
+        format: "long-form + калькулятор по п.м."
+        target_service_id: 3032
+      - id: comm_02
+        title: "Сколько стоит мойка фасада: расчёт цены по м² в Екатеринбурге"
+        cluster: mojka_fasadov
+        target_keywords: ["мойка фасадов екатеринбург цена", "сколько стоит мойка фасада за м2"]
+        target_length: 2500
+        format: "калькулятор + кейсы + примеры цен"
+        target_service_id: 3009
+      - id: comm_03
+        title: "Ремонт кровли без лесов: промальп vs строительные леса — экономия"
+        cluster: krovlya
+        target_keywords: ["ремонт кровли альпинистами", "промальп или леса"]
+        target_length: 2800
+        format: "comparison + расчёт"
+        target_service_id: 3087
+      - id: comm_04
+        title: "Монтаж рекламных конструкций на высоте: виды, сроки, стоимость"
+        cluster: reklama
+        target_keywords: ["монтаж рекламных конструкций на высоте"]
+        target_length: 2500
+        target_service_id: 3015
+      - id: comm_05
+        title: "Антикоррозийная обработка металлоконструкций промпредприятий"
+        cluster: antikor
+        target_keywords: ["антикоррозийная обработка металлоконструкций", "акз металлоконструкций цена"]
+        target_length: 3000
+        target_service_id: 3103
+      - id: comm_06
+        title: "Ремонт фасада панельного дома альпинистами: технология и цена"
+        cluster: fasad
+        target_keywords: ["ремонт фасада панельного дома альпинистами"]
+        target_length: 2800
+        target_service_id: 3084
+      - id: comm_07
+        title: "Такелажные работы в Екатеринбурге: подъём грузов на высоту"
+        cluster: takelazh
+        target_keywords: ["такелажные работы екатеринбург"]
+        target_length: 2200
+        target_service_id: 3130
+
+  # P2 — экспертные (E-E-A-T + AI-цитирование)
+  expert:
+    priority: P2
+    description: "Экспертные pillar-статьи для AI-поиска и доверия"
+    items:
+      - id: exp_01
+        title: "Что такое промышленный альпинизм: виды работ, допуски, безопасность"
+        cluster: alpinism_general
+        target_keywords: ["что такое промышленный альпинизм", "виды промышленного альпинизма"]
+        target_length: 4000
+        format: "ultimate guide + видео"
+        target_service_id: 330
+      - id: exp_02
+        title: "Как выбрать компанию промышленного альпинизма: 7 критериев"
+        cluster: alpinism_general
+        target_keywords: ["как выбрать компанию промышленного альпинизма"]
+        target_length: 2500
+        format: "checklist + PDF lead magnet"
+      - id: exp_03
+        title: "Допуски к работам на высоте: 2 и 3 группа — в чём разница"
+        cluster: norms
+        target_keywords: ["допуски сро на высотные работы", "категории промальпа"]
+        target_length: 2200
+      - id: exp_04
+        title: "Промышленный альпинизм или вышка-тура: что выбрать"
+        cluster: comparison
+        target_keywords: ["промальп или вышка тура"]
+        target_length: 2500
+      - id: exp_05
+        title: "Промальп или строительные леса: когда что дешевле (расчёт)"
+        cluster: comparison
+        target_keywords: ["промальп или леса"]
+        target_length: 2800
+      - id: exp_06
+        title: "Техника безопасности при высотных работах 2026: чек-лист по 782н"
+        cluster: norms
+        target_keywords: ["правила охраны труда на высоте", "приказ 782н"]
+        target_length: 3000
+      - id: exp_07
+        title: "Снаряжение промышленного альпиниста: что должно быть в комплекте"
+        cluster: gear
+        target_keywords: ["снаряжение промышленного альпиниста"]
+        target_length: 2500
+      - id: exp_08
+        title: "Виды антикоррозионных покрытий: что выбрать для металлоконструкций"
+        cluster: antikor
+        target_keywords: ["виды антикоррозионных покрытий"]
+        target_length: 2800
+
+  # P3 — сезонные
+  seasonal:
+    priority: P2
+    description: "Сезонные — высокая частота в определённые месяцы"
+    items:
+      - id: seas_01
+        title: "Уборка снега и сосулек с крыши: когда вызывать альпинистов"
+        cluster: snow
+        season: Q1
+        target_keywords: ["уборка снега с крыши", "сбить сосульки"]
+        target_length: 2000
+        target_service_id: 2858
+      - id: seas_02
+        title: "Новогоднее украшение зданий: монтаж гирлянд и иллюминации"
+        cluster: nye
+        season: Q4
+        target_keywords: ["новогоднее украшение здания", "монтаж гирлянд"]
+        target_length: 1800
+      - id: seas_03
+        title: "Подготовка фасада к зиме: герметизация, покраска, утепление"
+        cluster: winter_prep
+        season: Q3
+        target_keywords: ["подготовка фасада к зиме"]
+        target_length: 2500
+      - id: seas_04
+        title: "Мойка фасадов весной после зимы: почему именно сейчас"
+        cluster: spring_wash
+        season: Q2
+        target_keywords: ["мойка фасада весной"]
+        target_length: 1800
+      - id: seas_05
+        title: "Обследование фасада после зимы: чек-лист для УК"
+        cluster: spring_inspection
+        season: Q2
+        target_keywords: ["обследование фасада после зимы"]
+        target_length: 2200
+        format: "checklist + PDF"
+
+  # P3 — кейсы (доверие + E-E-A-T)
+  cases:
+    priority: P1
+    description: "Кейсы с реальных объектов ОЛИМП — главный сигнал доверия"
+    items:
+      - id: case_01
+        title: "Кейс: герметизация швов панельного дома (ЖК ..., Екатеринбург)"
+        cluster: germetizaciya
+        ingredients: ["адрес", "п.м. швов", "сроки", "цена", "фото до/после"]
+        target_service_id: 3032
+      - id: case_02
+        title: "Кейс: ремонт фасада БЦ Президент"
+        cluster: fasad
+        client: "БЦ Президент"
+        target_service_id: 3084
+      - id: case_03
+        title: "Кейс: антикоррозийная обработка металлоконструкций ЕВРАЗ"
+        cluster: antikor
+        client: "ЕВРАЗ"
+        target_service_id: 3103
+      - id: case_04
+        title: "Кейс: монтаж рекламы на ТЦ (с фото высот)"
+        cluster: reklama
+        target_service_id: 3015
+      - id: case_05
+        title: "Кейс: уборка сосулек с многоэтажки (УК ..., зимний сезон 2026)"
+        cluster: snow
+        season: Q1
+        target_service_id: 2858
+      - id: case_06
+        title: "Кейс: ремонт кровли ГРЭС Среднеуральская"
+        cluster: krovlya
+        client: "Среднеуральская ГРЭС"
+        target_service_id: 3087
+      - id: case_07
+        title: "Кейс: высотные работы на Ледовой арене Сириус"
+        cluster: alpinism_general
+        client: "Ледовая арена Сириус"
+        target_service_id: 330
+
+  # P2 — локальная экспансия (свободная ниша!)
+  regional:
+    priority: P2
+    description: "Региональные посадочные страницы — никто из ЕКБ не закрыл соседние города"
+    items:
+      - id: reg_01
+        title: "Промышленный альпинизм в Нижнем Тагиле"
+        target_keywords: ["промышленный альпинизм нижний тагил"]
+        format: "service landing"
+      - id: reg_02
+        title: "Высотные работы в Первоуральске"
+        target_keywords: ["высотные работы первоуральск"]
+        format: "service landing"
+      - id: reg_03
+        title: "Промальп в Серове"
+        target_keywords: ["промальп серов"]
+        format: "service landing"
+      - id: reg_04
+        title: "Альпинисты в Верхней Пышме"
+        target_keywords: ["альпинисты верхняя пышма"]
+        format: "service landing"
+      - id: reg_05
+        title: "Высотные работы в Каменск-Уральском"
+        target_keywords: ["высотные работы каменск-уральский"]
+        format: "service landing"
+
+# Сезонный календарь публикаций
+seasonality:
+  Q1:
+    months: [01, 02, 03]
+    focus: ["уборка сосулек", "снег с крыш", "тендерный сезон", "бюджет 2026"]
+    topic_ids: [seas_01, case_05, exp_03, exp_06]
+  Q2:
+    months: [04, 05, 06]
+    focus: ["мойка фасадов", "ремонт после зимы", "герметизация швов", "пик трафика по 'промальп'"]
+    topic_ids: [comm_01, comm_02, comm_06, seas_04, seas_05, case_01, case_02]
+  Q3:
+    months: [07, 08, 09]
+    focus: ["ремонт кровли", "АКЗ металлоконструкций", "подготовка к зиме", "сезон ремонтов"]
+    topic_ids: [comm_03, comm_05, comm_07, seas_03, case_03, case_06]
+  Q4:
+    months: [10, 11, 12]
+    focus: ["новогоднее украшение", "консервация объектов", "ретроспектива", "планирование тендеров"]
+    topic_ids: [seas_02, exp_02, exp_07, case_07]

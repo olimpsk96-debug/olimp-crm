@@ -1,0 +1,29 @@
+.env.content
+.env
+*.pyc
+__pycache__/
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# Runtime data
+/data/
+storage/articles/
+storage/cache/
+storage/media/
+*.log
+
+# IG session
+ig_session.json
+tiktok_cookies.txt
+gsc-sa.json
+ga4-sa.json
+
+# Локальные комфи модели
+comfyui_models/
+
+# Notebook checkpoints
+.ipynb_checkpoints/

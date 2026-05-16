@@ -1,0 +1,131 @@
+# Топ поисковых запросов для контент-завода ОЛИМП
+# Источник: ресерч 2026-05-17 + CLAUDE.md promalp + анализ 74 услуг сайта
+# Частоты — приблизительные, требуют верификации через Wordstat
+
+meta:
+  region: "Свердловская область"
+  city: "Екатеринбург"
+  language: "ru"
+  updated: "2026-05-17"
+  domain: "promalp-ural.ru"
+
+# Главное направление компании — промышленный альпинизм + промстроительство
+clusters:
+
+  # ВЧ — главные коммерческие запросы (приоритет 1)
+  vch_commercial:
+    priority: 1
+    description: "Высокочастотные коммерческие — основной источник трафика"
+    keywords:
+      - { query: "промышленный альпинизм екатеринбург", freq_est: 4000, intent: "commercial", page_type: "service", target_post_id: 330 }
+      - { query: "промальп екатеринбург", freq_est: 1200, intent: "commercial", page_type: "service", target_post_id: 330 }
+      - { query: "высотные работы екатеринбург", freq_est: 2500, intent: "commercial", page_type: "service", target_post_id: 330 }
+      - { query: "альпинисты екатеринбург", freq_est: 1500, intent: "commercial", page_type: "service", target_post_id: 330 }
+
+  # СЧ — услуги
+  sch_services:
+    priority: 1
+    description: "Среднечастотные коммерческие — посадочные на каждую услугу"
+    keywords:
+      - { query: "герметизация межпанельных швов екатеринбург", freq_est: 1250, intent: "commercial", target_post_id: 3032 }
+      - { query: "герметизация швов панельного дома", freq_est: 800, intent: "commercial", target_post_id: 3032 }
+      - { query: "мойка фасадов екатеринбург цена", freq_est: 850, intent: "commercial", target_post_id: 3009 }
+      - { query: "ремонт фасада альпинисты екатеринбург", freq_est: 600, intent: "commercial", target_post_id: 3084 }
+      - { query: "покраска фасада промальп", freq_est: 400, intent: "commercial", target_post_id: 3084 }
+      - { query: "ремонт кровли альпинистами", freq_est: 500, intent: "commercial", target_post_id: 3087 }
+      - { query: "уборка снега с крыши екатеринбург", freq_est: 1500, intent: "commercial", target_post_id: 2858 }
+      - { query: "сбивание сосулек с крыши", freq_est: 700, intent: "commercial", target_post_id: 2858 }
+      - { query: "антикоррозийная обработка металлоконструкций", freq_est: 500, intent: "commercial", target_post_id: 3103 }
+      - { query: "монтаж рекламных конструкций на высоте", freq_est: 400, intent: "commercial", target_post_id: 3015 }
+      - { query: "такелажные работы екатеринбург", freq_est: 350, intent: "commercial", target_post_id: 3130 }
+      - { query: "утепление фасада альпинистами", freq_est: 500, intent: "commercial" }
+      - { query: "монтаж металлоконструкций екатеринбург", freq_est: 750, intent: "commercial" }
+
+  # НЧ — низкоконкурентные B2B-запросы (свободная ниша!)
+  nch_b2b:
+    priority: 1
+    description: "Низкочастотные B2B — низкая конкуренция, высокая конверсия"
+    keywords:
+      - { query: "ремонт дымовых труб промышленных предприятий", intent: "b2b" }
+      - { query: "антикоррозийная обработка металлоконструкций цена", intent: "b2b" }
+      - { query: "торкретирование бетона урал", intent: "b2b" }
+      - { query: "ремонт градирен альпинистами", intent: "b2b" }
+      - { query: "обслуживание дымовых труб котельных", intent: "b2b" }
+      - { query: "ремонт промышленных объектов на высоте", intent: "b2b" }
+      - { query: "подрядчик высотные работы промышленные объекты", intent: "b2b" }
+
+  # Информационные (для AI-цитирования и pillars)
+  info:
+    priority: 2
+    description: "Информационные — pillars для SEO и AI-extract"
+    keywords:
+      - { query: "что такое промышленный альпинизм", intent: "info", page_type: "guide" }
+      - { query: "виды промышленного альпинизма", intent: "info", page_type: "guide" }
+      - { query: "категории сложности высотных работ", intent: "info", page_type: "norm" }
+      - { query: "допуски сро на высотные работы", intent: "info", page_type: "norm" }
+      - { query: "правила охраны труда на высоте", intent: "info", page_type: "norm" }
+      - { query: "промальп или вышка тура что выбрать", intent: "info", page_type: "comparison" }
+      - { query: "промальп или леса что дешевле", intent: "info", page_type: "comparison" }
+      - { query: "как выбрать компанию промышленного альпинизма", intent: "info", page_type: "checklist" }
+      - { query: "техника безопасности при высотных работах", intent: "info", page_type: "norm" }
+      - { query: "снаряжение промышленного альпиниста", intent: "info", page_type: "guide" }
+      - { query: "герметик для межпанельных швов какой лучше", intent: "info", page_type: "comparison" }
+      - { query: "тёплый шов или холодный какой лучше", intent: "info", page_type: "comparison" }
+      - { query: "как очистить фасад от высолов", intent: "info", page_type: "howto" }
+      - { query: "виды антикоррозионных покрытий", intent: "info", page_type: "comparison" }
+
+  # Long-tail — высокая конверсия
+  long_tail:
+    priority: 1
+    description: "Long-tail — низкая конкуренция, высокая конверсия"
+    keywords:
+      - { query: "сколько стоит мойка фасада за м2", intent: "commercial-info" }
+      - { query: "ремонт фасада панельного дома альпинистами цена", intent: "commercial" }
+      - { query: "цена герметизации швов панельного дома", intent: "commercial" }
+      - { query: "уборка снега с крыши цена за квадратный метр", intent: "commercial" }
+      - { query: "новогоднее украшение здания монтаж", intent: "commercial" }
+      - { query: "монтаж кондиционеров на высоту", intent: "commercial" }
+      - { query: "ремонт водостоков альпинистами", intent: "commercial" }
+      - { query: "промышленный альпинизм при -30", intent: "info-commercial" }
+      - { query: "герметизация швов зимой можно ли", intent: "info-commercial" }
+      - { query: "ремонт колонны после пожара", intent: "info-buy" }
+
+  # Тендерные / B2G
+  b2g_tender:
+    priority: 2
+    description: "Тендеры и B2G — для тендерного отдела"
+    keywords:
+      - { query: "подрядчик высотные работы свердловская область", intent: "b2g" }
+      - { query: "тендер обслуживание дымовых труб", intent: "b2g" }
+      - { query: "тендер антикоррозийная обработка", intent: "b2g" }
+      - { query: "допуск сро высотные работы получение", intent: "b2g-info" }
+      - { query: "договор подряда на промышленный альпинизм образец", intent: "b2b-template" }
+      - { query: "смета на высотные работы пример", intent: "b2b-template" }
+      - { query: "тз на герметизацию швов", intent: "b2b-template" }
+
+  # Региональные (расширение, свободная ниша!)
+  regional_expansion:
+    priority: 2
+    description: "Региональные посадочные — никто из ЕКБ-конкурентов не закрывает соседние города"
+    keywords:
+      - { query: "промышленный альпинизм нижний тагил", intent: "commercial", landing_todo: true }
+      - { query: "высотные работы первоуральск", intent: "commercial", landing_todo: true }
+      - { query: "промальп серов", intent: "commercial", landing_todo: true }
+      - { query: "промальп каменск-уральский", intent: "commercial", landing_todo: true }
+      - { query: "альпинисты верхняя пышма", intent: "commercial", landing_todo: true }
+      - { query: "высотные работы челябинск", intent: "commercial", landing_todo: true }
+      - { query: "альпинисты тюмень", intent: "commercial", landing_todo: true }
+
+  # Сезонные (для контент-планирования)
+  seasonal:
+    priority: 2
+    description: "Сезонные — следить за частотой по кварталам"
+    keywords:
+      - { query: "уборка сосулек с крыши", season: "Q1", intent: "commercial" }
+      - { query: "сбить лёд с крыши екатеринбург", season: "Q1", intent: "commercial" }
+      - { query: "новогоднее украшение фасада", season: "Q4", intent: "commercial" }
+      - { query: "монтаж гирлянд на здание", season: "Q4", intent: "commercial" }
+      - { query: "герметизация швов перед зимой", season: "Q3", intent: "info-commercial" }
+      - { query: "подготовка фасада к зиме", season: "Q3", intent: "info-commercial" }
+      - { query: "мойка фасада весной", season: "Q2", intent: "commercial" }
+      - { query: "обследование фасада после зимы", season: "Q2", intent: "info-commercial" }
