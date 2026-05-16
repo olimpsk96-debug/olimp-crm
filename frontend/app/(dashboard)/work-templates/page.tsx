@@ -5,6 +5,7 @@ import type { WorkTemplate } from "@/types/work-template";
 import { CATEGORIES, SOURCES } from "@/types/work-template";
 import WorkTemplateDrawer from "@/components/work-templates/WorkTemplateDrawer";
 import ApplyTemplateModal from "@/components/work-templates/ApplyTemplateModal";
+import { SavedViewsBar } from "@/components/ui/SavedViewsBar";
 
 interface CategoryStat { category: string; cnt: number; verified: number }
 
@@ -71,6 +72,18 @@ export default function WorkTemplatesPage() {
           + Новый шаблон
         </button>
       </div>
+
+      {/* Saved Views */}
+      <SavedViewsBar
+        route="/work-templates"
+        currentFilters={{ search, category, source, verified }}
+        onApply={(f) => {
+          setSearch(String(f.search || ""));
+          setCategory(String(f.category || ""));
+          setSource(String(f.source || ""));
+          setVerified(String(f.verified || ""));
+        }}
+      />
 
       {/* KPI */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>

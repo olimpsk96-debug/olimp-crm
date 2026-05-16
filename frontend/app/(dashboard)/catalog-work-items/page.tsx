@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { SavedViewsBar } from "@/components/ui/SavedViewsBar";
+import { EntityTimeline } from "@/components/ui/EntityTimeline";
 
 interface WorkItem {
   name: string;
@@ -453,6 +454,11 @@ function DetailDrawer({ item, onClose }: { item: WorkItem; onClose: () => void }
             </div>
           </div>
         )}
+
+        {/* Activity Timeline */}
+        <div style={{ marginTop: 24, paddingTop: 18, borderTop: "1px solid var(--border-subtle)" }}>
+          <EntityTimeline doctype="Catalog Work Item" name={item.name} limit={15} />
+        </div>
       </div>
     </div>
   );

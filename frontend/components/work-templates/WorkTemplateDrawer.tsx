@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { WorkTemplate, WorkStageTemplate } from "@/types/work-template";
 import { CATEGORIES, SOURCES } from "@/types/work-template";
+import { EntityTimeline } from "@/components/ui/EntityTimeline";
 
 const inputStyle: React.CSSProperties = {
   padding: "8px 10px", fontSize: 13, color: "var(--text-primary)",
@@ -313,6 +314,13 @@ export default function WorkTemplateDrawer({
                 </button>
               </div>
             </div>
+
+            {/* Activity Timeline — только для существующих шаблонов */}
+            {!isNew && (
+              <div style={{ marginTop: 24, paddingTop: 18, borderTop: "1px solid var(--border-subtle)" }}>
+                <EntityTimeline doctype="Work Template" name={name} limit={15} />
+              </div>
+            )}
           </>
         )}
       </div>

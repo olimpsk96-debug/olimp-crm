@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { ProjectRisk, RiskCategory, RiskStatus, RiskResponse } from "@/types/risk";
+import { EntityTimeline } from "@/components/ui/EntityTimeline";
 
 const CATEGORIES: RiskCategory[] = [
   "Финансовый", "Технический", "Срочный", "Качество", "Безопасность",
@@ -291,6 +292,13 @@ export default function RiskDrawer({
                 </button>
               </div>
             </div>
+
+            {/* Activity Timeline — только для существующих рисков */}
+            {!isNew && (
+              <div style={{ marginTop: 24, paddingTop: 18, borderTop: "1px solid var(--border-subtle)" }}>
+                <EntityTimeline doctype="Project Risk" name={name} limit={15} />
+              </div>
+            )}
           </>
         )}
       </div>
