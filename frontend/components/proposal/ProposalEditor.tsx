@@ -11,6 +11,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import { useCallback, useEffect } from "react";
 import { MergeTagNode } from "./extensions/MergeTag";
 import { PaymentScheduleNode } from "./extensions/PaymentSchedule";
+import { SpreadsheetNode } from "./extensions/Spreadsheet";
 
 interface Props {
   initialContent?: object | null;
@@ -38,6 +39,7 @@ export function ProposalEditor({
       Placeholder.configure({ placeholder }),
       MergeTagNode,
       PaymentScheduleNode,
+      SpreadsheetNode,
     ],
     content: initialContent || { type: "doc", content: [{ type: "paragraph" }] },
     editable: !readOnly,
@@ -66,6 +68,13 @@ export function ProposalEditor({
   const insertMergeTag = useCallback((path: string) => {
     editor?.chain().focus().insertContent({
       type: "mergeTag", attrs: { path },
+    }).run();
+  }, [editor]);
+
+  const insertSpreadsheet = useCallback(() => {
+    editor?.chain().focus().insertContent({
+      type: "spreadsheet",
+      attrs: { snapshot: null, title: "Калькуляция", height: 360 },
     }).run();
   }, [editor]);
 
@@ -99,18 +108,20 @@ export function ProposalEditor({
         <Toolbar editor={editor}
                  onInsertTable={insertTable}
                  onInsertMerge={insertMergeTag}
-                 onInsertPayments={insertPaymentSchedule} />
+                 onInsertPayments={insertPaymentSchedule}
+                 onInsertSpreadsheet={insertSpreadsheet} />
       )}
       <EditorContent editor={editor} />
     </div>
   );
 }
 
-function Toolbar({ editor, onInsertTable, onInsertMerge, onInsertPayments }: {
+function Toolbar({ editor, onInsertTable, onInsertMerge, onInsertPayments, onInsertSpreadsheet }: {
   editor: ReturnType<typeof useEditor>;
   onInsertTable: () => void;
   onInsertMerge: (path: string) => void;
   onInsertPayments: () => void;
+  onInsertSpreadsheet: () => void;
 }) {
   if (!editor) return null;
   const btn = (active: boolean): React.CSSProperties => ({
@@ -159,6 +170,7 @@ function Toolbar({ editor, onInsertTable, onInsertMerge, onInsertPayments }: {
       <div style={divider} />
 
       <button onClick={onInsertTable} style={btn(false)} title="Вставить таблицу">⊞ Таблица</button>
+      <button onClick={onInsertSpreadsheet} style={{ ...btn(false), color: "#7c3aed", borderColor: "#7c3aed" }} title="Калькуляция (Excel-like с формулами)">⊞ Калькуляция</button>
       <button onClick={onInsertPayments} style={btn(false)} title="График оплаты">₽ График оплаты</button>
 
       <div style={divider} />

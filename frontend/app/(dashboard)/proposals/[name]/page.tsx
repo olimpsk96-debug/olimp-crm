@@ -124,6 +124,15 @@ export default function ProposalEditPage() {
     toast.success("Ссылка для клиента сгенерирована");
   }
 
+  async function downloadExport(format: "pdf" | "docx") {
+    if (dirty) {
+      if (!window.confirm("Есть несохранённые изменения. Сохранить перед экспортом?")) return;
+      await save();
+    }
+    // Открываем в новой вкладке — браузер сам скачает
+    window.open(`/api/proposals/${encodeURIComponent(name)}/export?format=${format}`, "_blank");
+  }
+
   async function markSent() {
     const r = await fetch("/api/proposals", {
       method: "POST",
@@ -175,6 +184,16 @@ export default function ProposalEditPage() {
                       opacity: saving ? 0.6 : 1,
                     }}>
               {saving ? "..." : dirty ? "💾 Сохранить" : "✓ Сохранено"}
+            </button>
+            <button onClick={() => downloadExport("pdf")}
+                    style={exportBtnStyle}
+                    title="Скачать PDF">
+              📄 PDF
+            </button>
+            <button onClick={() => downloadExport("docx")}
+                    style={exportBtnStyle}
+                    title="Скачать DOCX">
+              📝 DOCX
             </button>
             <button onClick={generateShareLink}
                     style={{
@@ -341,4 +360,9 @@ const inp: React.CSSProperties = {
   width: "100%", padding: "7px 10px", fontSize: 12.5,
   background: "var(--bg-base)", color: "var(--text-primary)",
   border: "1px solid var(--border-subtle)", borderRadius: 6, outline: "none",
+};
+const exportBtnStyle: React.CSSProperties = {
+  padding: "9px 14px", fontSize: 13, fontWeight: 500,
+  background: "var(--bg-elevated)", color: "var(--text-secondary)",
+  border: "1px solid var(--border-subtle)", borderRadius: 7, cursor: "pointer",
 };
