@@ -85,6 +85,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: "/estimates", label: "Сметы", icon: I.estimates },
       { href: "/work-templates", label: "Шаблоны работ", icon: I.templates },
       { href: "/assemblies", label: "Сборки работ (Assembly)", icon: I.cwicr },
+      { href: "/boqs", label: "BOQ (Bill of Quantities)", icon: I.estimates },
       { href: "/catalog-work-items", label: "Расценки CWICR", icon: I.cwicr },
       { href: "/resources", label: "Ресурсы", icon: I.resources },
       { href: "/catalog", label: "Каталог ГЭСН", icon: I.catalog },

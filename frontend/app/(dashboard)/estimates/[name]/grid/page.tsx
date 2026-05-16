@@ -10,6 +10,7 @@ const EstimateGrid = dynamic(
   () => import("@/components/estimate/EstimateGrid").then((m) => m.EstimateGrid),
   { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "var(--text-tertiary)" }}>Загрузка таблицы…</div> },
 );
+import { ApplyAssemblyModal } from "@/components/estimate/ApplyAssemblyModal";
 
 interface GridRow {
   name?: string;
@@ -54,6 +55,7 @@ export default function EstimateGridPage() {
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [tab, setTab] = useState<"works" | "measurements" | "resources">("works");
+  const [showAssembly, setShowAssembly] = useState(false);
 
   function reload() {
     setLoading(true);
@@ -159,9 +161,12 @@ export default function EstimateGridPage() {
             }}>
               {saving ? "..." : dirty ? "💾 Сохранить" : "✓ Сохранено"}
             </button>
+            <button onClick={() => setShowAssembly(true)} style={{
+              ...btnSecondary, borderColor: "#7c3aed", color: "#7c3aed",
+            }}>⊞ + Сборка</button>
             <button onClick={applyMarkup} style={btnSecondary}>📈 Наценка ко всем</button>
             <button onClick={createProposal} style={{
-              ...btnSecondary, borderColor: "#7c3aed", color: "#7c3aed",
+              ...btnSecondary, borderColor: "var(--accent)", color: "var(--accent)",
             }}>📋 Создать КП</button>
           </div>
         </div>
@@ -224,6 +229,14 @@ export default function EstimateGridPage() {
           📦 Ресурсный план — в разработке (v6.2.2).<br/>
           <div style={{ fontSize: 11, marginTop: 6 }}>Здесь будет: материалы/трудозатраты/механизмы из CWICR с авто-расчётом.</div>
         </div>
+      )}
+
+      {showAssembly && (
+        <ApplyAssemblyModal
+          estimate={name}
+          onClose={() => setShowAssembly(false)}
+          onApplied={() => { setShowAssembly(false); reload(); }}
+        />
       )}
     </div>
   );
