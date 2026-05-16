@@ -25,6 +25,8 @@ _SEARCH_TARGETS = [
     {"dt": "Meeting",              "label": "Планёрка",    "icon": "👥", "href": "/meetings",      "search_fields": ["title", "name"], "title": "title", "extra": ["status", "meeting_date"]},
     {"dt": "Cost Catalog Item",    "label": "Расценка",    "icon": "📐", "href": "/catalog",       "search_fields": ["item_name", "name", "code"], "title": "item_name", "extra": ["unit", "base_price"]},
     {"dt": "Catalog Resource",     "label": "Ресурс",      "icon": "🧱", "href": "/resources",     "search_fields": ["resource_name", "name", "resource_code"], "title": "resource_name", "extra": ["unit", "price_avg"]},
+    {"dt": "Catalog Work Item",    "label": "Расценка CWICR", "icon": "📕", "href": "/catalog-work-items", "search_fields": ["rate_name", "name", "rate_code"], "title": "rate_name", "extra": ["rate_unit", "category_type"]},
+    {"dt": "Work Template",        "label": "Шаблон работ", "icon": "🪄", "href": "/work-templates", "search_fields": ["title", "name", "keywords"], "title": "title", "extra": ["category", "base_unit"]},
 ]
 
 

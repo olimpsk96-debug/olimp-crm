@@ -232,11 +232,79 @@ function CatChip({ label, count, active, onClick }: { label: string; count: numb
 }
 
 function DetailDrawer({ item, onClose }: { item: WorkItem; onClose: () => void }) {
+  const [actionOpen, setActionOpen] = useState<"estimate" | "template" | null>(null);
+  const [notice, setNotice] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  const [estimates, setEstimates] = useState<{ name: string; title?: string; status?: string }[]>([]);
+  const [selectedEstimate, setSelectedEstimate] = useState("");
+  const [qty, setQty] = useState<number>(1);
+  const [basePrice, setBasePrice] = useState<number>(0);
+  const [markup, setMarkup] = useState<number>(15);
+  const [templateId, setTemplateId] = useState("");
+  const [keywords, setKeywords] = useState("");
+  const [busy, setBusy] = useState(false);
+
   useEffect(() => {
-    const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const h = (e: KeyboardEvent) => { if (e.key === "Escape") { actionOpen ? setActionOpen(null) : onClose(); } };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [onClose]);
+  }, [onClose, actionOpen]);
+
+  useEffect(() => {
+    if (actionOpen === "estimate") {
+      fetch("/api/estimates")
+        .then((r) => r.json())
+        .then((d) => {
+          setEstimates(Array.isArray(d) ? d : []);
+          if (d.length > 0) setSelectedEstimate(d[0].name);
+        });
+    }
+  }, [actionOpen]);
+
+  async function addToEstimate() {
+    if (!selectedEstimate) { setNotice({ kind: "err", text: "Выбери смету" }); return; }
+    setBusy(true);
+    try {
+      const ourPrice = basePrice * (1 + markup / 100);
+      const r = await fetch("/api/catalog-work-items/add-to-estimate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rate_code: item.name,
+          estimate_name: selectedEstimate,
+          qty,
+          base_unit_price: basePrice,
+          our_unit_price: ourPrice,
+        }),
+      });
+      const d = await r.json();
+      if (!r.ok || d.error) { setNotice({ kind: "err", text: d.error || `Ошибка ${r.status}` }); return; }
+      setNotice({ kind: "ok", text: `✓ Добавлено в ${d.estimate} (${d.qty} × сумма ${d.amount.toLocaleString("ru-RU")} ₽)` });
+      setActionOpen(null);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function convertToTemplate() {
+    setBusy(true);
+    try {
+      const r = await fetch("/api/catalog-work-items/convert-to-template", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rate_code: item.name,
+          template_id: templateId || undefined,
+          keywords: keywords || undefined,
+        }),
+      });
+      const d = await r.json();
+      if (!r.ok || d.error) { setNotice({ kind: "err", text: d.error || `Ошибка ${r.status}` }); return; }
+      setNotice({ kind: "ok", text: `✓ Создан шаблон ${d.template_id} с ${d.stages_count} этапами (черновик)` });
+      setActionOpen(null);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 100, display: "flex", justifyContent: "flex-end" }}>
@@ -280,13 +348,134 @@ function DetailDrawer({ item, onClose }: { item: WorkItem; onClose: () => void }
           </div>
         )}
 
-        <div style={{ marginTop: 20, padding: 12, borderRadius: 9, background: "rgba(234,88,12,0.06)", border: "1px solid rgba(234,88,12,0.3)", fontSize: 11.5, color: "var(--text-secondary)" }}>
-          💡 Используй эту расценку как референс при составлении сметы — описание состава работ можно скопировать.
+        <div style={{ marginTop: 18, display: "flex", gap: 8 }}>
+          <button onClick={() => setActionOpen("estimate")} style={btnAction}>
+            ➕ В смету
+          </button>
+          <button onClick={() => setActionOpen("template")} style={btnActionSec}>
+            📋 Создать шаблон
+          </button>
         </div>
+
+        {notice && (
+          <div style={{
+            marginTop: 12, padding: 10, borderRadius: 8, fontSize: 12,
+            background: notice.kind === "ok" ? "rgba(34,197,94,0.10)" : "rgba(248,113,113,0.10)",
+            color: notice.kind === "ok" ? "var(--success)" : "var(--danger)",
+            border: `1px solid ${notice.kind === "ok" ? "var(--success)" : "var(--danger)"}`,
+          }}>
+            {notice.text}
+          </div>
+        )}
+
+        {actionOpen === "estimate" && (
+          <div style={modalOverlay} onClick={() => setActionOpen(null)}>
+            <div style={modalCard} onClick={(e) => e.stopPropagation()}>
+              <h3 style={{ fontSize: 15, margin: "0 0 14px" }}>Добавить расценку в смету</h3>
+              <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginBottom: 12, fontFamily: "monospace" }}>
+                {item.rate_code} · {item.rate_name}
+              </div>
+
+              <label style={lblM}>Смета *</label>
+              <select value={selectedEstimate} onChange={(e) => setSelectedEstimate(e.target.value)} style={inpM}>
+                <option value="">— выбери —</option>
+                {estimates.map((e) => <option key={e.name} value={e.name}>{e.name}{e.title ? ` — ${e.title}` : ""}</option>)}
+              </select>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 10 }}>
+                <div>
+                  <label style={lblM}>Кол-во ({item.rate_unit || "ед"})</label>
+                  <input type="number" value={qty} onChange={(e) => setQty(parseFloat(e.target.value) || 0)} style={inpM} />
+                </div>
+                <div>
+                  <label style={lblM}>Цена/ед.</label>
+                  <input type="number" value={basePrice} onChange={(e) => setBasePrice(parseFloat(e.target.value) || 0)} style={inpM} placeholder="0" />
+                </div>
+                <div>
+                  <label style={lblM}>Наценка %</label>
+                  <input type="number" value={markup} onChange={(e) => setMarkup(parseFloat(e.target.value) || 0)} style={inpM} />
+                </div>
+              </div>
+              {basePrice > 0 && (
+                <div style={{ marginTop: 8, fontSize: 12, color: "var(--text-secondary)" }}>
+                  Итого: <b>{(qty * basePrice * (1 + markup/100)).toLocaleString("ru-RU", { maximumFractionDigits: 2 })} ₽</b>
+                </div>
+              )}
+
+              <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                <button onClick={() => setActionOpen(null)} style={btnCancel}>Отмена</button>
+                <button onClick={addToEstimate} disabled={busy} style={btnAction}>
+                  {busy ? "..." : "Добавить"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {actionOpen === "template" && (
+          <div style={modalOverlay} onClick={() => setActionOpen(null)}>
+            <div style={modalCard} onClick={(e) => e.stopPropagation()}>
+              <h3 style={{ fontSize: 15, margin: "0 0 14px" }}>Создать шаблон работ из расценки</h3>
+              <div style={{ padding: 10, marginBottom: 12, borderRadius: 7, background: "rgba(168,139,250,0.08)", fontSize: 11.5, color: "var(--text-secondary)" }}>
+                Шаблон создаётся как <b>черновик</b> (is_verified=0). Этапы парсятся из состава работ
+                автоматически. Главный инженер должен проверить и проставить нормы.
+              </div>
+
+              <label style={lblM}>Template ID (опц.)</label>
+              <input value={templateId} onChange={(e) => setTemplateId(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g,"_"))}
+                     placeholder={`cwicr_${item.rate_code.toLowerCase().replace(/[^a-z0-9]/g,"_").substring(0,30)}`}
+                     style={inpM} />
+
+              <label style={{ ...lblM, marginTop: 10 }}>Keywords (опц., через запятую)</label>
+              <input value={keywords} onChange={(e) => setKeywords(e.target.value)}
+                     placeholder="будут извлечены из названия автоматически"
+                     style={inpM} />
+
+              <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                <button onClick={() => setActionOpen(null)} style={btnCancel}>Отмена</button>
+                <button onClick={convertToTemplate} disabled={busy} style={btnActionSec}>
+                  {busy ? "..." : "Создать черновик"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
+const modalOverlay: React.CSSProperties = {
+  position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 110,
+  display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+};
+const modalCard: React.CSSProperties = {
+  width: 460, maxWidth: "100%", background: "var(--bg-base)",
+  border: "1px solid var(--border-subtle)", borderRadius: 12, padding: 20,
+};
+const inpM: React.CSSProperties = {
+  width: "100%", padding: "8px 10px", fontSize: 12.5,
+  background: "var(--bg-elevated)", color: "var(--text-primary)",
+  border: "1px solid var(--border-subtle)", borderRadius: 7, outline: "none",
+};
+const lblM: React.CSSProperties = {
+  display: "block", fontSize: 10, color: "var(--text-tertiary)",
+  textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "monospace", marginBottom: 4,
+};
+const btnAction: React.CSSProperties = {
+  padding: "8px 14px", fontSize: 12.5, fontWeight: 500, borderRadius: 8,
+  background: "var(--accent)", color: "white", border: "none", cursor: "pointer",
+};
+const btnActionSec: React.CSSProperties = {
+  padding: "8px 14px", fontSize: 12.5, fontWeight: 500, borderRadius: 8,
+  background: "rgba(168,139,250,0.15)", color: "#a78bfa",
+  border: "1px solid #a78bfa", cursor: "pointer",
+};
+const btnCancel: React.CSSProperties = {
+  padding: "8px 14px", fontSize: 12.5, fontWeight: 500, borderRadius: 8,
+  background: "var(--bg-elevated)", color: "var(--text-secondary)",
+  border: "1px solid var(--border-subtle)", cursor: "pointer",
+};
 
 function Meta({ label, value }: { label: string; value: string }) {
   return (
