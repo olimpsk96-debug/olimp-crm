@@ -1,0 +1,5 @@
+customer_name,customer_type,mobile_no,email_id,tax_id,website,industry,customer_details
+ООО Альфастрой,Company,+79991111111,info@alfastroy.ru,7700000001,alfastroy.ru,Строительство,Постоянный клиент с 2020 года
+АО НПЗ Старт,Company,+73431234567,sales@start-npp.ru,6677001234,,Нефтехимия,Резервуары РВС-2000 АКЗ
+ИП Иванов И.И.,Individual,+79992222222,ivanov@mail.ru,665812345678,,Промышленность,
+Петров Сергей,Individual,+79993333333,,,,,Частный клиент по фасадам

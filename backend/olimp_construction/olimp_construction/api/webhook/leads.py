@@ -192,25 +192,109 @@ def create_lead(
 
 @frappe.whitelist()
 def get_lead_stats(days: int = 30) -> dict:
-    """Статистика лидов с сайта за период (по source)."""
+    """Сводная статистика лидов за период.
+
+    Возвращает:
+    - kpi: total, won, lost, conversion_pct, avg_amount
+    - by_source: разбивка по источнику (Сайт, Telegram, Тендер, ...)
+    - funnel: воронка по статусам (Лид → Договор → Выигран)
+    - timeline: динамика по дням
+    - recent: последние 15 лидов
+    """
+    from frappe.utils import flt
+
     frappe.has_permission("Deal", throw=True)
     days = max(1, min(int(days), 365))
 
-    rows = frappe.db.sql(
+    # KPI
+    kpi_row = frappe.db.sql(
+        """SELECT COUNT(*) AS total,
+                  SUM(CASE WHEN status = 'Закрыт выигран' THEN 1 ELSE 0 END) AS won,
+                  SUM(CASE WHEN status = 'Закрыт проигран' THEN 1 ELSE 0 END) AS lost,
+                  SUM(CASE WHEN status NOT IN ('Закрыт выигран', 'Закрыт проигран') THEN 1 ELSE 0 END) AS open_count,
+                  COALESCE(AVG(NULLIF(amount_estimated, 0)), 0) AS avg_amount,
+                  COALESCE(SUM(amount_estimated), 0) AS total_amount
+           FROM `tabDeal`
+           WHERE creation >= DATE_SUB(NOW(), INTERVAL %(d)s DAY)""",
+        {"d": days}, as_dict=True,
+    )[0]
+
+    total = int(kpi_row["total"] or 0)
+    won = int(kpi_row["won"] or 0)
+    lost = int(kpi_row["lost"] or 0)
+    closed = won + lost
+    conversion_pct = round(won / closed * 100, 1) if closed > 0 else 0
+
+    # By source — конверсия и средняя сумма
+    by_source = frappe.db.sql(
         """SELECT source,
                   COUNT(*) AS total,
                   SUM(CASE WHEN status = 'Лид' THEN 1 ELSE 0 END) AS new_count,
-                  SUM(CASE WHEN status IN ('Договор','В работе','Закрыт выигран') THEN 1 ELSE 0 END) AS won,
-                  SUM(CASE WHEN status = 'Закрыт проигран' THEN 1 ELSE 0 END) AS lost
+                  SUM(CASE WHEN status NOT IN ('Закрыт выигран','Закрыт проигран') THEN 1 ELSE 0 END) AS open_count,
+                  SUM(CASE WHEN status = 'Закрыт выигран' THEN 1 ELSE 0 END) AS won,
+                  SUM(CASE WHEN status = 'Закрыт проигран' THEN 1 ELSE 0 END) AS lost,
+                  COALESCE(AVG(NULLIF(amount_estimated, 0)), 0) AS avg_amount,
+                  COALESCE(SUM(amount_estimated), 0) AS total_amount
            FROM `tabDeal`
            WHERE creation >= DATE_SUB(NOW(), INTERVAL %(d)s DAY)
            GROUP BY source
            ORDER BY total DESC""",
         {"d": days}, as_dict=True,
     )
+    for r in by_source:
+        cl = (r["won"] or 0) + (r["lost"] or 0)
+        r["conversion_pct"] = round((r["won"] or 0) / cl * 100, 1) if cl else 0
+        r["avg_amount"] = flt(r["avg_amount"] or 0)
+        r["total_amount"] = flt(r["total_amount"] or 0)
+
+    # Funnel — все статусы (по сумме сделок)
+    funnel = frappe.db.sql(
+        """SELECT status, COUNT(*) AS cnt,
+                  COALESCE(SUM(amount_estimated), 0) AS amount
+           FROM `tabDeal`
+           WHERE creation >= DATE_SUB(NOW(), INTERVAL %(d)s DAY)
+           GROUP BY status""",
+        {"d": days}, as_dict=True,
+    )
+    funnel_order = ["Лид", "Переговоры", "КП отправлено", "Договор", "В работе", "Закрыт выигран", "Закрыт проигран"]
+    funnel_map = {r["status"]: r for r in funnel}
+    funnel_sorted = [funnel_map.get(s, {"status": s, "cnt": 0, "amount": 0}) for s in funnel_order]
+
+    # Timeline — динамика по дням за период
+    timeline = frappe.db.sql(
+        """SELECT DATE(creation) AS day, COUNT(*) AS cnt,
+                  SUM(CASE WHEN status = 'Закрыт выигран' THEN 1 ELSE 0 END) AS won
+           FROM `tabDeal`
+           WHERE creation >= DATE_SUB(NOW(), INTERVAL %(d)s DAY)
+           GROUP BY DATE(creation)
+           ORDER BY day ASC""",
+        {"d": days}, as_dict=True,
+    )
+
+    # Recent — последние 15 лидов
+    recent = frappe.db.sql(
+        """SELECT name, title, status, source, customer, contact_name,
+                  amount_estimated, creation
+           FROM `tabDeal`
+           WHERE creation >= DATE_SUB(NOW(), INTERVAL %(d)s DAY)
+           ORDER BY creation DESC
+           LIMIT 15""",
+        {"d": days}, as_dict=True,
+    )
 
     return {
         "period_days": days,
-        "by_source": rows,
-        "total": sum(r["total"] for r in rows),
+        "kpi": {
+            "total": total,
+            "open": int(kpi_row["open_count"] or 0),
+            "won": won,
+            "lost": lost,
+            "conversion_pct": conversion_pct,
+            "avg_amount": flt(kpi_row["avg_amount"] or 0),
+            "total_amount": flt(kpi_row["total_amount"] or 0),
+        },
+        "by_source": by_source,
+        "funnel": funnel_sorted,
+        "timeline": [{"day": str(r["day"]), "cnt": int(r["cnt"]), "won": int(r["won"] or 0)} for r in timeline],
+        "recent": recent,
     }

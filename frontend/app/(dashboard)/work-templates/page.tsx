@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { WorkTemplate } from "@/types/work-template";
 import { CATEGORIES, SOURCES } from "@/types/work-template";
 import WorkTemplateDrawer from "@/components/work-templates/WorkTemplateDrawer";
+import ApplyTemplateModal from "@/components/work-templates/ApplyTemplateModal";
 
 interface CategoryStat { category: string; cnt: number; verified: number }
 
@@ -16,6 +17,8 @@ export default function WorkTemplatesPage() {
   const [source, setSource] = useState("");
   const [verified, setVerified] = useState("");
   const [openName, setOpenName] = useState<string | null>(null);
+  const [applyTemplate, setApplyTemplate] = useState<WorkTemplate | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -120,7 +123,7 @@ export default function WorkTemplatesPage() {
         <div style={{ background: "var(--bg-elevated)", borderRadius: 12, border: "1px solid var(--border-subtle)", overflow: "hidden" }}>
           <div style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr 130px 90px 90px 90px 110px",
+            gridTemplateColumns: "1fr 1fr 130px 70px 90px 70px 100px 60px",
             gap: 0, padding: "12px 16px",
             background: "var(--bg-base)", borderBottom: "1px solid var(--border-subtle)",
             fontSize: 10.5, color: "var(--text-tertiary)",
@@ -133,6 +136,7 @@ export default function WorkTemplatesPage() {
             <div style={{ textAlign: "right" }}>Объём</div>
             <div style={{ textAlign: "right" }}>Раз</div>
             <div style={{ textAlign: "right" }}>Статус</div>
+            <div></div>
           </div>
 
           {items.map((t) => (
@@ -141,7 +145,7 @@ export default function WorkTemplatesPage() {
               onClick={() => setOpenName(t.name!)}
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr 130px 90px 90px 90px 110px",
+                gridTemplateColumns: "1fr 1fr 130px 70px 90px 70px 100px 60px",
                 gap: 0, padding: "12px 16px",
                 borderBottom: "1px solid rgba(255,255,255,0.04)",
                 cursor: "pointer", transition: "background 0.1s",
@@ -184,6 +188,19 @@ export default function WorkTemplatesPage() {
                   </span>
                 )}
               </div>
+              <div style={{ textAlign: "right" }}>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setApplyTemplate(t); }}
+                  title="Применить шаблон в смету"
+                  style={{
+                    padding: "4px 8px", fontSize: 11, borderRadius: 6,
+                    background: "rgba(234,88,12,0.12)", color: "var(--accent)",
+                    border: "1px solid var(--accent)", cursor: "pointer",
+                  }}
+                >
+                  🪄
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -195,6 +212,29 @@ export default function WorkTemplatesPage() {
           onClose={() => setOpenName(null)}
           onSaved={() => { setOpenName(null); reload(); }}
         />
+      )}
+
+      {applyTemplate && (
+        <ApplyTemplateModal
+          template={applyTemplate}
+          onClose={() => setApplyTemplate(null)}
+          onApplied={(r) => {
+            setApplyTemplate(null);
+            setNotice(`✓ Добавлено ${r.added} строк в ${r.estimate} · сумма: ${r.total_our.toLocaleString("ru-RU")} ₽ · маржа ${r.margin_pct}%`);
+            setTimeout(() => setNotice(null), 7000);
+            reload();
+          }}
+        />
+      )}
+
+      {notice && (
+        <div style={{
+          position: "fixed", bottom: 24, right: 24, zIndex: 250,
+          padding: "12px 18px", background: "var(--success)", color: "white",
+          borderRadius: 10, fontSize: 13, boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+        }}>
+          {notice}
+        </div>
       )}
     </div>
   );

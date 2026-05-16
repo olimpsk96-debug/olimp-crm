@@ -257,6 +257,109 @@ def delete_contact(name: str) -> dict:
 
 
 @frappe.whitelist()
+def bulk_import_customers(rows: list | str, dry_run: int | bool = 0) -> dict:
+    """Массовый импорт клиентов из CSV/JSON.
+
+    rows: массив словарей с ключами:
+      customer_name, customer_type, territory?, customer_group?,
+      mobile_no?, email_id?, tax_id?, website?, customer_details?, industry?
+
+    Дубль (existing customer_name) → updated если есть что заполнить, иначе skipped.
+    """
+    import json as _json
+
+    if "System Manager" not in frappe.get_roles(frappe.session.user):
+        frappe.throw("Только System Manager", frappe.PermissionError)
+
+    if isinstance(rows, str):
+        rows = _json.loads(rows)
+    if not isinstance(rows, list):
+        frappe.throw("rows должен быть массивом")
+
+    is_dry = bool(int(dry_run or 0))
+
+    default_territory = (
+        frappe.db.get_value("Territory", {"is_group": 0}, "name") or "All Territories"
+    )
+    default_group = (
+        frappe.db.get_value("Customer Group", {"is_group": 0}, "name") or "Commercial"
+    )
+
+    created = 0
+    updated = 0
+    skipped = 0
+    errors: list[dict] = []
+
+    for idx, row in enumerate(rows):
+        try:
+            name = (row.get("customer_name") or "").strip()[:140]
+            if not name:
+                errors.append({"row": idx + 1, "error": "Пустое customer_name"})
+                skipped += 1
+                continue
+
+            existing = frappe.db.exists("Customer", {"customer_name": name})
+            if existing:
+                if is_dry:
+                    updated += 1
+                    continue
+                doc = frappe.get_doc("Customer", existing)
+                changed = False
+                for fld in ("mobile_no", "email_id", "tax_id", "website", "industry"):
+                    val = (row.get(fld) or "").strip()
+                    if val and not doc.get(fld):
+                        setattr(doc, fld, val[:140])
+                        changed = True
+                if changed:
+                    doc.save(ignore_permissions=True)
+                    updated += 1
+                else:
+                    skipped += 1
+                continue
+
+            if is_dry:
+                created += 1
+                continue
+
+            ct = (row.get("customer_type") or "").strip()
+            if ct not in ("Company", "Individual"):
+                ct = "Company" if any(kw in name.lower() for kw in ("ооо", "оао", "ао", "ип", "зао", "пао")) else "Individual"
+
+            doc = frappe.get_doc({
+                "doctype": "Customer",
+                "customer_name": name,
+                "customer_type": ct,
+                "territory": (row.get("territory") or "").strip() or default_territory,
+                "customer_group": (row.get("customer_group") or "").strip() or default_group,
+                "mobile_no": (row.get("mobile_no") or "").strip()[:50] or None,
+                "email_id": (row.get("email_id") or "").strip()[:140] or None,
+                "tax_id": (row.get("tax_id") or "").strip()[:50] or None,
+                "website": (row.get("website") or "").strip()[:140] or None,
+                "industry": (row.get("industry") or "").strip()[:100] or None,
+                "customer_details": (row.get("customer_details") or "").strip()[:2000] or None,
+            })
+            doc.insert(ignore_permissions=True)
+            created += 1
+
+        except Exception as e:
+            errors.append({"row": idx + 1, "name": row.get("customer_name", "?"), "error": str(e)[:200]})
+            skipped += 1
+
+    if not is_dry:
+        frappe.db.commit()
+
+    return {
+        "ok": True,
+        "dry_run": is_dry,
+        "total": len(rows),
+        "created": created,
+        "updated": updated,
+        "skipped": skipped,
+        "errors": errors[:50],
+    }
+
+
+@frappe.whitelist()
 def get_crm_stats() -> dict:
     today = getdate(nowdate())
 

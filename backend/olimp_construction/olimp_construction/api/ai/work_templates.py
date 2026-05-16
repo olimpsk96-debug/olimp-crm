@@ -221,6 +221,113 @@ def duplicate_template(name: str, new_id: str, new_title: str | None = None) -> 
 
 
 @frappe.whitelist()
+def apply_to_estimate(template_name: str, estimate_name: str, volume: float,
+                      markup_pct: float = 15.0) -> dict:
+    """Применяет шаблон напрямую к смете (без AI-промпта).
+
+    Параметры:
+    - template_name: ID шаблона (например, akz_rvs_steel_tank)
+    - estimate_name: имя Estimate куда добавить строки
+    - volume: объём работы в базовых единицах шаблона
+    - markup_pct: наценка для our_unit_price (по умолчанию 15%)
+
+    Возвращает: {ok, added, total_base, total_our, margin}
+    """
+    from frappe.utils import flt
+    import json as _json
+
+    frappe.has_permission("Work Template", "read", doc=template_name, throw=True)
+    frappe.has_permission("Estimate", "write", doc=estimate_name, throw=True)
+
+    tpl = frappe.get_doc("Work Template", template_name)
+    est = frappe.get_doc("Estimate", estimate_name)
+    vol = flt(volume) or flt(tpl.typical_volume_min) or 100
+
+    # Раздел-заголовок
+    est.append("items", {
+        "item_code": f"WT-{tpl.template_id}"[:40],
+        "item_name": f"{tpl.title} ({vol} {tpl.base_unit})",
+        "is_section": 1,
+        "unit": "",
+        "qty": 0,
+        "base_unit_price": 0,
+        "our_unit_price": 0,
+    })
+
+    added_count = 1
+    total_base = 0.0
+    total_our = 0.0
+
+    for s in (tpl.stages or []):
+        qty = flt(s.norm_per_base_unit or 1) * vol
+
+        # Стоимость этапа: пробуем детальную разбивку, иначе legacy
+        stage_total = 0.0
+        notes_parts: list[str] = []
+
+        if getattr(s, "resources", None):
+            for r in s.resources:
+                r_qty = flt(r.qty_per_base_unit or 0) * vol
+                r_price = flt(r.fallback_price or 0)
+                if r.catalog_resource:
+                    cat_price = frappe.db.get_value("Catalog Resource", r.catalog_resource, "price_avg")
+                    if flt(cat_price or 0) > 0:
+                        r_price = flt(cat_price)
+                stage_total += r_price * r_qty
+                if r.label and r_qty > 0:
+                    notes_parts.append(f"{r.label}: {round(r_qty, 2)} {r.unit or ''}")
+        elif s.catalog_resource:
+            cat_price = frappe.db.get_value("Catalog Resource", s.catalog_resource, "price_avg")
+            if cat_price:
+                stage_total = flt(cat_price) * qty
+
+        if s.materials_json:
+            try:
+                mat = _json.loads(s.materials_json)
+                for k, v in (mat or {}).items():
+                    notes_parts.append(f"{k}: {round(flt(v) * vol, 2)}")
+            except (_json.JSONDecodeError, TypeError):
+                pass
+
+        base_unit_price = stage_total / qty if qty > 0 else 0
+        our_unit_price = base_unit_price * (1 + flt(markup_pct) / 100) if base_unit_price else 0
+
+        notes_text = " | ".join(notes_parts)[:500] if notes_parts else None
+        if s.notes:
+            notes_text = (s.notes + " | " + notes_text) if notes_text else s.notes
+
+        est.append("items", {
+            "item_code": (s.gesn_ref or "")[:40] or f"WT-{tpl.template_id}-{added_count}",
+            "item_name": s.title,
+            "unit": s.unit or "ед.",
+            "qty": round(qty, 3),
+            "base_unit_price": round(base_unit_price, 2),
+            "our_unit_price": round(our_unit_price, 2),
+            "notes": notes_text,
+        })
+        total_base += base_unit_price * qty
+        total_our += our_unit_price * qty
+        added_count += 1
+
+    est.save(ignore_permissions=True)
+    tpl.db_set("usage_count", (tpl.usage_count or 0) + 1, update_modified=False)
+    frappe.db.commit()
+
+    margin_pct = ((total_our - total_base) / total_our * 100) if total_our else 0
+
+    return {
+        "ok": True,
+        "added": added_count - 1,  # без заголовка-раздела
+        "total_base": round(total_base, 2),
+        "total_our": round(total_our, 2),
+        "margin_pct": round(margin_pct, 2),
+        "volume": vol,
+        "estimate": estimate_name,
+        "template": template_name,
+    }
+
+
+@frappe.whitelist()
 def get_categories() -> list[dict]:
     """Список категорий с счётчиками."""
     frappe.has_permission("Work Template", throw=True)
