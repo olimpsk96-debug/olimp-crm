@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { SavedViewsBar } from "@/components/ui/SavedViewsBar";
 
 interface WorkItem {
   name: string;
@@ -85,6 +86,18 @@ export default function CatalogWorkItemsPage() {
           {facets ? `${facets.total.toLocaleString("ru-RU")} типовых работ` : "..."} · импорт из DDC CWICR Санкт-Петербург
         </p>
       </div>
+
+      {/* Saved Views */}
+      <SavedViewsBar
+        route="/catalog-work-items"
+        currentFilters={{ search, category_type: category, department_name: department, hide_abstract: hideAbstract ? "1" : "" }}
+        onApply={(f) => {
+          setSearch(String(f.search || ""));
+          setCategory(String(f.category_type || ""));
+          setDepartment(String(f.department_name || ""));
+          setHideAbstract(f.hide_abstract === "1");
+        }}
+      />
 
       {/* Категории-чипы */}
       {facets && (

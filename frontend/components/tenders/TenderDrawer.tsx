@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Tender, TenderStatus } from "@/types/tender";
+import { EntityTimeline } from "@/components/ui/EntityTimeline";
 
 interface Props {
   name: string | null;
@@ -272,6 +273,11 @@ export function TenderDrawer({ name, onClose, onStatusChange }: Props) {
                 setTender((t) => t ? { ...t, ai_match_score: score, ai_recommendation: rec as Tender["ai_recommendation"], ai_analysis: analysis } : t)
               }
             />
+
+            {/* Activity Timeline */}
+            <div style={{ marginTop: 28, paddingTop: 20, borderTop: "1px solid var(--border-subtle)" }}>
+              <EntityTimeline doctype="Tender" name={tender.name} limit={20} />
+            </div>
 
             {/* Кнопка ERPNext */}
             <div style={{ marginTop: 24 }}>
