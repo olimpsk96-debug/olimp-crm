@@ -336,6 +336,71 @@ def _source_label(result: dict) -> str:
 
 
 @frappe.whitelist()
+def track_diff(feedback_id: str, current_items: str | list) -> dict:
+    """Сохранить diff между AI-генерацией и текущим состоянием строк сметы.
+
+    current_items — массив строк сметы, которые сейчас в Estimate.items
+    (как видит пользователь после правок).
+
+    Считаем diff:
+    - added — строки, которых нет в AI-генерации (юзер добавил)
+    - removed — строки из AI-генерации, которых нет сейчас (юзер удалил)
+    - modified — строки с одинаковым названием, но изменёнными qty/unit_price/notes
+    """
+    if not frappe.db.exists("Decomposition Feedback", feedback_id):
+        frappe.throw(_("Feedback {} не найден").format(feedback_id))
+
+    if isinstance(current_items, str):
+        try:
+            current_items = json.loads(current_items)
+        except json.JSONDecodeError:
+            current_items = []
+
+    doc = frappe.get_doc("Decomposition Feedback", feedback_id)
+    try:
+        original = json.loads(doc.decomposition_json or "{}")
+    except json.JSONDecodeError:
+        original = {}
+
+    original_stages = original.get("stages") or []
+    orig_by_title = {(s.get("title") or "").strip().lower(): s for s in original_stages}
+    curr_by_title = {(s.get("item_name") or s.get("title") or "").strip().lower(): s
+                     for s in current_items if (s.get("item_name") or s.get("title"))}
+
+    added = []
+    removed = []
+    modified = []
+
+    for title, curr in curr_by_title.items():
+        if title not in orig_by_title:
+            added.append({"title": curr.get("item_name") or curr.get("title"),
+                          "qty": curr.get("qty"), "unit_price": curr.get("our_unit_price")})
+            continue
+        orig = orig_by_title[title]
+        # Сравниваем qty и unit_price
+        delta = {}
+        if abs(flt(curr.get("qty") or 0) - flt(orig.get("qty") or 0)) > 0.01:
+            delta["qty"] = {"from": orig.get("qty"), "to": curr.get("qty")}
+        if abs(flt(curr.get("our_unit_price") or 0) - flt(orig.get("unit_price") or 0)) > 0.01:
+            delta["unit_price"] = {"from": orig.get("unit_price"), "to": curr.get("our_unit_price")}
+        if delta:
+            modified.append({"title": title, "delta": delta})
+
+    for title, orig in orig_by_title.items():
+        if title not in curr_by_title:
+            removed.append({"title": orig.get("title")})
+
+    diff = {"added": added, "removed": removed, "modified": modified}
+    doc.user_diff_json = json.dumps(diff, ensure_ascii=False)[:50000]
+    doc.was_edited_after = 1 if (added or removed or modified) else 0
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {"ok": True, "feedback_id": feedback_id,
+            "added": len(added), "removed": len(removed), "modified": len(modified)}
+
+
+@frappe.whitelist()
 def rate_feedback(feedback_id: str, rating: str | None = None,
                   comment: str | None = None, was_edited: int | bool = 0) -> dict:
     """Сохранить оценку пользователя по декомпозиции.
@@ -361,9 +426,11 @@ def rate_feedback(feedback_id: str, rating: str | None = None,
 
 @frappe.whitelist()
 def get_feedback_stats(days: int = 30) -> dict:
-    """Статистика обратной связи за период."""
+    """Сводная статистика обратной связи за период (KPI + топы)."""
     frappe.has_permission("Decomposition Feedback", throw=True)
     days = max(1, min(int(days), 365))
+
+    # KPI
     row = frappe.db.sql(
         """SELECT
               COUNT(*) AS total,
@@ -372,12 +439,72 @@ def get_feedback_stats(days: int = 30) -> dict:
               SUM(CASE WHEN was_applied=1 THEN 1 ELSE 0 END) AS applied,
               SUM(CASE WHEN was_edited_after=1 THEN 1 ELSE 0 END) AS edited,
               SUM(CASE WHEN rating LIKE '%%Полезно%%' THEN 1 ELSE 0 END) AS rated_good,
-              SUM(CASE WHEN rating LIKE '%%Бесполезно%%' THEN 1 ELSE 0 END) AS rated_bad
+              SUM(CASE WHEN rating LIKE '%%Сойдёт%%' THEN 1 ELSE 0 END) AS rated_ok,
+              SUM(CASE WHEN rating LIKE '%%Бесполезно%%' THEN 1 ELSE 0 END) AS rated_bad,
+              SUM(CASE WHEN rating IS NULL OR rating = '' THEN 1 ELSE 0 END) AS unrated
            FROM `tabDecomposition Feedback`
            WHERE feedback_date >= DATE_SUB(NOW(), INTERVAL %(d)s DAY)""",
         {"d": days}, as_dict=True,
     )[0]
-    return {k: int(row.get(k) or 0) for k in row}
+
+    # Топ-10 шаблонов по использованию
+    top_templates = frappe.db.sql(
+        """SELECT df.template_used AS template, wt.title AS title, wt.category AS category,
+                  COUNT(*) AS uses,
+                  SUM(CASE WHEN df.rating LIKE '%%Полезно%%' THEN 1 ELSE 0 END) AS good,
+                  SUM(CASE WHEN df.rating LIKE '%%Бесполезно%%' THEN 1 ELSE 0 END) AS bad
+           FROM `tabDecomposition Feedback` df
+           LEFT JOIN `tabWork Template` wt ON wt.name = df.template_used
+           WHERE df.feedback_date >= DATE_SUB(NOW(), INTERVAL %(d)s DAY)
+             AND df.template_used IS NOT NULL AND df.template_used != ''
+           GROUP BY df.template_used
+           ORDER BY uses DESC
+           LIMIT 10""",
+        {"d": days}, as_dict=True,
+    )
+
+    # Топ-10 запросов без шаблона (нужно создать новые)
+    no_template_queries = frappe.db.sql(
+        """SELECT description, COUNT(*) AS uses,
+                  SUM(CASE WHEN rating LIKE '%%Полезно%%' THEN 1 ELSE 0 END) AS good
+           FROM `tabDecomposition Feedback`
+           WHERE feedback_date >= DATE_SUB(NOW(), INTERVAL %(d)s DAY)
+             AND (template_used IS NULL OR template_used = '')
+           GROUP BY description
+           ORDER BY uses DESC
+           LIMIT 10""",
+        {"d": days}, as_dict=True,
+    )
+
+    # Активность по пользователям
+    by_user = frappe.db.sql(
+        """SELECT user_email, COUNT(*) AS cnt
+           FROM `tabDecomposition Feedback`
+           WHERE feedback_date >= DATE_SUB(NOW(), INTERVAL %(d)s DAY)
+           GROUP BY user_email
+           ORDER BY cnt DESC
+           LIMIT 10""",
+        {"d": days}, as_dict=True,
+    )
+
+    # Последние 20 записей для ленты
+    recent = frappe.db.sql(
+        """SELECT name, description, template_used, source, rating, was_applied,
+                  was_edited_after, user_email, feedback_date
+           FROM `tabDecomposition Feedback`
+           ORDER BY feedback_date DESC
+           LIMIT 20""",
+        as_dict=True,
+    )
+
+    return {
+        "period_days": days,
+        "kpi": {k: int(row.get(k) or 0) for k in row},
+        "top_templates": top_templates,
+        "no_template_queries": no_template_queries,
+        "by_user": by_user,
+        "recent": recent,
+    }
 
 
 # ───────────────────────────────────────────────────────────────────────────────
