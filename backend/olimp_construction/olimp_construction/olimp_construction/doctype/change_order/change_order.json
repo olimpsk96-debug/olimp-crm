@@ -160,6 +160,53 @@
       "fieldname": "notes",
       "fieldtype": "Text",
       "label": "Заметки"
+    },
+    {
+      "fieldname": "section_break_bic",
+      "fieldtype": "Section Break",
+      "label": "Ответственность (ball-in-court)",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "current_responsible",
+      "fieldtype": "Select",
+      "label": "Сейчас у кого «мяч»",
+      "options": "\nПодрядчик (ОЛИМП)\nГИП / Технадзор\nЗаказчик\nЮрист\nЗакрыто",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "description": "Кто блокирует движение по согласованию"
+    },
+    {
+      "fieldname": "responsible_name",
+      "fieldtype": "Data",
+      "label": "ФИО ответственного",
+      "description": "Конкретное лицо у которого сейчас «мяч»"
+    },
+    {
+      "fieldname": "ball_handed_at",
+      "fieldtype": "Datetime",
+      "label": "Передан мяч",
+      "read_only": 1,
+      "description": "Когда последний раз сменился ответственный"
+    },
+    {
+      "fieldname": "column_break_bic",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "days_with_current",
+      "fieldtype": "Int",
+      "label": "Дней без движения",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "is_overdue",
+      "fieldtype": "Check",
+      "label": "Просрочено",
+      "default": "0",
+      "read_only": 1,
+      "in_list_view": 1
     }
   ],
   "permissions": [

@@ -76,6 +76,59 @@
       "fieldname": "notes",
       "fieldtype": "Text",
       "label": "Заметки"
+    },
+    {
+      "fieldname": "section_break_pipeline",
+      "fieldtype": "Section Break",
+      "label": "Движение по воронке",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "last_activity_date",
+      "fieldtype": "Datetime",
+      "label": "Последняя активность",
+      "read_only": 1,
+      "description": "Обновляется при смене статуса / комментарии / письме"
+    },
+    {
+      "fieldname": "is_rotting",
+      "fieldtype": "Check",
+      "label": "Залежался (rotting)",
+      "default": "0",
+      "read_only": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "description": "Сделка без активности больше N дней (threshold per stage)"
+    },
+    {
+      "fieldname": "rotting_days",
+      "fieldtype": "Int",
+      "label": "Дней без активности",
+      "read_only": 1
+    },
+    {
+      "fieldname": "column_break_pipeline",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "loss_reason",
+      "fieldtype": "Select",
+      "label": "Причина проигрыша",
+      "options": "\nЦена\nСроки\nКонкурент\nМолчание заказчика\nБюджет не утвердили\nНе наш профиль\nКачество КП\nДругое",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "description": "Обязательно при status=Закрыт проигран"
+    },
+    {
+      "fieldname": "loss_competitor",
+      "fieldtype": "Data",
+      "label": "Кто выиграл (конкурент)",
+      "description": "Если проиграли по цене/конкурент — кто выиграл"
+    },
+    {
+      "fieldname": "loss_notes",
+      "fieldtype": "Small Text",
+      "label": "Детали проигрыша"
     }
   ],
   "permissions": [

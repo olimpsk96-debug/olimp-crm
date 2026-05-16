@@ -3,7 +3,7 @@ from __future__ import annotations
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt, today
+from frappe.utils import flt, today, now_datetime
 
 
 class ChangeOrder(Document):
@@ -37,3 +37,19 @@ class ChangeOrder(Document):
 
         if self.status == "Отклонён" and not self.rejected_at:
             self.rejected_at = today()
+
+        # Ball-in-Court auto-handoff по статусу
+        BALL_FOR_STATUS = {
+            "Черновик": "Подрядчик (ОЛИМП)",
+            "На согласовании": "ГИП / Технадзор",
+            "Одобрен": "Закрыто",
+            "Отклонён": "Закрыто",
+            "Закрыт": "Закрыто",
+        }
+        if self.has_value_changed("status"):
+            target = BALL_FOR_STATUS.get(self.status)
+            if target and self.current_responsible != target:
+                self.current_responsible = target
+                self.ball_handed_at = now_datetime()
+                self.days_with_current = 0
+                self.is_overdue = 0

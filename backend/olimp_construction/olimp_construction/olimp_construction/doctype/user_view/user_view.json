@@ -1,0 +1,91 @@
+{
+  "name": "User View",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "format:UV-{YYYY}-{#####}",
+  "title_field": "view_name",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "view_name",
+      "fieldtype": "Data",
+      "label": "Название view",
+      "reqd": 1,
+      "in_list_view": 1,
+      "bold": 1
+    },
+    {
+      "fieldname": "route",
+      "fieldtype": "Data",
+      "label": "Страница (route)",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "description": "/tenders, /deals, /catalog-work-items, ..."
+    },
+    {
+      "fieldname": "user_email",
+      "fieldtype": "Data",
+      "label": "Владелец",
+      "in_standard_filter": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "is_shared",
+      "fieldtype": "Check",
+      "label": "Доступно команде",
+      "default": "0",
+      "in_list_view": 1,
+      "description": "Если 1 — view виден всем пользователям"
+    },
+    {
+      "fieldname": "is_pinned",
+      "fieldtype": "Check",
+      "label": "Закреплён",
+      "default": "0",
+      "in_list_view": 1,
+      "description": "Закреплённые видны в сайдбаре"
+    },
+    {
+      "fieldname": "section_break_filters",
+      "fieldtype": "Section Break",
+      "label": "Фильтры"
+    },
+    {
+      "fieldname": "filters_json",
+      "fieldtype": "Long Text",
+      "label": "Фильтры (JSON)",
+      "description": "{\"status\":\"Новый\",\"region\":\"Свердловская\"}"
+    },
+    {
+      "fieldname": "sort_field",
+      "fieldtype": "Data",
+      "label": "Сортировка"
+    },
+    {
+      "fieldname": "sort_order",
+      "fieldtype": "Select",
+      "label": "Направление",
+      "options": "ASC\nDESC",
+      "default": "DESC"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1
+    },
+    {
+      "role": "All",
+      "read": 1, "write": 1, "create": 1, "delete": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "naming_rule": "Expression"
+}

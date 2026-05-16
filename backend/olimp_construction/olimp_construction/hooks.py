@@ -240,6 +240,8 @@ scheduler_events = {
         "olimp_construction.api.certification.check_certification_expiry",
         "olimp_construction.api.evm.save_daily_evm_snapshots",
         "olimp_construction.tasks.check_punch_list_overdue",
+        "olimp_construction.api.pipeline.refresh_rotting",
+        "olimp_construction.api.pipeline.refresh_ball_overdue",
     ],
     "weekly": [
         "olimp_construction.tasks.update_customer_payment_patterns",

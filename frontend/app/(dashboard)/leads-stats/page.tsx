@@ -56,16 +56,61 @@ function fmtMln(n: number): string {
   return `${n.toLocaleString("ru-RU", { maximumFractionDigits: 0 })} ₽`;
 }
 
+interface Forecast {
+  pipeline_total: number;
+  weighted_total: number;
+  best_case: number;
+  commit: number;
+  deals_count: number;
+  by_month: Array<{ month: string; pipeline: number; weighted: number; deals: number }>;
+}
+
+interface RottingDeal {
+  name: string;
+  title: string;
+  status: string;
+  source: string;
+  customer: string;
+  amount_estimated: number;
+  rotting_days: number;
+  last_activity_date: string;
+}
+
+interface LossAnalysis {
+  period_days: number;
+  won_count: number;
+  won_amount: number;
+  lost_count: number;
+  lost_amount: number;
+  total_closed: number;
+  win_rate: number;
+  reasons: Array<{ reason: string; cnt: number; amt: number }>;
+  competitors: Array<{ loss_competitor: string; cnt: number; amt: number }>;
+  by_source: Array<{ source: string; total: number; won: number; lost: number; win_rate: number }>;
+}
+
 export default function LeadsStatsPage() {
   const [days, setDays] = useState(30);
   const [data, setData] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [forecast, setForecast] = useState<Forecast | null>(null);
+  const [rotting, setRotting] = useState<RottingDeal[]>([]);
+  const [lossAnalysis, setLossAnalysis] = useState<LossAnalysis | null>(null);
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/leads-stats?days=${days}`)
-      .then((r) => r.json())
-      .then((d) => setData(d))
+    Promise.all([
+      fetch(`/api/leads-stats?days=${days}`).then((r) => r.json()),
+      fetch("/api/pipeline-forecast").then((r) => r.json()),
+      fetch("/api/pipeline-rotting").then((r) => r.json()),
+      fetch(`/api/pipeline-loss-analysis?days=${days}`).then((r) => r.json()),
+    ])
+      .then(([s, f, r, l]) => {
+        setData(s);
+        setForecast(f);
+        setRotting(Array.isArray(r) ? r : []);
+        setLossAnalysis(l);
+      })
       .finally(() => setLoading(false));
   }, [days]);
 
@@ -230,6 +275,139 @@ export default function LeadsStatsPage() {
           <span>{data.timeline[data.timeline.length - 1]?.day || "—"}</span>
         </div>
       </div>
+
+      {/* Forecast */}
+      {forecast && forecast.deals_count > 0 && (
+        <div style={{ ...card, marginBottom: 22 }}>
+          <h3 style={cardTitle}>📈 Weighted Forecast (по probability_pct)</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 14 }}>
+            <Kpi label="Pipeline (best case)" value={fmtMln(forecast.best_case)} />
+            <Kpi label="Weighted (50/50)" value={fmtMln(forecast.weighted_total)} accent="var(--accent)"
+                 sub={`${forecast.deals_count} сделок`} />
+            <Kpi label="Commit (≥80%)" value={fmtMln(forecast.commit)} accent="var(--success)" />
+            <Kpi label="Conversion ratio" value={
+              forecast.best_case > 0
+                ? `${Math.round(forecast.weighted_total / forecast.best_case * 100)}%`
+                : "—"
+            } />
+          </div>
+          {forecast.by_month.length > 0 && (
+            <div>
+              <div style={{ fontSize: 11, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "monospace", marginBottom: 8 }}>
+                По месяцам:
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                {forecast.by_month.map((m) => (
+                  <div key={m.month} style={{
+                    flex: 1, padding: 10, borderRadius: 8,
+                    background: "var(--bg-base)", border: "1px solid var(--border-subtle)",
+                  }}>
+                    <div style={{ fontSize: 10, color: "var(--text-tertiary)", fontFamily: "monospace" }}>{m.month}</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "var(--accent)", marginTop: 4 }}>{fmtMln(m.weighted)}</div>
+                    <div style={{ fontSize: 10, color: "var(--text-tertiary)" }}>{m.deals} сделок · {fmtMln(m.pipeline)} pipeline</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Rotting deals */}
+      {rotting.length > 0 && (
+        <div style={{ ...card, marginBottom: 22 }}>
+          <h3 style={{ ...cardTitle, color: "var(--warning)" }}>
+            🥀 Залежавшиеся сделки ({rotting.length})
+          </h3>
+          <p style={{ fontSize: 11.5, color: "var(--text-tertiary)", margin: "0 0 12px" }}>
+            Сделки без активности больше N дней (порог зависит от стадии). Свяжись или закрой.
+          </p>
+          <table style={tbl}>
+            <thead>
+              <tr style={tblHead}>
+                <th style={th}>Название</th>
+                <th style={th}>Статус</th>
+                <th style={{ ...th, textAlign: "right" }}>Дней молчания</th>
+                <th style={{ ...th, textAlign: "right" }}>Сумма</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rotting.slice(0, 10).map((d) => (
+                <tr key={d.name} style={tblRow}>
+                  <td style={td}>
+                    <div style={{ fontSize: 12.5 }}>{d.title || d.name}</div>
+                    <div style={{ fontSize: 10.5, color: "var(--text-tertiary)" }}>{d.source || "—"} · {d.customer || "—"}</div>
+                  </td>
+                  <td style={{ ...td, fontSize: 11 }}>
+                    <span style={{
+                      padding: "2px 8px", borderRadius: 4, fontSize: 10.5,
+                      background: `${STATUS_COLOR[d.status] || "var(--text-tertiary)"}22`,
+                      color: STATUS_COLOR[d.status] || "var(--text-tertiary)",
+                    }}>{d.status}</span>
+                  </td>
+                  <td style={{ ...td, textAlign: "right", fontFamily: "monospace", color: "var(--danger)", fontWeight: 600 }}>
+                    {d.rotting_days}д
+                  </td>
+                  <td style={{ ...td, textAlign: "right", fontFamily: "monospace", fontSize: 11 }}>
+                    {fmtMln(d.amount_estimated)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Loss Analysis */}
+      {lossAnalysis && lossAnalysis.total_closed > 0 && (
+        <div style={{ ...card, marginBottom: 22 }}>
+          <h3 style={cardTitle}>🎯 Win/Loss Analysis (закрытые за период)</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 14 }}>
+            <Kpi label="Выиграно" value={`${lossAnalysis.won_count}`} accent="var(--success)" sub={fmtMln(lossAnalysis.won_amount)} />
+            <Kpi label="Проиграно" value={`${lossAnalysis.lost_count}`} accent="var(--danger)" sub={fmtMln(lossAnalysis.lost_amount)} />
+            <Kpi label="Всего закрыто" value={`${lossAnalysis.total_closed}`} />
+            <Kpi label="Win-rate" value={`${lossAnalysis.win_rate}%`}
+                 accent={lossAnalysis.win_rate >= 30 ? "var(--success)" : lossAnalysis.win_rate >= 15 ? "var(--warning)" : "var(--danger)"} />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <div>
+              <div style={{ fontSize: 11, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "monospace", marginBottom: 8 }}>
+                Топ-причины проигрыша
+              </div>
+              {lossAnalysis.reasons.length === 0 ? (
+                <Empty>Причины не указаны</Empty>
+              ) : (
+                lossAnalysis.reasons.slice(0, 6).map((r) => (
+                  <div key={r.reason} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", fontSize: 12, borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <span>{r.reason}</span>
+                    <span style={{ fontFamily: "monospace", color: "var(--danger)" }}>{r.cnt} · {fmtMln(r.amt)}</span>
+                  </div>
+                ))
+              )}
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "monospace", marginBottom: 8 }}>
+                Win-rate по источникам
+              </div>
+              <table style={{ width: "100%", fontSize: 11.5 }}>
+                <tbody>
+                  {lossAnalysis.by_source.map((s) => (
+                    <tr key={s.source || "—"} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                      <td style={{ padding: "5px 0" }}>{s.source || "—"}</td>
+                      <td style={{ padding: "5px 0", textAlign: "right", fontFamily: "monospace" }}>
+                        {s.won}/{s.total}
+                      </td>
+                      <td style={{ padding: "5px 0", textAlign: "right", fontFamily: "monospace", color: s.win_rate >= 30 ? "var(--success)" : s.win_rate >= 15 ? "var(--warning)" : "var(--text-tertiary)" }}>
+                        {s.win_rate}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Последние лиды */}
       <div style={card}>
