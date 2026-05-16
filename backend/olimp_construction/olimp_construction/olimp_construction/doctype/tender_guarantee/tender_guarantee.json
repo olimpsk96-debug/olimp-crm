@@ -1,0 +1,133 @@
+{
+  "name": "Tender Guarantee",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "format:TG-{YYYY}-{#####}",
+  "title_field": "guarantee_number",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "tender",
+      "fieldtype": "Link",
+      "label": "Тендер",
+      "options": "Tender",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "guarantee_type",
+      "fieldtype": "Select",
+      "label": "Тип обеспечения",
+      "options": "Обеспечение заявки\nОбеспечение контракта\nБанковская гарантия\nСРО взнос\nГарантийные обязательства",
+      "reqd": 1,
+      "default": "Обеспечение заявки",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "guarantee_number",
+      "fieldtype": "Data",
+      "label": "№ гарантии / документа",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "amount",
+      "fieldtype": "Currency",
+      "label": "Сумма обеспечения",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "issue_date",
+      "fieldtype": "Date",
+      "label": "Дата выдачи",
+      "default": "Today",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "expiry_date",
+      "fieldtype": "Date",
+      "label": "Действует до",
+      "reqd": 1,
+      "in_list_view": 1,
+      "description": "За 30/7/1 день до истечения — Telegram-алерт директору"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Статус",
+      "options": "Активна\nИстекла\nВозвращена\nИспользована\nАннулирована",
+      "default": "Активна",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "section_bank",
+      "fieldtype": "Section Break",
+      "label": "Реквизиты банковской гарантии",
+      "depends_on": "eval:doc.guarantee_type==='Банковская гарантия'",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "bank_name",
+      "fieldtype": "Data",
+      "label": "Банк-гарант"
+    },
+    {
+      "fieldname": "commission_pct",
+      "fieldtype": "Float",
+      "label": "Комиссия банку, %",
+      "precision": "3"
+    },
+    {
+      "fieldname": "column_break_bank",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "commission_amount",
+      "fieldtype": "Currency",
+      "label": "Стоимость БГ"
+    },
+    {
+      "fieldname": "section_notes",
+      "fieldtype": "Section Break",
+      "label": "Дополнительно"
+    },
+    {
+      "fieldname": "next_reminder_sent",
+      "fieldtype": "Date",
+      "label": "Последний алерт об истечении",
+      "read_only": 1,
+      "description": "Чтобы не спамить чаще раза в 7 дней"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Small Text",
+      "label": "Заметки"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "report": 1
+    },
+    {
+      "role": "Главный инженер",
+      "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1
+    },
+    {
+      "role": "Тендерный менеджер",
+      "read": 1, "write": 1, "create": 1, "report": 1
+    }
+  ],
+  "sort_field": "expiry_date",
+  "sort_order": "ASC",
+  "naming_rule": "Expression"
+}
