@@ -1,0 +1,69 @@
+{
+  "name": "Work Stage Resource",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "istable": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "resource_type",
+      "fieldtype": "Select",
+      "label": "Тип",
+      "options": "Материал\nТруд\nОборудование",
+      "default": "Материал",
+      "reqd": 1,
+      "in_list_view": 1,
+      "columns": 1
+    },
+    {
+      "fieldname": "label",
+      "fieldtype": "Data",
+      "label": "Название",
+      "reqd": 1,
+      "in_list_view": 1,
+      "columns": 3,
+      "description": "Внутреннее название, например «primer_kg» или «Маляр 4 разряда»"
+    },
+    {
+      "fieldname": "qty_per_base_unit",
+      "fieldtype": "Float",
+      "label": "Кол-во/ед.",
+      "precision": "4",
+      "reqd": 1,
+      "in_list_view": 1,
+      "columns": 1,
+      "description": "Сколько ресурса нужно на 1 ед. базового объёма работы шаблона"
+    },
+    {
+      "fieldname": "unit",
+      "fieldtype": "Data",
+      "label": "Ед.",
+      "in_list_view": 1,
+      "columns": 1,
+      "description": "кг, л, м, чел.-час, маш.-час"
+    },
+    {
+      "fieldname": "catalog_resource",
+      "fieldtype": "Link",
+      "label": "Ресурс CWICR",
+      "options": "Catalog Resource",
+      "in_list_view": 1,
+      "columns": 3,
+      "description": "Привязка к каталогу для актуальной цены"
+    },
+    {
+      "fieldname": "fallback_price",
+      "fieldtype": "Currency",
+      "label": "Резервная цена",
+      "precision": "2",
+      "in_list_view": 1,
+      "columns": 1,
+      "description": "Если catalog_resource не задан — используется эта цена"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Small Text",
+      "label": "Примечание"
+    }
+  ]
+}

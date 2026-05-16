@@ -1,0 +1,137 @@
+{
+  "name": "Telegram Lead Bot",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "errorWorkflow": ""
+  },
+  "nodes": [
+    {
+      "id": "trigger",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300],
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "credentials": {
+        "telegramApi": { "name": "Olimp Zayavka Bot" }
+      }
+    },
+    {
+      "id": "extract",
+      "name": "Извлечь поля",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// Парсим сообщение от пользователя Telegram. Поддерживаем 2 формата:\n// 1) Свободный текст — берём как описание (Имя=ник, Телефон=username)\n// 2) Структурированный (предпочтительно):\n//    Имя: Иван Петров\n//    Телефон: +79991234567\n//    Email: ivan@test.ru\n//    Компания: ООО Альфа\n//    Тема: АКЗ резервуара\n//    Описание: 200 м²\n\nconst msg = $input.first().json.message || {};\nconst text = (msg.text || '').trim();\nconst from = msg.from || {};\n\n// Имя из Telegram-профиля как fallback\nconst tgName = [from.first_name, from.last_name].filter(Boolean).join(' ') || from.username || 'Не указан';\n\n// Парсим структуру «Поле: значение»\nconst fields = {\n  name: tgName,\n  phone: '',\n  email: '',\n  company: '',\n  subject: '',\n  description: text,\n};\n\nconst patterns = {\n  name: /(?:имя|name)\\s*[:\\-]\\s*(.+)/i,\n  phone: /(?:телефон|тел|phone)\\s*[:\\-]\\s*(.+)/i,\n  email: /(?:email|почта|mail)\\s*[:\\-]\\s*(.+)/i,\n  company: /(?:компания|организация|company|фирма)\\s*[:\\-]\\s*(.+)/i,\n  subject: /(?:тема|объект|subject|работа)\\s*[:\\-]\\s*(.+)/i,\n  description: /(?:описание|задача|description|details)\\s*[:\\-]\\s*(.+)/i,\n};\n\nlet structured = false;\nfor (const [key, re] of Object.entries(patterns)) {\n  const m = text.match(re);\n  if (m) {\n    fields[key] = m[1].split('\\n')[0].trim();\n    structured = true;\n  }\n}\n\n// Если не структурированное и нет телефона → запросим у юзера\nif (!structured && !fields.phone && from.id) {\n  // Берём из контакта Telegram если шарил, иначе пометим запрос\n  fields._needs_contact = !msg.contact;\n}\n\n// Если шарил контакт — берём оттуда\nif (msg.contact) {\n  fields.phone = msg.contact.phone_number || '';\n  fields.name = `${msg.contact.first_name || ''} ${msg.contact.last_name || ''}`.trim() || fields.name;\n}\n\nfields.source = 'Telegram';\nfields.tg_user_id = String(from.id || '');\nfields.tg_username = from.username || '';\nfields.chat_id = String(msg.chat?.id || from.id || '');\n\nreturn [{ json: fields }];"
+      }
+    },
+    {
+      "id": "check_phone",
+      "name": "Есть телефон?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300],
+      "parameters": {
+        "conditions": {
+          "options": { "version": 2 },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.phone }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEmpty" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "ask_phone",
+      "name": "Попросить телефон",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [900, 480],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Извлечь поля').first().json.chat_id }}",
+        "text": "Здравствуйте! Чтобы оставить заявку, поделитесь, пожалуйста, контактом или напишите так:\n\n<b>Имя:</b> Иван Петров\n<b>Телефон:</b> +79991234567\n<b>Тема:</b> АКЗ резервуара РВС\n<b>Описание:</b> Нужна антикоррозийная защита, 200 м²",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "credentials": {
+        "telegramApi": { "name": "Olimp Zayavka Bot" }
+      }
+    },
+    {
+      "id": "create_lead",
+      "name": "Создать лид в ERP",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "http://nginx/api/method/olimp_construction.api.webhook.leads.create_lead",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            { "name": "name",        "value": "={{ $json.name }}" },
+            { "name": "phone",       "value": "={{ $json.phone }}" },
+            { "name": "email",       "value": "={{ $json.email }}" },
+            { "name": "company",     "value": "={{ $json.company }}" },
+            { "name": "subject",     "value": "={{ $json.subject || $json.description.substring(0,100) }}" },
+            { "name": "description", "value": "={{ $json.description }}\n\nИз Telegram: @{{ $json.tg_username || $json.tg_user_id }}" },
+            { "name": "source",      "value": "Telegram" }
+          ]
+        },
+        "options": {
+          "response": { "response": { "responseFormat": "json" } }
+        }
+      }
+    },
+    {
+      "id": "reply_ok",
+      "name": "Ответить «Заявка принята»",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1120, 200],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Извлечь поля').first().json.chat_id }}",
+        "text": "✓ <b>Заявка принята</b> ({{ $json.message.deal }})\n\nМы свяжемся с вами в ближайшее время. По срочным вопросам: +7 (343) ХХХ-ХХ-ХХ",
+        "additionalFields": { "parse_mode": "HTML" }
+      },
+      "credentials": {
+        "telegramApi": { "name": "Olimp Zayavka Bot" }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [[{ "node": "Извлечь поля", "type": "main", "index": 0 }]]
+    },
+    "Извлечь поля": {
+      "main": [[{ "node": "Есть телефон?", "type": "main", "index": 0 }]]
+    },
+    "Есть телефон?": {
+      "main": [
+        [{ "node": "Создать лид в ERP", "type": "main", "index": 0 }],
+        [{ "node": "Попросить телефон", "type": "main", "index": 0 }]
+      ]
+    },
+    "Создать лид в ERP": {
+      "main": [[{ "node": "Ответить «Заявка принята»", "type": "main", "index": 0 }]]
+    }
+  },
+  "tags": [{ "name": "leads" }, { "name": "telegram" }]
+}

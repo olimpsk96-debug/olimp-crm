@@ -101,13 +101,24 @@ def save_template(data: dict | str) -> dict:
         # Заменяем stages полностью
         doc.stages = []
         for idx, stage in enumerate(data.get("stages") or [], start=1):
-            doc.append("stages", {
+            stage_row = doc.append("stages", {
                 **{k: stage.get(k) for k in (
                     "title", "unit", "norm_per_base_unit", "labor_hours_per_unit",
                     "materials_json", "gesn_ref", "catalog_resource", "notes",
                 )},
                 "stage_order": stage.get("stage_order") or idx,
             })
+            # Детальные ресурсы этапа (новая модель)
+            for r in (stage.get("resources") or []):
+                stage_row.append("resources", {
+                    "resource_type": r.get("resource_type") or "Материал",
+                    "label": r.get("label") or "",
+                    "qty_per_base_unit": r.get("qty_per_base_unit") or 0,
+                    "unit": r.get("unit") or "",
+                    "catalog_resource": r.get("catalog_resource") or None,
+                    "fallback_price": r.get("fallback_price") or 0,
+                    "notes": r.get("notes") or "",
+                })
         # Обновляем мета-поля
         for k in ("title", "category", "base_unit", "typical_volume_min",
                   "typical_volume_max", "keywords", "description",
@@ -135,17 +146,26 @@ def save_template(data: dict | str) -> dict:
 
     payload = {k: v for k, v in data.items() if k != "stages"}
     payload["doctype"] = "Work Template"
-    payload["stages"] = [
-        {
+    payload["stages"] = []
+    doc = frappe.get_doc(payload)
+    for idx, s in enumerate(data["stages"], start=1):
+        stage_row = doc.append("stages", {
             **{k: s.get(k) for k in (
                 "title", "unit", "norm_per_base_unit", "labor_hours_per_unit",
                 "materials_json", "gesn_ref", "catalog_resource", "notes",
             )},
             "stage_order": s.get("stage_order") or idx,
-        }
-        for idx, s in enumerate(data["stages"], start=1)
-    ]
-    doc = frappe.get_doc(payload)
+        })
+        for r in (s.get("resources") or []):
+            stage_row.append("resources", {
+                "resource_type": r.get("resource_type") or "Материал",
+                "label": r.get("label") or "",
+                "qty_per_base_unit": r.get("qty_per_base_unit") or 0,
+                "unit": r.get("unit") or "",
+                "catalog_resource": r.get("catalog_resource") or None,
+                "fallback_price": r.get("fallback_price") or 0,
+                "notes": r.get("notes") or "",
+            })
     doc.insert(ignore_permissions=True)
     frappe.db.commit()
     return {"name": doc.name, "created": True}

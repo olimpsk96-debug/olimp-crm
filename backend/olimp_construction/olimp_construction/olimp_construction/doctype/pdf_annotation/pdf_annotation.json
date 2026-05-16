@@ -1,0 +1,129 @@
+{
+  "name": "PDF Annotation",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "format:PDF-{YYYY}-{#####}",
+  "title_field": "title",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Название разметки",
+      "reqd": 1,
+      "in_list_view": 1,
+      "bold": 1,
+      "description": "Например: «Замечания технадзора к КС-2 №3»"
+    },
+    {
+      "fieldname": "reference_doctype",
+      "fieldtype": "Link",
+      "label": "Связанный документ (тип)",
+      "options": "DocType",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "description": "KS2 Act / KS3 Act / Construction Project / Tender / ..."
+    },
+    {
+      "fieldname": "reference_name",
+      "fieldtype": "Dynamic Link",
+      "label": "ID документа",
+      "options": "reference_doctype",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "pdf_file",
+      "fieldtype": "Attach",
+      "label": "PDF файл",
+      "description": "Исходный PDF (план, акт, чертёж). Можно прикрепить позже."
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Статус",
+      "options": "Черновик\nНа согласовании\nПодписан\nОтклонён",
+      "default": "Черновик",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "section_break_data",
+      "fieldtype": "Section Break",
+      "label": "Разметка"
+    },
+    {
+      "fieldname": "annotations_json",
+      "fieldtype": "Long Text",
+      "label": "Аннотации (JSON)",
+      "description": "Массив аннотаций: [{type, page, x, y, w, h, text, color, author, created}]"
+    },
+    {
+      "fieldname": "annotation_count",
+      "fieldtype": "Int",
+      "label": "Кол-во аннотаций",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "section_break_meta",
+      "fieldtype": "Section Break",
+      "label": "Подпись"
+    },
+    {
+      "fieldname": "signed_by",
+      "fieldtype": "Data",
+      "label": "Подписал (ФИО)"
+    },
+    {
+      "fieldname": "signed_at",
+      "fieldtype": "Datetime",
+      "label": "Дата подписания"
+    },
+    {
+      "fieldname": "column_break_meta",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "signed_role",
+      "fieldtype": "Select",
+      "label": "Роль подписанта",
+      "options": "\nЗаказчик\nТехнический надзор\nПодрядчик\nГенеральный директор\nГлавный инженер"
+    },
+    {
+      "fieldname": "section_break_notes",
+      "fieldtype": "Section Break",
+      "label": "Дополнительно"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Text",
+      "label": "Заметки"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "email": 1, "export": 1, "share": 1, "report": 1
+    },
+    {
+      "role": "Главный инженер",
+      "read": 1, "write": 1, "create": 1, "delete": 1, "print": 1, "report": 1
+    },
+    {
+      "role": "Прораб",
+      "read": 1, "write": 1, "create": 1, "report": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "naming_rule": "Expression"
+}

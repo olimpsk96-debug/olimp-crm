@@ -68,6 +68,13 @@
       "fieldname": "notes",
       "fieldtype": "Small Text",
       "label": "Примечание"
+    },
+    {
+      "fieldname": "resources",
+      "fieldtype": "Table",
+      "label": "Ресурсы этапа (мат. / труд / оборуд.)",
+      "options": "Work Stage Resource",
+      "description": "Детальная разбивка по ресурсам с привязкой к CWICR — заменяет materials_json + labor_hours_per_unit, даёт точные цены"
     }
   ]
 }

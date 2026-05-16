@@ -254,10 +254,44 @@ def decompose_work(description: str, volume: float | str | None = None,
                 except (json.JSONDecodeError, TypeError):
                     pass
 
-            # Если этап привязан к Catalog Resource — подтягиваем цену
+            # Новая модель: детальная разбивка stage.resources (мат/труд/оборуд.)
+            # Если её нет — fallback на старые поля catalog_resource + materials_json
+            detailed_resources = []
+            stage_total_cost = 0.0
+
+            if getattr(s, "resources", None):
+                for r in s.resources:
+                    r_qty = flt(r.qty_per_base_unit or 0) * final_volume
+                    r_price = flt(r.fallback_price or 0)
+                    r_resource_id = None
+                    r_resource_name = None
+                    if r.catalog_resource:
+                        cat = frappe.db.get_value(
+                            "Catalog Resource", r.catalog_resource,
+                            ["name", "price_avg", "resource_name"], as_dict=True,
+                        )
+                        if cat:
+                            r_resource_id = cat["name"]
+                            r_resource_name = cat["resource_name"]
+                            if flt(cat.get("price_avg") or 0) > 0:
+                                r_price = flt(cat["price_avg"])
+                    r_amount = r_price * r_qty
+                    stage_total_cost += r_amount
+                    detailed_resources.append({
+                        "type": r.resource_type,
+                        "label": r.label,
+                        "qty": round(r_qty, 3),
+                        "unit": r.unit or "ед.",
+                        "unit_price": round(r_price, 2),
+                        "amount": round(r_amount, 2),
+                        "catalog_resource": r_resource_id,
+                        "resource_name": r_resource_name,
+                    })
+
+            # Legacy fallback (если детальной разбивки нет)
             unit_price = 0.0
             catalog_resource_name = None
-            if s.catalog_resource:
+            if not detailed_resources and s.catalog_resource:
                 row = frappe.db.get_value(
                     "Catalog Resource", s.catalog_resource,
                     ["name", "price_avg"], as_dict=True,
@@ -265,6 +299,7 @@ def decompose_work(description: str, volume: float | str | None = None,
                 if row:
                     unit_price = flt(row.get("price_avg") or 0)
                     catalog_resource_name = row.get("name")
+                    stage_total_cost = unit_price * qty
 
             stages.append({
                 "title": s.title,
@@ -276,7 +311,8 @@ def decompose_work(description: str, volume: float | str | None = None,
                 "notes": s.notes or "",
                 "catalog_resource": catalog_resource_name,
                 "unit_price": round(unit_price, 2),
-                "amount": round(unit_price * qty, 2) if unit_price else 0.0,
+                "amount": round(stage_total_cost, 2),
+                "resources": detailed_resources,  # детальная разбивка для UI
             })
 
         result["source"] = "template"
