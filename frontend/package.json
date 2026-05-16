@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.95.1",
+    "@revolist/react-datagrid": "^4.21.9",
     "@tanstack/react-query": "^5.62.7",
     "@tiptap/extension-image": "^2.27.2",
     "@tiptap/extension-placeholder": "^2.27.2",

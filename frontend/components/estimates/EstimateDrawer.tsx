@@ -185,6 +185,19 @@ export function EstimateDrawer({ name, onClose, onUpdated }: Props) {
                   {estimate.name} {estimate.version ? `· v${estimate.version}` : ""}
                 </p>
               )}
+              {estimate && (
+                <a href={`/estimates/${encodeURIComponent(estimate.name)}/grid`}
+                   target="_blank" rel="noopener"
+                   style={{
+                     display: "inline-flex", alignItems: "center", gap: 4,
+                     marginTop: 8, padding: "5px 10px", fontSize: 11.5, fontWeight: 500,
+                     background: "rgba(167,139,250,0.1)", color: "#7c3aed",
+                     border: "1px solid #7c3aed", borderRadius: 6,
+                     textDecoration: "none",
+                   }}>
+                  ⊞ Открыть в Excel-редакторе ↗
+                </a>
+              )}
             </div>
             <button
               onClick={onClose}
