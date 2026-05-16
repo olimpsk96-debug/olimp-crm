@@ -1,0 +1,178 @@
+{
+  "name": "Construction Proposal",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "format:КП-{YYYY}-{#####}",
+  "title_field": "title",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Название КП",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "customer",
+      "fieldtype": "Link",
+      "label": "Заказчик",
+      "options": "Customer",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "project",
+      "fieldtype": "Link",
+      "label": "Проект",
+      "options": "Construction Project",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "estimate_link",
+      "fieldtype": "Link",
+      "label": "Связанная смета",
+      "options": "Estimate",
+      "description": "Из неё подтягиваются цены и объёмы для EstimateTable-блока"
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Статус",
+      "options": "Черновик\nГотово к отправке\nОтправлено\nПросмотрено клиентом\nСогласовано\nОтклонено\nИстекло",
+      "default": "Черновик",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "total_amount",
+      "fieldtype": "Currency",
+      "label": "Сумма КП",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "valid_until",
+      "fieldtype": "Date",
+      "label": "Действует до",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "template_used",
+      "fieldtype": "Link",
+      "label": "Шаблон",
+      "options": "Proposal Template"
+    },
+    {
+      "fieldname": "section_content",
+      "fieldtype": "Section Break",
+      "label": "Содержание (TipTap JSON)"
+    },
+    {
+      "fieldname": "content_json",
+      "fieldtype": "Long Text",
+      "label": "Содержание (JSON)",
+      "description": "TipTap document JSON. Редактировать через /proposals/[name]/edit"
+    },
+    {
+      "fieldname": "section_share",
+      "fieldtype": "Section Break",
+      "label": "Share-link и подпись",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "share_token",
+      "fieldtype": "Small Text",
+      "label": "Share token (JWT)",
+      "read_only": 1,
+      "description": "Используется в публичной ссылке /p/[token]"
+    },
+    {
+      "fieldname": "share_token_expires",
+      "fieldtype": "Datetime",
+      "label": "Token истекает",
+      "read_only": 1
+    },
+    {
+      "fieldname": "sent_at",
+      "fieldtype": "Datetime",
+      "label": "Отправлено клиенту",
+      "read_only": 1
+    },
+    {
+      "fieldname": "first_viewed_at",
+      "fieldtype": "Datetime",
+      "label": "Первый просмотр клиентом",
+      "read_only": 1
+    },
+    {
+      "fieldname": "column_break_share",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "view_count",
+      "fieldtype": "Int",
+      "label": "Кол-во просмотров",
+      "read_only": 1,
+      "default": "0"
+    },
+    {
+      "fieldname": "signed_at",
+      "fieldtype": "Datetime",
+      "label": "Подписано клиентом",
+      "read_only": 1
+    },
+    {
+      "fieldname": "signed_by_name",
+      "fieldtype": "Data",
+      "label": "ФИО подписанта",
+      "read_only": 1
+    },
+    {
+      "fieldname": "signed_by_ip",
+      "fieldtype": "Data",
+      "label": "IP подписанта",
+      "read_only": 1
+    },
+    {
+      "fieldname": "signature_data_url",
+      "fieldtype": "Long Text",
+      "label": "Подпись (base64 PNG)",
+      "read_only": 1
+    },
+    {
+      "fieldname": "section_meta",
+      "fieldtype": "Section Break",
+      "label": "Метаданные",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Text",
+      "label": "Внутренние заметки"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "report": 1
+    },
+    {
+      "role": "Главный инженер",
+      "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1
+    },
+    {
+      "role": "Тендерный менеджер",
+      "read": 1, "write": 1, "create": 1, "report": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "naming_rule": "Expression"
+}

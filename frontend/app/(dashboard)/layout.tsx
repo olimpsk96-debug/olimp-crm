@@ -68,6 +68,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: "/tenders", label: "Тендеры", icon: I.tenders },
       { href: "/guarantees", label: "Обеспечения тендеров", icon: I.guarantees },
       { href: "/leads-stats", label: "Аналитика лидов", icon: I.leadsStats },
+      { href: "/proposals", label: "Коммерческие предложения", icon: I.estimates },
     ],
   },
   {
