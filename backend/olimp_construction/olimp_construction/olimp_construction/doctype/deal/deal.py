@@ -26,3 +26,14 @@ class Deal(Document):
         }
         if self.has_value_changed("status") and not self.probability_pct:
             self.probability_pct = DEFAULT_PROBABILITY.get(self.status, 30)
+
+        # Auto-scoring (rule-based)
+        try:
+            from olimp_construction.api.lead_scoring import calculate_score
+            import json as _json
+            result = calculate_score(self.as_dict())
+            self.lead_score = result["score"]
+            self.lead_grade = result["grade"]
+            self.lead_score_breakdown = _json.dumps(result["breakdown"], ensure_ascii=False)[:1000]
+        except Exception:
+            pass  # не блокируем save если scoring упал

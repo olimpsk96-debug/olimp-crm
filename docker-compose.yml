@@ -125,6 +125,7 @@ services:
       TELEGRAM_DIRECTOR_CHAT_ID: ${TELEGRAM_DIRECTOR_CHAT_ID}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
+      DADATA_API_KEY: ${DADATA_API_KEY}
       QDRANT_URL: http://qdrant:6333
     volumes:
       - erpnext_sites:/home/frappe/frappe-bench/sites

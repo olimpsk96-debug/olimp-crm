@@ -96,6 +96,7 @@ export default function LeadsStatsPage() {
   const [forecast, setForecast] = useState<Forecast | null>(null);
   const [rotting, setRotting] = useState<RottingDeal[]>([]);
   const [lossAnalysis, setLossAnalysis] = useState<LossAnalysis | null>(null);
+  const [grades, setGrades] = useState<Array<{ grade: string; cnt: number; amt: number }>>([]);
 
   useEffect(() => {
     setLoading(true);
@@ -104,12 +105,14 @@ export default function LeadsStatsPage() {
       fetch("/api/pipeline-forecast").then((r) => r.json()),
       fetch("/api/pipeline-rotting").then((r) => r.json()),
       fetch(`/api/pipeline-loss-analysis?days=${days}`).then((r) => r.json()),
+      fetch("/api/lead-scoring").then((r) => r.json()),
     ])
-      .then(([s, f, r, l]) => {
+      .then(([s, f, r, l, g]) => {
         setData(s);
         setForecast(f);
         setRotting(Array.isArray(r) ? r : []);
         setLossAnalysis(l);
+        setGrades(Array.isArray(g.by_grade) ? g.by_grade : []);
       })
       .finally(() => setLoading(false));
   }, [days]);
@@ -275,6 +278,39 @@ export default function LeadsStatsPage() {
           <span>{data.timeline[data.timeline.length - 1]?.day || "—"}</span>
         </div>
       </div>
+
+      {/* Lead Scoring distribution */}
+      {grades.length > 0 && (
+        <div style={{ ...card, marginBottom: 22 }}>
+          <h3 style={cardTitle}>🎓 Lead Grade распределение (открытые сделки)</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+            {["A", "B", "C", "D"].map((g) => {
+              const row = grades.find((x) => x.grade === g);
+              const cnt = row?.cnt || 0;
+              const amt = row?.amt || 0;
+              const color = g === "A" ? "var(--success)" : g === "B" ? "var(--accent)" : g === "C" ? "var(--warning)" : "var(--danger)";
+              const desc = g === "A" ? "Горячий" : g === "B" ? "Тёплый" : g === "C" ? "Холодный" : "Бесперспективный";
+              return (
+                <div key={g} style={{
+                  padding: 14, borderRadius: 10,
+                  background: "var(--bg-base)", border: `1px solid ${color}`,
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: 28, fontWeight: 700, color }}>{g}</span>
+                    <span style={{ fontSize: 22, fontWeight: 600, fontFamily: "monospace", color }}>{cnt}</span>
+                  </div>
+                  <div style={{ fontSize: 10.5, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "monospace", marginTop: 6 }}>
+                    {desc}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 4 }}>
+                    {fmtMln(amt)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Forecast */}
       {forecast && forecast.deals_count > 0 && (
