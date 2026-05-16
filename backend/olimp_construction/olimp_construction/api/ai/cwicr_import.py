@@ -145,6 +145,147 @@ def import_from_parquet(parquet_path: str, region: str = "RU_SPB",
 
 
 @frappe.whitelist()
+def import_work_items(parquet_path: str, batch_size: int = 5000) -> dict:
+    """Импорт 55 719 уникальных работ (rate_code) из CWICR в Catalog Work Item.
+
+    Использует прямой SQL INSERT IGNORE (батчами), потому что через
+    frappe.get_doc().insert() заняло бы час+. Текущий подход — ~2-3 минуты.
+
+    parquet_path: путь к файлу в контейнере (/tmp/RU_SPB.parquet)
+    batch_size: размер батча для bulk insert
+    """
+    import json
+    from frappe.utils import now_datetime
+
+    if "System Manager" not in frappe.get_roles(frappe.session.user):
+        frappe.throw("Только System Manager", frappe.PermissionError)
+
+    if not os.path.exists(parquet_path):
+        frappe.throw(f"Файл не найден: {parquet_path}")
+
+    try:
+        import pyarrow.parquet as pq
+    except ImportError:
+        frappe.throw("pyarrow не установлен")
+
+    # Читаем нужные колонки
+    cols = [
+        "rate_code", "rate_final_name", "rate_unit",
+        "category_type", "department_name", "section_name", "subsection_name",
+        "row_type", "is_scope", "is_abstract", "work_composition_text",
+    ]
+    available = pq.ParquetFile(parquet_path).schema_arrow.names
+    cols = [c for c in cols if c in available]
+
+    t = pq.read_table(parquet_path, columns=cols)
+    df = t.to_pandas()
+
+    # Группируем по rate_code, берём первое непустое значение для каждой колонки
+    df = df.dropna(subset=["rate_code"])
+    df = df[df["rate_code"] != ""]
+
+    agg = df.groupby("rate_code").agg({
+        "rate_final_name": "first",
+        "rate_unit": "first",
+        "category_type": "first",
+        "department_name": "first",
+        "section_name": "first",
+        "subsection_name": "first",
+        "row_type": "first",
+        "is_scope": "max",
+        "is_abstract": "max",
+        "work_composition_text": "first",
+    }).reset_index()
+
+    total = len(agg)
+    now = now_datetime()
+    user = frappe.session.user
+
+    # Получим существующие rate_code чтобы пропустить
+    existing = set(frappe.db.sql_list("SELECT rate_code FROM `tabCatalog Work Item`") or [])
+
+    inserted = 0
+    skipped = 0
+    errors = 0
+
+    # Подготовим INSERT IGNORE батчами
+    insert_sql = """
+        INSERT IGNORE INTO `tabCatalog Work Item`
+        (name, creation, modified, modified_by, owner, docstatus, idx,
+         rate_code, rate_name, rate_unit, category_type, department_name,
+         section_name, subsection_name, row_type, is_scope, is_abstract,
+         work_composition_text, source, usage_count)
+        VALUES %s
+    """
+
+    def _s(v, maxlen=140):
+        if v is None:
+            return None
+        s = str(v).strip()
+        return s[:maxlen] if s else None
+
+    batch_rows = []
+    for _, row in agg.iterrows():
+        rate_code = _s(row["rate_code"], 140)
+        if not rate_code or rate_code in existing:
+            skipped += 1
+            continue
+
+        batch_rows.append((
+            rate_code,                                 # name (autoname=rate_code)
+            now, now, user, user, 0, 0,                # creation/modified/...
+            rate_code,
+            _s(row.get("rate_final_name"), 1000),
+            _s(row.get("rate_unit"), 50),
+            _s(row.get("category_type"), 200),
+            _s(row.get("department_name"), 500),
+            _s(row.get("section_name"), 500),
+            _s(row.get("subsection_name"), 500),
+            _s(row.get("row_type"), 50),
+            1 if row.get("is_scope") else 0,
+            1 if row.get("is_abstract") else 0,
+            _s(row.get("work_composition_text"), 65000),
+            "CWICR RU_SPB",
+            0,
+        ))
+
+        if len(batch_rows) >= int(batch_size):
+            try:
+                # Frappe не любит сырой VALUES %s — делаем сами параметризацию
+                placeholders = ",".join(["(" + ",".join(["%s"] * 20) + ")"] * len(batch_rows))
+                flat = [v for row in batch_rows for v in row]
+                frappe.db.sql(insert_sql.replace("%s", placeholders), tuple(flat))
+                inserted += len(batch_rows)
+                batch_rows.clear()
+            except Exception as e:
+                errors += len(batch_rows)
+                frappe.logger().error(f"CWICR bulk insert ошибка: {str(e)[:300]}")
+                batch_rows.clear()
+
+    # Финальный батч
+    if batch_rows:
+        try:
+            placeholders = ",".join(["(" + ",".join(["%s"] * 20) + ")"] * len(batch_rows))
+            flat = [v for row in batch_rows for v in row]
+            frappe.db.sql(insert_sql.replace("%s", placeholders), tuple(flat))
+            inserted += len(batch_rows)
+        except Exception as e:
+            errors += len(batch_rows)
+            frappe.logger().error(f"CWICR final batch error: {str(e)[:300]}")
+
+    frappe.db.commit()
+
+    return {
+        "ok": True,
+        "total_in_parquet": total,
+        "inserted": inserted,
+        "skipped_existing": skipped,
+        "errors": errors,
+        "total_in_db_after": frappe.db.count("Catalog Work Item"),
+    }
+
+
+@frappe.whitelist()
 def get_import_status() -> dict:
     """Статус обогащения Catalog Resource данными CWICR."""
     frappe.has_permission("Catalog Resource", throw=True)

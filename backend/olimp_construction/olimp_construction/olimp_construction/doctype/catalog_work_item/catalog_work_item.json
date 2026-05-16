@@ -1,0 +1,143 @@
+{
+  "name": "Catalog Work Item",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "field:rate_code",
+  "title_field": "rate_name",
+  "track_changes": 0,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "rate_code",
+      "fieldtype": "Data",
+      "label": "Код расценки",
+      "reqd": 1,
+      "unique": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "bold": 1,
+      "description": "Уникальный код работы из CWICR (например, KADX_KADX_KAKAME_KAME)"
+    },
+    {
+      "fieldname": "rate_name",
+      "fieldtype": "Data",
+      "label": "Название работы",
+      "in_list_view": 1,
+      "description": "Например: «Изготовление стоек опорных из прокатной стали»"
+    },
+    {
+      "fieldname": "rate_unit",
+      "fieldtype": "Data",
+      "label": "Ед. изм.",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "description": "т, м², м³, шт, 100 м, и т.п."
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "category_type",
+      "fieldtype": "Data",
+      "label": "Категория",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "description": "СТРОИТЕЛЬНЫЕ РАБОТЫ / МОНТАЖНЫЕ / ОБЩЕОТРАСЛЕВЫЕ / ..."
+    },
+    {
+      "fieldname": "department_name",
+      "fieldtype": "Data",
+      "label": "Отдел / Сборник",
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "section_name",
+      "fieldtype": "Data",
+      "label": "Раздел"
+    },
+    {
+      "fieldname": "subsection_name",
+      "fieldtype": "Data",
+      "label": "Подраздел"
+    },
+    {
+      "fieldname": "section_break_meta",
+      "fieldtype": "Section Break",
+      "label": "Состав работ"
+    },
+    {
+      "fieldname": "work_composition_text",
+      "fieldtype": "Long Text",
+      "label": "Состав работ (полный текст)",
+      "description": "Что входит в эту расценку — описание этапов из CWICR/ГЭСН"
+    },
+    {
+      "fieldname": "section_break_flags",
+      "fieldtype": "Section Break",
+      "label": "Флаги"
+    },
+    {
+      "fieldname": "row_type",
+      "fieldtype": "Data",
+      "label": "Тип строки CWICR",
+      "in_standard_filter": 1,
+      "description": "Ресурс / Состав работ / Машинист / Масса / Электричество / Абстрактный ресурс"
+    },
+    {
+      "fieldname": "is_scope",
+      "fieldtype": "Check",
+      "label": "Группа/раздел (scope)",
+      "default": "0"
+    },
+    {
+      "fieldname": "column_break_flags",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "is_abstract",
+      "fieldtype": "Check",
+      "label": "Абстрактная",
+      "default": "0",
+      "description": "Если 1 — это абстрактная расценка (шаблон), не для прямого применения"
+    },
+    {
+      "fieldname": "source",
+      "fieldtype": "Data",
+      "label": "Источник",
+      "default": "CWICR RU_SPB",
+      "read_only": 1
+    },
+    {
+      "fieldname": "section_break_usage",
+      "fieldtype": "Section Break",
+      "label": "Использование"
+    },
+    {
+      "fieldname": "usage_count",
+      "fieldtype": "Int",
+      "label": "Использовано раз",
+      "default": "0",
+      "read_only": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "email": 1, "export": 1, "share": 1, "report": 1
+    },
+    {
+      "role": "Главный инженер",
+      "read": 1, "report": 1, "export": 1
+    },
+    {
+      "role": "Тендерный менеджер",
+      "read": 1, "report": 1
+    }
+  ],
+  "sort_field": "rate_code",
+  "sort_order": "ASC",
+  "naming_rule": "By fieldname",
+  "search_fields": "rate_name, category_type, department_name, section_name"
+}
