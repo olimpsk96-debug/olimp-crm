@@ -174,6 +174,71 @@ def get_today(project: str | None = None) -> list[dict]:
 
 
 @frappe.whitelist()
+def notify_arrival(project: str, foreman_name: str = "",
+                   eta_minutes: int = 0, custom_chat_id: str = "") -> dict:
+    """«Я выехал» / «Я на объекте» — one-tap уведомление заказчику в Telegram.
+
+    Идея — Housecall Pro / Jobber "On My Way" текст.
+    Получатель определяется:
+    1. Явный custom_chat_id (если передан — для тестов)
+    2. Custom Field `telegram_chat_id` на Customer проекта (TODO будущий релиз)
+    3. Fallback на TELEGRAM_CHAT_ID директора (Дима получает уведомление о том,
+       что прораб выехал)
+
+    eta_minutes — если 0, отправляется «Я уже на объекте», иначе «Выехал, буду через N мин».
+    """
+    from olimp_construction.telegram_utils import send_message
+
+    frappe.has_permission("Construction Project", "read", doc=project, throw=True)
+    if not frappe.db.exists("Construction Project", project):
+        frappe.throw(f"Проект {project} не найден")
+
+    proj = frappe.db.get_value(
+        "Construction Project", project,
+        ["title", "customer", "location", "foreman"], as_dict=True,
+    )
+
+    foreman = (foreman_name or "").strip() or proj.foreman or "Прораб"
+    location = proj.location or "объект"
+    project_title = proj.title or project
+
+    if eta_minutes and int(eta_minutes) > 0:
+        text = (
+            f"🚐 <b>Бригада выехала</b>\n\n"
+            f"<b>Прораб:</b> {foreman}\n"
+            f"<b>Объект:</b> {project_title}\n"
+            f"<b>Адрес:</b> {location}\n"
+            f"<b>Прибытие через:</b> ~{int(eta_minutes)} мин\n"
+            f"<i>Можете встретить или подготовить доступ.</i>"
+        )
+    else:
+        text = (
+            f"📍 <b>Бригада на объекте</b>\n\n"
+            f"<b>Прораб:</b> {foreman}\n"
+            f"<b>Объект:</b> {project_title}\n"
+            f"<b>Адрес:</b> {location}\n"
+            f"<i>Приступаем к работам.</i>"
+        )
+
+    # Получатель: custom_chat_id → customer.telegram_chat_id (если есть поле) → fallback директор
+    target_chat: str | None = None
+    if custom_chat_id and custom_chat_id.strip():
+        target_chat = custom_chat_id.strip()
+    elif proj.customer and frappe.db.has_column("Customer", "telegram_chat_id"):
+        try:
+            target_chat = frappe.db.get_value("Customer", proj.customer, "telegram_chat_id")
+        except Exception:
+            target_chat = None
+
+    sent = send_message(text, chat_id=target_chat)
+    return {
+        "ok": True, "sent": sent, "project": project,
+        "fallback_used": not target_chat and sent,
+        "preview": text,
+    }
+
+
+@frappe.whitelist()
 def get_active_now() -> list[dict]:
     """Кто сейчас на объекте (без check_out_time)."""
     frappe.has_permission("Foreman Check-in", throw=True)

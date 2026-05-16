@@ -716,3 +716,127 @@ def _days_word(n: int) -> str:
     if 2 <= n <= 4:
         return "дня"
     return "дней"
+
+
+# ────────────────────── Auto-rollover незавершённых работ ────────────────────
+
+
+def rollover_unfinished_work() -> dict:
+    """Weekly (вечер воскресенья): незакрытые работы прошлой недели переезжают в следующую.
+
+    Идея — Linear Cycles auto-rollover.
+    Что переносим:
+    - Schedule Task с status IN ('Запланирована','В работе') и end_date < сегодня:
+        * end_date переносится на (старая end_date + 7 дней)
+        * в комментарий добавляется метка "rolled over from {old_date}"
+    - Punch List Item с status IN ('Открыто','В работе') и due_date < сегодня:
+        * due_date += 7 дней
+        * в solution_notes добавляется "[ROLLOVER N: prev due {old_date}]"
+
+    Итог сводки → Telegram директору.
+    """
+    today_d = getdate()
+    rolled_tasks: list[dict] = []
+    rolled_punch: list[dict] = []
+
+    # Schedule Task
+    try:
+        if frappe.db.exists("DocType", "Schedule Task"):
+            stuck = frappe.db.sql("""
+                SELECT name, title, project, end_date, status
+                FROM `tabSchedule Task`
+                WHERE status IN ('Запланирована', 'В работе')
+                  AND end_date IS NOT NULL
+                  AND end_date < %(today)s
+                ORDER BY end_date ASC
+                LIMIT 200
+            """, {"today": str(today_d)}, as_dict=True)
+
+            for t in stuck:
+                old_end = getdate(t["end_date"])
+                new_end = old_end + timedelta(days=7)
+                frappe.db.set_value(
+                    "Schedule Task", t["name"], "end_date", str(new_end),
+                    update_modified=False,
+                )
+                frappe.get_doc({
+                    "doctype": "Comment",
+                    "comment_type": "Info",
+                    "reference_doctype": "Schedule Task",
+                    "reference_name": t["name"],
+                    "content": f"⏩ Auto-rollover: дедлайн перенесён с {old_end} на {new_end}",
+                }).insert(ignore_permissions=True)
+                rolled_tasks.append({
+                    "name": t["name"], "title": t["title"],
+                    "project": t["project"], "old_end": str(old_end), "new_end": str(new_end),
+                })
+            frappe.db.commit()
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "rollover_unfinished_work.schedule_task")
+
+    # Punch List Item
+    try:
+        if frappe.db.exists("DocType", "Punch List Item"):
+            stuck = frappe.db.sql("""
+                SELECT name, title, project, due_date, urgency, solution_notes
+                FROM `tabPunch List Item`
+                WHERE status IN ('Открыто', 'В работе')
+                  AND due_date IS NOT NULL
+                  AND due_date < %(today)s
+                ORDER BY due_date ASC
+                LIMIT 200
+            """, {"today": str(today_d)}, as_dict=True)
+
+            for p in stuck:
+                old_due = getdate(p["due_date"])
+                new_due = old_due + timedelta(days=7)
+                marker = f"[ROLLOVER {today_d}: prev due {old_due}]"
+                new_notes = (p.get("solution_notes") or "").strip()
+                if marker not in new_notes:
+                    new_notes = (marker + "\n" + new_notes).strip()
+                frappe.db.set_value(
+                    "Punch List Item", p["name"], "due_date", str(new_due),
+                    update_modified=False,
+                )
+                frappe.db.set_value(
+                    "Punch List Item", p["name"], "solution_notes", new_notes[:2000],
+                    update_modified=False,
+                )
+                rolled_punch.append({
+                    "name": p["name"], "title": p["title"], "project": p["project"],
+                    "old_due": str(old_due), "new_due": str(new_due),
+                    "urgency": p.get("urgency"),
+                })
+            frappe.db.commit()
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "rollover_unfinished_work.punch_list")
+
+    total = len(rolled_tasks) + len(rolled_punch)
+    if total == 0:
+        frappe.logger().info("rollover_unfinished_work: nothing to roll over")
+        return {"ok": True, "total": 0, "tasks": 0, "punch": 0}
+
+    # Telegram-сводка
+    lines = [f"⏩ <b>Auto-rollover: перенесено {total} элементов на след. неделю</b>", ""]
+
+    if rolled_tasks:
+        lines.append(f"<b>Работы графика ({len(rolled_tasks)}):</b>")
+        for t in rolled_tasks[:10]:
+            lines.append(f"• {t['title']} ({t['project']}) — {t['old_end']} → {t['new_end']}")
+        if len(rolled_tasks) > 10:
+            lines.append(f"…и ещё {len(rolled_tasks) - 10}")
+        lines.append("")
+
+    if rolled_punch:
+        lines.append(f"<b>Доделки ({len(rolled_punch)}):</b>")
+        for p in rolled_punch[:10]:
+            crit = "🔴 " if p.get("urgency") == "Критично" else ""
+            lines.append(f"• {crit}{p['title']} ({p['project']}) — {p['old_due']} → {p['new_due']}")
+        if len(rolled_punch) > 10:
+            lines.append(f"…и ещё {len(rolled_punch) - 10}")
+
+    send_message("\n".join(lines))
+    frappe.logger().info(
+        f"rollover_unfinished_work: rolled {len(rolled_tasks)} tasks + {len(rolled_punch)} punch items"
+    )
+    return {"ok": True, "total": total, "tasks": len(rolled_tasks), "punch": len(rolled_punch)}

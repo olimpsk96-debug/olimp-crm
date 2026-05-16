@@ -86,6 +86,34 @@ export default function CheckinPage() {
     );
   }
 
+  async function notifyArrival(etaMinutes: number) {
+    if (!project) { toast.error("Выбери проект"); return; }
+    if (!foreman.trim()) { toast.error("Укажи ФИО"); return; }
+    localStorage.setItem("olimp-foreman-name", foreman);
+
+    const r = await fetch("/api/foreman-checkin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "notify_arrival",
+        project, foreman_name: foreman,
+        eta_minutes: etaMinutes,
+      }),
+    });
+    const d = await r.json();
+    if (d.error) {
+      toast.error(d.error);
+      return;
+    }
+    if (d.sent) {
+      toast.success(etaMinutes > 0
+        ? `🚐 Заказчик уведомлён: выезд, ETA ${etaMinutes} мин`
+        : `📍 Заказчик уведомлён: прибыли на объект`, 6000);
+    } else {
+      toast.warn("Сообщение сформировано, но Telegram не сконфигурирован (TELEGRAM_BOT_TOKEN)");
+    }
+  }
+
   async function submit() {
     if (!project) { toast.error("Выбери проект"); return; }
     if (!foreman.trim()) { toast.error("Укажи ФИО"); return; }
@@ -166,6 +194,30 @@ export default function CheckinPage() {
             {gpsLoading ? "..." : gps ? "↻ Обновить" : "📍 Захватить GPS"}
           </button>
         </div>
+      </div>
+
+      {/* One-tap уведомление заказчику (Housecall Pro / Jobber-style) */}
+      <div style={{
+        display: "flex", gap: 8, marginBottom: 14,
+      }}>
+        <button onClick={() => notifyArrival(25)} disabled={!project || !foreman.trim()}
+                style={{
+                  flex: 1, padding: "12px", fontSize: 13, fontWeight: 500,
+                  background: "var(--bg-elevated)", color: "var(--text-primary)",
+                  border: "1px solid var(--accent)", borderRadius: 10, cursor: "pointer",
+                  opacity: (!project || !foreman.trim()) ? 0.5 : 1,
+                }}>
+          🚐 Я выехал (≈25 мин)
+        </button>
+        <button onClick={() => notifyArrival(0)} disabled={!project || !foreman.trim()}
+                style={{
+                  flex: 1, padding: "12px", fontSize: 13, fontWeight: 500,
+                  background: "var(--bg-elevated)", color: "var(--text-primary)",
+                  border: "1px solid var(--success)", borderRadius: 10, cursor: "pointer",
+                  opacity: (!project || !foreman.trim()) ? 0.5 : 1,
+                }}>
+          📍 Я на объекте
+        </button>
       </div>
 
       {/* Form */}

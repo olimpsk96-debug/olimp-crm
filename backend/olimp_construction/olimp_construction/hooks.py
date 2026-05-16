@@ -248,6 +248,7 @@ scheduler_events = {
         "olimp_construction.tasks.update_customer_payment_patterns",
         "olimp_construction.tasks.generate_cashflow_snapshot",
         "olimp_construction.api.ai.template_suggester.suggest_templates",
+        "olimp_construction.tasks.rollover_unfinished_work",
     ],
     "cron": {
         "0 * * * *": [  # раз в час

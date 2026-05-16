@@ -1,0 +1,146 @@
+{
+  "name": "Site Cash Entry",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "format:SCE-{YYYY}-{#####}",
+  "title_field": "purpose",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "project",
+      "fieldtype": "Link",
+      "label": "Проект",
+      "options": "Construction Project",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "entry_type",
+      "fieldtype": "Select",
+      "label": "Тип операции",
+      "options": "Приход\nРасход",
+      "reqd": 1,
+      "default": "Расход",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "operation_kind",
+      "fieldtype": "Select",
+      "label": "Вид",
+      "options": "Закупка материалов\nОплата бригаде\nГСМ / транспорт\nАренда оборудования\nПитание / бытовое\nВозврат остатка\nВнесение от директора\nПрочее",
+      "default": "Прочее",
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "amount",
+      "fieldtype": "Currency",
+      "label": "Сумма ₽",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "date",
+      "fieldtype": "Date",
+      "label": "Дата",
+      "default": "Today",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "foreman",
+      "fieldtype": "Data",
+      "label": "Прораб / подотчётный",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "counterparty",
+      "fieldtype": "Data",
+      "label": "Получатель / поставщик",
+      "description": "От кого приход или кому расход"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Статус",
+      "options": "Черновик\nЖдёт подтверждения\nПодтверждён\nОтклонён",
+      "default": "Ждёт подтверждения",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "section_break_details",
+      "fieldtype": "Section Break",
+      "label": "Детали"
+    },
+    {
+      "fieldname": "purpose",
+      "fieldtype": "Data",
+      "label": "Назначение",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "comment",
+      "fieldtype": "Small Text",
+      "label": "Комментарий"
+    },
+    {
+      "fieldname": "receipt_image_url",
+      "fieldtype": "Data",
+      "label": "URL фото чека",
+      "description": "Файл загружен в /files или внешний URL"
+    },
+    {
+      "fieldname": "section_break_meta",
+      "fieldtype": "Section Break",
+      "label": "Подтверждение",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "confirmed_by",
+      "fieldtype": "Data",
+      "label": "Подтвердил",
+      "read_only": 1
+    },
+    {
+      "fieldname": "confirmed_at",
+      "fieldtype": "Datetime",
+      "label": "Подтверждено",
+      "read_only": 1
+    },
+    {
+      "fieldname": "column_break_meta",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "rejection_reason",
+      "fieldtype": "Small Text",
+      "label": "Причина отклонения"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "report": 1
+    },
+    {
+      "role": "Главный инженер",
+      "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1
+    },
+    {
+      "role": "Прораб",
+      "read": 1, "write": 1, "create": 1, "report": 1
+    }
+  ],
+  "sort_field": "date",
+  "sort_order": "DESC",
+  "naming_rule": "Expression"
+}

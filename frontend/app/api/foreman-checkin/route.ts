@@ -18,6 +18,28 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const body = await request.json();
+  const action = body.action || "checkin";
+
+  // "Я выехал" / "Я на объекте" — notify_arrival
+  if (action === "notify_arrival") {
+    const p = new URLSearchParams();
+    for (const k of ["project", "foreman_name", "eta_minutes", "custom_chat_id"]) {
+      if (body[k] !== undefined && body[k] !== null) p.set(k, String(body[k]));
+    }
+    const r = await fetch(
+      `${base}/api/method/olimp_construction.api.foreman_checkin.notify_arrival`,
+      {
+        method: "POST",
+        headers: { Authorization: auth(), "Content-Type": "application/x-www-form-urlencoded" },
+        body: p, cache: "no-store",
+      },
+    );
+    const d = await r.json();
+    if (!r.ok || d.exception) return NextResponse.json({ error: d.exception }, { status: r.status });
+    return NextResponse.json(d.message ?? d);
+  }
+
+  // Стандартный чек-ин
   const p = new URLSearchParams();
   for (const k of ["project", "foreman_name", "kind", "lat", "lng", "accuracy_m",
                     "photo_url", "photo_caption", "workers_count", "engineers_count",

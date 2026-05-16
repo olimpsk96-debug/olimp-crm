@@ -1,0 +1,133 @@
+{
+  "name": "Construction Project Update",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "format:CPU-{YYYY}-{#####}",
+  "title_field": "title",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Заголовок",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "project",
+      "fieldtype": "Link",
+      "label": "Проект",
+      "options": "Construction Project",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "week_start",
+      "fieldtype": "Date",
+      "label": "Начало недели (Пн)",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "health",
+      "fieldtype": "Select",
+      "label": "Здоровье",
+      "options": "🟢 Зелёный\n🟡 Жёлтый\n🔴 Красный",
+      "reqd": 1,
+      "default": "🟢 Зелёный",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "author",
+      "fieldtype": "Data",
+      "label": "Автор",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "section_break_content",
+      "fieldtype": "Section Break",
+      "label": "Содержание"
+    },
+    {
+      "fieldname": "summary",
+      "fieldtype": "Text",
+      "label": "Что сделано за неделю",
+      "reqd": 1
+    },
+    {
+      "fieldname": "blockers",
+      "fieldtype": "Text",
+      "label": "Блокеры / риски"
+    },
+    {
+      "fieldname": "next_week_plan",
+      "fieldtype": "Text",
+      "label": "План на следующую неделю"
+    },
+    {
+      "fieldname": "section_break_meta",
+      "fieldtype": "Section Break",
+      "label": "Метаданные",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "cpi_snapshot",
+      "fieldtype": "Float",
+      "label": "CPI (снимок)",
+      "precision": "3",
+      "description": "Снимок CPI из последнего EVM Snapshot на момент апдейта"
+    },
+    {
+      "fieldname": "spi_snapshot",
+      "fieldtype": "Float",
+      "label": "SPI (снимок)",
+      "precision": "3"
+    },
+    {
+      "fieldname": "column_break_meta",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "ai_drafted",
+      "fieldtype": "Check",
+      "label": "AI-черновик использован",
+      "default": "0"
+    },
+    {
+      "fieldname": "ai_model",
+      "fieldtype": "Data",
+      "label": "AI модель",
+      "depends_on": "ai_drafted"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "report": 1
+    },
+    {
+      "role": "Главный инженер",
+      "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1
+    },
+    {
+      "role": "Прораб",
+      "read": 1, "write": 1, "create": 1, "report": 1
+    },
+    {
+      "role": "Тендерный менеджер",
+      "read": 1, "report": 1
+    }
+  ],
+  "sort_field": "week_start",
+  "sort_order": "DESC",
+  "naming_rule": "Expression"
+}
