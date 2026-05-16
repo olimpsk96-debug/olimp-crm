@@ -10,6 +10,9 @@ interface DecompStage {
   materials: Record<string, number>;
   gesn_ref: string;
   notes?: string;
+  catalog_resource?: string | null;
+  unit_price?: number;
+  amount?: number;
 }
 
 interface DecompResult {
@@ -17,6 +20,9 @@ interface DecompResult {
   source: "template" | "ai";
   template_name?: string;
   template_match_score?: number;
+  template_match_method?: "semantic" | "keyword";
+  ai_method?: string;
+  feedback_id?: string;
   decomposition: {
     title: string;
     category: string;
@@ -51,6 +57,7 @@ export default function DecomposeWorkModal({
   const [result, setResult] = useState<DecompResult | null>(null);
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ratingStage, setRatingStage] = useState<{ feedbackId: string } | null>(null);
 
   async function generate() {
     if (description.trim().length < 5) {
@@ -101,12 +108,31 @@ export default function DecomposeWorkModal({
         setError(d.error || `Ошибка ${r.status}`);
         return;
       }
-      onApplied();
+      // Если есть feedback_id — показываем экран оценки, иначе сразу закрываемся
+      if (d.feedback_id) {
+        setRatingStage({ feedbackId: d.feedback_id });
+      } else {
+        onApplied();
+      }
     } catch (e) {
       setError(String(e));
     } finally {
       setApplying(false);
     }
+  }
+
+  async function submitRating(rating: string) {
+    if (!ratingStage) return;
+    try {
+      await fetch("/api/estimates/decompose/rate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ feedback_id: ratingStage.feedbackId, rating }),
+      });
+    } catch {
+      // не критично если не сохранилось — закрываемся всё равно
+    }
+    onApplied();
   }
 
   return (
@@ -118,14 +144,48 @@ export default function DecomposeWorkModal({
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
           <div>
             <h2 style={{ fontSize: 18, fontWeight: 500, margin: 0 }}>
-              🪄 AI-декомпозиция работы
+              {ratingStage ? "✓ Этапы добавлены" : "🪄 AI-декомпозиция работы"}
             </h2>
             <p style={{ fontSize: 12, color: "var(--text-tertiary)", marginTop: 4, margin: "4px 0 0 0" }}>
-              Опиши работу в произвольной форме — система разложит на этапы с объёмами
+              {ratingStage
+                ? "Оцени декомпозицию — это поможет улучшить шаблоны"
+                : "Опиши работу в произвольной форме — система разложит на этапы с объёмами"}
             </p>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-tertiary)", fontSize: 22, cursor: "pointer" }}>×</button>
         </div>
+
+        {/* Экран оценки */}
+        {ratingStage && (
+          <div style={{ padding: "32px 12px", textAlign: "center" }}>
+            <div style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 24 }}>
+              Насколько полезной получилась декомпозиция?
+            </div>
+            <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
+              <button onClick={() => submitRating("👍 Полезно (минимальные правки)")}
+                      style={{ ...rateBtn, borderColor: "var(--success)", color: "var(--success)" }}>
+                <div style={{ fontSize: 28 }}>👍</div>
+                <div style={{ fontSize: 11, marginTop: 4 }}>Полезно</div>
+              </button>
+              <button onClick={() => submitRating("👌 Сойдёт (доделал ручками)")}
+                      style={{ ...rateBtn, borderColor: "var(--warning)", color: "var(--warning)" }}>
+                <div style={{ fontSize: 28 }}>👌</div>
+                <div style={{ fontSize: 11, marginTop: 4 }}>Сойдёт</div>
+              </button>
+              <button onClick={() => submitRating("👎 Бесполезно (пришлось переделать)")}
+                      style={{ ...rateBtn, borderColor: "var(--danger)", color: "var(--danger)" }}>
+                <div style={{ fontSize: 28 }}>👎</div>
+                <div style={{ fontSize: 11, marginTop: 4 }}>Бесполезно</div>
+              </button>
+            </div>
+            <button onClick={onClose} style={{ ...btnCancel, marginTop: 24, fontSize: 11 }}>
+              Пропустить
+            </button>
+          </div>
+        )}
+
+        {!ratingStage && (<>
+
 
         {/* Поле ввода */}
         <label style={lbl}>Описание работы</label>
@@ -220,6 +280,14 @@ export default function DecomposeWorkModal({
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
                 {result.decomposition.stages.length} этапов · итого {result.decomposition.stages.reduce((acc, s) => acc + s.labor_hours, 0).toFixed(1)} чел.-час
+                {(() => {
+                  const totalAmount = result.decomposition.stages.reduce((acc, s) => acc + (s.amount || 0), 0);
+                  return totalAmount > 0 ? (
+                    <span style={{ marginLeft: 12, color: "var(--accent)", fontWeight: 500 }}>
+                      ≈ {totalAmount.toLocaleString("ru-RU", { maximumFractionDigits: 0 })} ₽
+                    </span>
+                  ) : null;
+                })()}
               </div>
               <div style={{ display: "flex", gap: 10 }}>
                 <button onClick={onClose} style={btnCancel}>Отмена</button>
@@ -231,6 +299,7 @@ export default function DecomposeWorkModal({
             </div>
           </>
         )}
+        </>)}
       </div>
     </div>
   );
@@ -256,4 +325,10 @@ const btnCancel: React.CSSProperties = {
   padding: "9px 18px", borderRadius: 10, fontSize: 13, fontWeight: 500,
   background: "var(--bg-elevated)", color: "var(--text-secondary)",
   border: "1px solid var(--border-subtle)", cursor: "pointer",
+};
+
+const rateBtn: React.CSSProperties = {
+  width: 110, padding: "14px 0", borderRadius: 12,
+  background: "transparent", border: "2px solid",
+  cursor: "pointer", fontWeight: 500,
 };

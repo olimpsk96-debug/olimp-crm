@@ -1,0 +1,123 @@
+{
+  "name": "Decomposition Feedback",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "format:DF-{YYYY}-{#####}",
+  "title_field": "description",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "description",
+      "fieldtype": "Data",
+      "label": "Описание работы",
+      "reqd": 1,
+      "in_list_view": 1,
+      "bold": 1,
+      "description": "Что пользователь ввёл в декомпозитор"
+    },
+    {
+      "fieldname": "template_used",
+      "fieldtype": "Link",
+      "label": "Найденный шаблон",
+      "options": "Work Template",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "source",
+      "fieldtype": "Select",
+      "label": "Источник",
+      "options": "Шаблон (keyword)\nШаблон (semantic)\nAI (CoT)\nAI (single-prompt)",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "section_break_estimate",
+      "fieldtype": "Section Break",
+      "label": "Привязка"
+    },
+    {
+      "fieldname": "estimate",
+      "fieldtype": "Link",
+      "label": "Смета",
+      "options": "Estimate",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "user_email",
+      "fieldtype": "Data",
+      "label": "Пользователь",
+      "read_only": 1
+    },
+    {
+      "fieldname": "feedback_date",
+      "fieldtype": "Datetime",
+      "label": "Дата",
+      "default": "now",
+      "read_only": 1
+    },
+    {
+      "fieldname": "section_break_outcome",
+      "fieldtype": "Section Break",
+      "label": "Результат"
+    },
+    {
+      "fieldname": "was_applied",
+      "fieldtype": "Check",
+      "label": "Применено в смету",
+      "default": 0,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "was_edited_after",
+      "fieldtype": "Check",
+      "label": "Правил после применения",
+      "default": 0,
+      "in_list_view": 1,
+      "description": "1 если пользователь редактировал строки после AI-генерации"
+    },
+    {
+      "fieldname": "rating",
+      "fieldtype": "Select",
+      "label": "Оценка пользователя",
+      "options": "\n👍 Полезно (минимальные правки)\n👌 Сойдёт (доделал ручками)\n👎 Бесполезно (пришлось переделать)",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "section_break_data",
+      "fieldtype": "Section Break",
+      "label": "Данные для обучения"
+    },
+    {
+      "fieldname": "decomposition_json",
+      "fieldtype": "Long Text",
+      "label": "Что AI вернул (JSON)",
+      "description": "Полный JSON ответа decompose_work — для последующего анализа"
+    },
+    {
+      "fieldname": "user_diff_json",
+      "fieldtype": "Long Text",
+      "label": "Diff после правок (JSON)",
+      "description": "Что пользователь добавил/убрал/изменил — для обучения шаблонов"
+    },
+    {
+      "fieldname": "user_comment",
+      "fieldtype": "Small Text",
+      "label": "Комментарий пользователя"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "report": 1
+    },
+    {
+      "role": "Главный инженер",
+      "read": 1, "report": 1
+    }
+  ],
+  "sort_field": "feedback_date",
+  "sort_order": "DESC",
+  "naming_rule": "Expression"
+}

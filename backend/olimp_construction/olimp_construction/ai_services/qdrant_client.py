@@ -12,6 +12,7 @@ from __future__ import annotations
 import os
 
 CATALOG_COLLECTION = "olimp_catalog"
+WORK_TEMPLATES_COLLECTION = "olimp_work_templates"
 EMBED_DIM = 1536
 
 _client = None
@@ -90,6 +91,82 @@ def search_catalog(
         query_filter=flt_obj,
         with_payload=True,
     )
+
+
+def ensure_collection(name: str) -> bool:
+    """Универсальный создатель коллекции для любых embedding-индексов."""
+    from qdrant_client.http import models as qm
+    c = get_qdrant()
+    existing = {col.name for col in c.get_collections().collections}
+    if name in existing:
+        return False
+    c.create_collection(
+        collection_name=name,
+        vectors_config=qm.VectorParams(size=EMBED_DIM, distance=qm.Distance.COSINE),
+    )
+    return True
+
+
+def reset_collection(name: str) -> None:
+    c = get_qdrant()
+    try:
+        c.delete_collection(name)
+    except Exception:
+        pass
+    ensure_collection(name)
+
+
+def upsert_points(collection: str, points: list[dict]) -> None:
+    """Универсальный upsert для любой коллекции."""
+    if not points:
+        return
+    from qdrant_client.http import models as qm
+    c = get_qdrant()
+    c.upsert(
+        collection_name=collection,
+        points=[qm.PointStruct(id=p["id"], vector=p["vector"], payload=p["payload"]) for p in points],
+    )
+
+
+def search_collection(collection: str, vector: list[float], limit: int = 10,
+                      payload_filter: dict | None = None) -> list:
+    """Универсальный search."""
+    from qdrant_client.http import models as qm
+
+    flt_obj = None
+    if payload_filter:
+        must = [qm.FieldCondition(key=k, match=qm.MatchValue(value=v))
+                for k, v in payload_filter.items() if v]
+        if must:
+            flt_obj = qm.Filter(must=must)
+
+    c = get_qdrant()
+    return c.search(
+        collection_name=collection,
+        query_vector=vector,
+        limit=int(limit),
+        query_filter=flt_obj,
+        with_payload=True,
+    )
+
+
+def get_collection_status(name: str) -> dict:
+    """Универсальный статус."""
+    c = get_qdrant()
+    try:
+        existing = {col.name for col in c.get_collections().collections}
+        if name not in existing:
+            return {"exists": False, "points_count": 0}
+        info = c.get_collection(name)
+        return {
+            "exists": True,
+            "points_count": info.points_count,
+            "indexed_vectors_count": info.indexed_vectors_count,
+            "status": str(info.status),
+            "vector_size": EMBED_DIM,
+        }
+    except Exception as e:
+        return {"exists": False, "error": str(e)}
 
 
 def get_catalog_status() -> dict:
