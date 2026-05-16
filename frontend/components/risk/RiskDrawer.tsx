@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ProjectRisk, RiskCategory, RiskStatus, RiskResponse } from "@/types/risk";
 import { EntityTimeline } from "@/components/ui/EntityTimeline";
+import { SimilarItemsWarning } from "@/components/ui/SimilarItemsWarning";
 
 const CATEGORIES: RiskCategory[] = [
   "Финансовый", "Технический", "Срочный", "Качество", "Безопасность",
@@ -166,6 +167,14 @@ export default function RiskDrawer({
             <input style={{ ...inputStyle, marginBottom: 12 }}
                    value={form.title || ""} onChange={(e) => up("title", e.target.value)}
                    placeholder="Срыв поставки металла / Дождливое лето / Травма на высоте" />
+
+            {isNew && (
+              <SimilarItemsWarning
+                doctype="Project Risk"
+                text={form.title || ""}
+                project={form.project || undefined}
+              />
+            )}
 
             <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
               <div style={{ flex: 1 }}>

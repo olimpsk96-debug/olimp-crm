@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { SimilarItemsWarning } from "@/components/ui/SimilarItemsWarning";
+import { BeforeAfterCompare } from "@/components/ui/BeforeAfterCompare";
 import type {
   PunchListItem,
   PunchListStats,
@@ -395,6 +397,12 @@ function CreateDrawer({
               placeholder="Подкрасить трещину у входа..." style={inputStyle} autoFocus />
           </Field>
 
+          <SimilarItemsWarning
+            doctype="Punch List Item"
+            text={form.title || ""}
+            project={form.project || undefined}
+          />
+
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <Field label="Проект *">
               <select value={form.project} onChange={(e) => setForm({ ...form, project: e.target.value })} style={inputStyle}>
@@ -631,16 +639,25 @@ function DetailDrawer({
           </div>
 
           {/* Photos */}
-          <p style={sectionLabel}>Фото</p>
+          <p style={sectionLabel}>Фото До / После</p>
+          {(data.photo_before || data.photo_after) && (
+            <div style={{ marginBottom: 10 }}>
+              <BeforeAfterCompare
+                beforeUrl={data.photo_before}
+                afterUrl={data.photo_after}
+                height={240}
+              />
+            </div>
+          )}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <PhotoSlot
-              label="До"
+              label="До (загрузить)"
               url={data.photo_before}
               loading={uploading === "before"}
               onUpload={(f) => uploadPhoto("before", f)}
             />
             <PhotoSlot
-              label="После"
+              label="После (загрузить)"
               url={data.photo_after}
               loading={uploading === "after"}
               onUpload={(f) => uploadPhoto("after", f)}
