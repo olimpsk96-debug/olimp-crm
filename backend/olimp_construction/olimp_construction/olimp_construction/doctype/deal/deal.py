@@ -10,6 +10,24 @@ class Deal(Document):
         if self.has_value_changed("status") or self.is_new():
             self.last_activity_date = now_datetime()
 
+        # first_response_at: при первой смене статуса с «Лид» на что-то другое
+        if (self.has_value_changed("status")
+            and self.status != "Лид"
+            and not self.first_response_at):
+            self.first_response_at = now_datetime()
+            # Сбрасываем missed-флаг — менеджер ответил
+            self.is_missed = 0
+            self.missed_minutes = 0
+
+        # Auto-assign round-robin при создании (если assigned_to не задан вручную)
+        if self.is_new() and not self.assigned_to:
+            try:
+                from olimp_construction.api.lead_routing import pick_next_assignee
+                self.assigned_to = pick_next_assignee()
+                self.assigned_at = now_datetime()
+            except Exception as e:
+                frappe.logger().warning(f"Auto-assign failed: {e}")
+
         # При статусе «Закрыт проигран» — требуем loss_reason
         if self.status == "Закрыт проигран" and not self.loss_reason:
             frappe.throw("При статусе «Закрыт проигран» нужно указать причину (loss_reason)")

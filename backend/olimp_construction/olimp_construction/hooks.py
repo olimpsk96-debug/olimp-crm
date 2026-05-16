@@ -242,6 +242,7 @@ scheduler_events = {
         "olimp_construction.tasks.check_punch_list_overdue",
         "olimp_construction.api.pipeline.refresh_rotting",
         "olimp_construction.api.pipeline.refresh_ball_overdue",
+        "olimp_construction.api.lead_routing.check_missed_leads",
     ],
     "weekly": [
         "olimp_construction.tasks.update_customer_payment_patterns",

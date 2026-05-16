@@ -1,0 +1,171 @@
+{
+  "name": "Foreman Check-in",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "format:CHK-{YYYY}-{MM}-{#####}",
+  "title_field": "foreman_name",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "foreman_name",
+      "fieldtype": "Data",
+      "label": "Прораб (ФИО)",
+      "reqd": 1,
+      "in_list_view": 1,
+      "bold": 1
+    },
+    {
+      "fieldname": "project",
+      "fieldtype": "Link",
+      "label": "Проект",
+      "options": "Construction Project",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "check_in_time",
+      "fieldtype": "Datetime",
+      "label": "Время чек-ина",
+      "default": "now",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "check_out_time",
+      "fieldtype": "Datetime",
+      "label": "Время чек-аута",
+      "description": "Заполняется при закрытии смены"
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "kind",
+      "fieldtype": "Select",
+      "label": "Тип",
+      "options": "Начало смены\nКонец смены\nПриёмка\nПромежуточная проверка",
+      "default": "Начало смены",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "weather",
+      "fieldtype": "Data",
+      "label": "Погода (auto)",
+      "description": "Подтягивается из Open-Meteo по GPS"
+    },
+    {
+      "fieldname": "temperature_c",
+      "fieldtype": "Float",
+      "label": "Температура, °C",
+      "precision": "1"
+    },
+    {
+      "fieldname": "section_break_location",
+      "fieldtype": "Section Break",
+      "label": "Геолокация (GPS)"
+    },
+    {
+      "fieldname": "lat",
+      "fieldtype": "Float",
+      "label": "Широта",
+      "precision": "6"
+    },
+    {
+      "fieldname": "lng",
+      "fieldtype": "Float",
+      "label": "Долгота",
+      "precision": "6"
+    },
+    {
+      "fieldname": "accuracy_m",
+      "fieldtype": "Float",
+      "label": "Точность GPS, м",
+      "precision": "1"
+    },
+    {
+      "fieldname": "column_break_loc",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "address_resolved",
+      "fieldtype": "Data",
+      "label": "Адрес (резолв)",
+      "description": "Reverse-geocoded из GPS, опционально"
+    },
+    {
+      "fieldname": "distance_from_project_m",
+      "fieldtype": "Int",
+      "label": "Дистанция от проекта, м",
+      "description": "Расстояние от plant_location проекта (для контроля что прораб на объекте)"
+    },
+    {
+      "fieldname": "section_break_photo",
+      "fieldtype": "Section Break",
+      "label": "Фото на объекте"
+    },
+    {
+      "fieldname": "photo_url",
+      "fieldtype": "Attach",
+      "label": "Фото"
+    },
+    {
+      "fieldname": "photo_caption",
+      "fieldtype": "Small Text",
+      "label": "Подпись к фото"
+    },
+    {
+      "fieldname": "section_break_crew",
+      "fieldtype": "Section Break",
+      "label": "Бригада / оборудование",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "workers_count",
+      "fieldtype": "Int",
+      "label": "Рабочих на смене"
+    },
+    {
+      "fieldname": "engineers_count",
+      "fieldtype": "Int",
+      "label": "ИТР на смене"
+    },
+    {
+      "fieldname": "column_break_crew",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "equipment_on_site",
+      "fieldtype": "Small Text",
+      "label": "Техника на объекте",
+      "description": "Через запятую: «ЭКГ-5А, КАМАЗ 65115»"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Small Text",
+      "label": "Комментарий"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "report": 1
+    },
+    {
+      "role": "Прораб",
+      "read": 1, "write": 1, "create": 1, "report": 1
+    },
+    {
+      "role": "Главный инженер",
+      "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1
+    }
+  ],
+  "sort_field": "check_in_time",
+  "sort_order": "DESC",
+  "naming_rule": "Expression"
+}

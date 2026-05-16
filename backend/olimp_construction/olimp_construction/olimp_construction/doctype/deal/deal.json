@@ -161,6 +161,53 @@
       "fieldname": "loss_notes",
       "fieldtype": "Small Text",
       "label": "Детали проигрыша"
+    },
+    {
+      "fieldname": "section_break_assignment",
+      "fieldtype": "Section Break",
+      "label": "Назначение",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "assigned_to",
+      "fieldtype": "Data",
+      "label": "Назначен (email)",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "description": "Email ответственного менеджера. Заполняется auto round-robin или вручную."
+    },
+    {
+      "fieldname": "assigned_at",
+      "fieldtype": "Datetime",
+      "label": "Назначен в",
+      "read_only": 1
+    },
+    {
+      "fieldname": "first_response_at",
+      "fieldtype": "Datetime",
+      "label": "Первый ответ менеджера",
+      "read_only": 1,
+      "description": "Когда менеджер впервые что-то сделал (изменил статус, добавил комментарий)"
+    },
+    {
+      "fieldname": "column_break_assignment",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "is_missed",
+      "fieldtype": "Check",
+      "label": "Пропущен",
+      "default": "0",
+      "read_only": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "description": "Менеджер не ответил больше N минут — лид нуждается в эскалации"
+    },
+    {
+      "fieldname": "missed_minutes",
+      "fieldtype": "Int",
+      "label": "Мин без ответа",
+      "read_only": 1
     }
   ],
   "permissions": [
