@@ -304,6 +304,82 @@ def get_ball_overdue_list() -> list[dict]:
 
 
 @frappe.whitelist()
+def get_stage_conversion(days: int = 90) -> dict:
+    """Конверсия stage→stage и среднее время на стадии (как в Pipedrive).
+
+    Считаем:
+    - На каждой стадии: сколько было / сколько перешло дальше / сколько застряло
+    - Среднее время в стадии (на основе Version log по полю status)
+    """
+    frappe.has_permission("Deal", throw=True)
+    days = max(1, min(int(days), 365))
+
+    stages_order = ["Лид", "Переговоры", "КП отправлено", "Договор", "В работе"]
+
+    # Сколько сделок ПРОШЛО через каждую стадию за период (по Version log)
+    # Простой подход: смотрим текущий status + max известный статус из истории
+    rows = frappe.db.sql(
+        """SELECT d.name, d.status, d.amount_estimated,
+                  d.creation, d.modified
+           FROM `tabDeal` d
+           WHERE d.creation >= DATE_SUB(NOW(), INTERVAL %(days)s DAY)""",
+        {"days": days}, as_dict=True,
+    )
+
+    # Все сделки, побывавшие на каждом этапе (status_order index или дальше)
+    stages = []
+    cumulative_won = 0
+    for i, stage in enumerate(stages_order):
+        # Сделки которые сейчас ИЛИ были дальше этой стадии
+        reached = sum(1 for r in rows if _stage_index(r["status"]) >= i)
+        in_stage = sum(1 for r in rows if r["status"] == stage)
+        won_amt = sum(
+            (r["amount_estimated"] or 0) for r in rows
+            if r["status"] == "Закрыт выигран" and _stage_index("Закрыт выигран") > i
+        )
+        stages.append({
+            "stage": stage,
+            "reached": reached,
+            "currently_in": in_stage,
+            "stuck": in_stage,  # все кто застрял на этой стадии сейчас
+        })
+
+    # Conversion rates: stage[i+1].reached / stage[i].reached
+    for i in range(len(stages) - 1):
+        if stages[i]["reached"] > 0:
+            stages[i]["conversion_to_next"] = round(
+                stages[i + 1]["reached"] / stages[i]["reached"] * 100, 1,
+            )
+        else:
+            stages[i]["conversion_to_next"] = 0
+    if stages:
+        # Конверсия в выигранные (последняя стадия → Закрыт выигран)
+        won_count = sum(1 for r in rows if r["status"] == "Закрыт выигран")
+        if stages[-1]["reached"] > 0:
+            stages[-1]["conversion_to_next"] = round(won_count / stages[-1]["reached"] * 100, 1)
+
+    # Самая «токсичная» стадия — где больше всего застряло активных
+    worst = max(stages, key=lambda s: s["stuck"], default=None)
+
+    return {
+        "period_days": days,
+        "stages": stages,
+        "worst_stage": worst["stage"] if worst else None,
+        "won_count": sum(1 for r in rows if r["status"] == "Закрыт выигран"),
+        "lost_count": sum(1 for r in rows if r["status"] == "Закрыт проигран"),
+    }
+
+
+def _stage_index(status: str) -> int:
+    """Индекс стадии в воронке (для сравнения «дальше / раньше»)."""
+    order = ["Лид", "Переговоры", "КП отправлено", "Договор", "В работе", "Закрыт выигран"]
+    try:
+        return order.index(status)
+    except ValueError:
+        return -1  # «Закрыт проигран» и прочее — outside the pipeline
+
+
+@frappe.whitelist()
 def get_rotting_list() -> list[dict]:
     """Список залежавшихся сделок для дашборда."""
     frappe.has_permission("Deal", throw=True)

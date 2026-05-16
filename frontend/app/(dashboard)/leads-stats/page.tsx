@@ -97,6 +97,8 @@ export default function LeadsStatsPage() {
   const [rotting, setRotting] = useState<RottingDeal[]>([]);
   const [lossAnalysis, setLossAnalysis] = useState<LossAnalysis | null>(null);
   const [grades, setGrades] = useState<Array<{ grade: string; cnt: number; amt: number }>>([]);
+  const [stages, setStages] = useState<{ stages: Array<{ stage: string; reached: number; currently_in: number; stuck: number; conversion_to_next: number }>; worst_stage: string | null } | null>(null);
+  const [workload, setWorkload] = useState<Array<{ user: string; total: number; open_count: number; won_count: number; missed_count: number; rotting_count: number; total_amount: number }>>([]);
 
   useEffect(() => {
     setLoading(true);
@@ -106,13 +108,17 @@ export default function LeadsStatsPage() {
       fetch("/api/pipeline-rotting").then((r) => r.json()),
       fetch(`/api/pipeline-loss-analysis?days=${days}`).then((r) => r.json()),
       fetch("/api/lead-scoring").then((r) => r.json()),
+      fetch(`/api/pipeline-stages?days=${days}`).then((r) => r.json()),
+      fetch("/api/lead-routing").then((r) => r.json()),
     ])
-      .then(([s, f, r, l, g]) => {
+      .then(([s, f, r, l, g, st, w]) => {
         setData(s);
         setForecast(f);
         setRotting(Array.isArray(r) ? r : []);
         setLossAnalysis(l);
         setGrades(Array.isArray(g.by_grade) ? g.by_grade : []);
+        setStages(st && st.stages ? st : null);
+        setWorkload(Array.isArray(w) ? w : []);
       })
       .finally(() => setLoading(false));
   }, [days]);
@@ -309,6 +315,82 @@ export default function LeadsStatsPage() {
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* Stage-to-stage conversion */}
+      {stages && stages.stages.length > 0 && (
+        <div style={{ ...card, marginBottom: 22 }}>
+          <h3 style={cardTitle}>🪜 Конверсия по этапам</h3>
+          {stages.worst_stage && (
+            <p style={{ fontSize: 11.5, color: "var(--warning)", margin: "0 0 12px" }}>
+              ⚠️ Самая «токсичная» стадия: <b>{stages.worst_stage}</b>
+            </p>
+          )}
+          <div style={{ display: "flex", gap: 4, alignItems: "stretch" }}>
+            {stages.stages.map((s, i) => (
+              <div key={s.stage} style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                <div style={{
+                  padding: "10px 8px", borderRadius: 7, border: "1px solid var(--border-subtle)",
+                  background: s.stage === stages.worst_stage ? "rgba(251,191,36,0.08)" : "var(--bg-base)",
+                  textAlign: "center", minHeight: 70, display: "flex", flexDirection: "column", justifyContent: "center",
+                }}>
+                  <div style={{ fontSize: 10, color: "var(--text-tertiary)", fontFamily: "monospace", textTransform: "uppercase" }}>
+                    {s.stage}
+                  </div>
+                  <div style={{ fontSize: 18, fontWeight: 600, color: "var(--accent)", marginTop: 3 }}>
+                    {s.reached}
+                  </div>
+                  {s.stuck > 0 && (
+                    <div style={{ fontSize: 10, color: "var(--warning)", marginTop: 2 }}>
+                      🥀 {s.stuck} застряло
+                    </div>
+                  )}
+                </div>
+                {i < stages.stages.length - 1 && (
+                  <div style={{ textAlign: "center", padding: "4px 0", fontSize: 11,
+                                color: s.conversion_to_next >= 50 ? "var(--success)" :
+                                       s.conversion_to_next >= 25 ? "var(--warning)" : "var(--danger)",
+                                fontFamily: "monospace" }}>
+                    → {s.conversion_to_next}%
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Manager Workload */}
+      {workload.length > 0 && (
+        <div style={{ ...card, marginBottom: 22 }}>
+          <h3 style={cardTitle}>👥 Workload менеджеров</h3>
+          <table style={tbl}>
+            <thead>
+              <tr style={tblHead}>
+                <th style={th}>Менеджер</th>
+                <th style={{ ...th, textAlign: "right" }}>Активных</th>
+                <th style={{ ...th, textAlign: "right" }}>Выиграно</th>
+                <th style={{ ...th, textAlign: "right" }}>🥀 Залежалось</th>
+                <th style={{ ...th, textAlign: "right" }}>⚠ Пропущено</th>
+                <th style={{ ...th, textAlign: "right" }}>Pipeline</th>
+              </tr>
+            </thead>
+            <tbody>
+              {workload.map((u) => (
+                <tr key={u.user} style={tblRow}>
+                  <td style={td}>
+                    <div style={{ fontSize: 12 }}>{u.user}</div>
+                  </td>
+                  <td style={{ ...td, textAlign: "right", fontFamily: "monospace", color: "var(--accent)" }}>{u.open_count}</td>
+                  <td style={{ ...td, textAlign: "right", fontFamily: "monospace", color: "var(--success)" }}>{u.won_count}</td>
+                  <td style={{ ...td, textAlign: "right", fontFamily: "monospace", color: u.rotting_count > 0 ? "var(--warning)" : "var(--text-tertiary)" }}>{u.rotting_count}</td>
+                  <td style={{ ...td, textAlign: "right", fontFamily: "monospace", color: u.missed_count > 0 ? "var(--danger)" : "var(--text-tertiary)" }}>{u.missed_count}</td>
+                  <td style={{ ...td, textAlign: "right", fontFamily: "monospace", fontSize: 11 }}>{fmtMln(u.total_amount)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 

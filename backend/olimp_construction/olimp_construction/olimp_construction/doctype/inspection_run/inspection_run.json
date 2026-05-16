@@ -1,0 +1,125 @@
+{
+  "name": "Inspection Run",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "format:INSP-{YYYY}-{MM}-{#####}",
+  "title_field": "title",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Название проверки",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "template",
+      "fieldtype": "Link",
+      "label": "Шаблон",
+      "options": "Inspection Template",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "project",
+      "fieldtype": "Link",
+      "label": "Проект",
+      "options": "Construction Project",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "inspector_name",
+      "fieldtype": "Data",
+      "label": "Инспектор",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "started_at",
+      "fieldtype": "Datetime",
+      "label": "Начато",
+      "default": "now",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "finished_at",
+      "fieldtype": "Datetime",
+      "label": "Завершено"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Статус",
+      "options": "В работе\nЗавершён (Pass)\nЗавершён (Fail)\nОтменён",
+      "default": "В работе",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "section_break_score",
+      "fieldtype": "Section Break",
+      "label": "Результат"
+    },
+    {
+      "fieldname": "score_pct",
+      "fieldtype": "Percent",
+      "label": "Score %",
+      "read_only": 1,
+      "in_list_view": 1,
+      "description": "Сумма баллов по правильным ответам / макс. возможный балл"
+    },
+    {
+      "fieldname": "critical_fails",
+      "fieldtype": "Int",
+      "label": "Критические провалы",
+      "read_only": 1,
+      "in_list_view": 1,
+      "description": "Если >0 — общий статус Fail"
+    },
+    {
+      "fieldname": "column_break_score",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "answers_json",
+      "fieldtype": "Long Text",
+      "label": "Ответы (JSON)",
+      "description": "Массив: [{question_id, answer (yes/no/score/text/photo_url), comment, photo_url}]"
+    },
+    {
+      "fieldname": "section_break_meta",
+      "fieldtype": "Section Break",
+      "label": "Заметки"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Text",
+      "label": "Общий комментарий"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "report": 1
+    },
+    {
+      "role": "Главный инженер",
+      "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1
+    },
+    {
+      "role": "Прораб",
+      "read": 1, "write": 1, "create": 1, "report": 1
+    }
+  ],
+  "sort_field": "started_at",
+  "sort_order": "DESC",
+  "naming_rule": "Expression"
+}

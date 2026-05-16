@@ -1,0 +1,95 @@
+{
+  "name": "Inspection Template",
+  "doctype": "DocType",
+  "module": "Olimp Construction",
+  "autoname": "field:template_id",
+  "title_field": "title",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "template_id",
+      "fieldtype": "Data",
+      "label": "ID шаблона",
+      "reqd": 1,
+      "unique": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Название",
+      "reqd": 1,
+      "in_list_view": 1,
+      "bold": 1
+    },
+    {
+      "fieldname": "category",
+      "fieldtype": "Select",
+      "label": "Категория",
+      "options": "Входной контроль\nПриёмка работ\nОТ/ТБ обход\nКонтроль оборудования\nПриёмка скрытых работ\nЕжедневный осмотр\nПрочее",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "reqd": 1
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "is_active",
+      "fieldtype": "Check",
+      "label": "Активен",
+      "default": "1",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "usage_count",
+      "fieldtype": "Int",
+      "label": "Использовано раз",
+      "read_only": 1,
+      "default": 0,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "section_break_questions",
+      "fieldtype": "Section Break",
+      "label": "Вопросы / пункты проверки"
+    },
+    {
+      "fieldname": "questions_json",
+      "fieldtype": "Long Text",
+      "label": "Вопросы (JSON)",
+      "reqd": 1,
+      "description": "Массив: [{id, text, kind (yesno/score/photo/text/number), weight, critical}, ...]. kind=yesno → Да=ok / Нет=fail; kind=score → 1-5; kind=critical → fail на yesno=Нет блокирует прохождение."
+    },
+    {
+      "fieldname": "section_break_meta",
+      "fieldtype": "Section Break",
+      "label": "Описание"
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Small Text",
+      "label": "Когда применять"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1, "write": 1, "create": 1, "delete": 1,
+      "print": 1, "report": 1
+    },
+    {
+      "role": "Главный инженер",
+      "read": 1, "write": 1, "create": 1, "report": 1
+    },
+    {
+      "role": "Прораб",
+      "read": 1, "report": 1
+    }
+  ],
+  "sort_field": "usage_count",
+  "sort_order": "DESC",
+  "naming_rule": "By fieldname"
+}
