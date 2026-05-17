@@ -205,12 +205,16 @@ services:
     depends_on:
       configurator:
         condition: service_completed_successfully
-    command: ["bench", "worker", "--queue", "short,default"]
+    # Тот же entrypoint, что и у backend: устанавливает зависимости olimp_construction перед exec.
+    # Без него воркер падает с exit 127 при первом старте (ImportError на нашем app).
+    entrypoint: ["/scripts/docker-entrypoint-backend.sh"]
+    command: ["/usr/local/bin/bench", "worker", "--queue", "short,default"]
     volumes:
       - erpnext_sites:/home/frappe/frappe-bench/sites
       - erpnext_logs:/home/frappe/frappe-bench/logs
       - ./backend/olimp_construction:/home/frappe/frappe-bench/apps/olimp_construction
       - ./backend/olimp_construction.pth:/home/frappe/frappe-bench/env/lib/python3.11/site-packages/olimp_construction.pth:ro
+      - ./scripts/docker-entrypoint-backend.sh:/scripts/docker-entrypoint-backend.sh:ro
 
   queue-long:
     image: frappe/erpnext:v15
@@ -220,12 +224,14 @@ services:
     depends_on:
       configurator:
         condition: service_completed_successfully
-    command: ["bench", "worker", "--queue", "long,default,short"]
+    entrypoint: ["/scripts/docker-entrypoint-backend.sh"]
+    command: ["/usr/local/bin/bench", "worker", "--queue", "long,default,short"]
     volumes:
       - erpnext_sites:/home/frappe/frappe-bench/sites
       - erpnext_logs:/home/frappe/frappe-bench/logs
       - ./backend/olimp_construction:/home/frappe/frappe-bench/apps/olimp_construction
       - ./backend/olimp_construction.pth:/home/frappe/frappe-bench/env/lib/python3.11/site-packages/olimp_construction.pth:ro
+      - ./scripts/docker-entrypoint-backend.sh:/scripts/docker-entrypoint-backend.sh:ro
 
   scheduler:
     image: frappe/erpnext:v15
@@ -235,7 +241,8 @@ services:
     depends_on:
       configurator:
         condition: service_completed_successfully
-    command: ["bench", "schedule"]
+    entrypoint: ["/scripts/docker-entrypoint-backend.sh"]
+    command: ["/usr/local/bin/bench", "schedule"]
     environment:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_DIRECTOR_CHAT_ID: ${TELEGRAM_DIRECTOR_CHAT_ID}
@@ -245,6 +252,7 @@ services:
       - erpnext_logs:/home/frappe/frappe-bench/logs
       - ./backend/olimp_construction:/home/frappe/frappe-bench/apps/olimp_construction
       - ./backend/olimp_construction.pth:/home/frappe/frappe-bench/env/lib/python3.11/site-packages/olimp_construction.pth:ro
+      - ./scripts/docker-entrypoint-backend.sh:/scripts/docker-entrypoint-backend.sh:ro
 
   # ════════════════════════════════════════════════════════════════════════
   # 4. NEXT.JS (кастомный фронт)
