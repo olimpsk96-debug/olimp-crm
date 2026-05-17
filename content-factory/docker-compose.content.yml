@@ -27,7 +27,7 @@ services:
     depends_on:
       - content-pg
     networks:
-      - olimp_net
+      - olimp-erp_olimp_net
 
   # Discovery-агент: cron на сбор трендов
   content-discovery:
@@ -50,7 +50,7 @@ services:
     depends_on:
       - content-pg
     networks:
-      - olimp_net
+      - olimp-erp_olimp_net
 
   # ComfyUI для генерации изображений (FLUX-модели)
   # GPU optional — для production-нагрузки нужна видеокарта; для MVP fallback на OpenAI gpt-image-1
@@ -68,7 +68,7 @@ services:
     ports:
       - "8188:8188"
     networks:
-      - olimp_net
+      - olimp-erp_olimp_net
     # GPU support — раскомментировать если есть NVIDIA GPU
     # deploy:
     #   resources:
@@ -97,7 +97,7 @@ services:
     ports:
       - "8102:8102"
     networks:
-      - olimp_net
+      - olimp-erp_olimp_net
 
   # Postiz — single-source-of-truth для мульти-публикации
   content-postiz:
@@ -120,7 +120,7 @@ services:
     depends_on:
       - content-pg
     networks:
-      - olimp_net
+      - olimp-erp_olimp_net
 
   # Analytics worker (GSC, GA4, Метрика, AI-visibility)
   content-analytics:
@@ -142,7 +142,7 @@ services:
     depends_on:
       - content-pg
     networks:
-      - olimp_net
+      - olimp-erp_olimp_net
 
   # Отдельная Postgres для контент-завода (idea_queue, publications, metrics, postiz)
   content-pg:
@@ -160,7 +160,7 @@ services:
     ports:
       - "5433:5432"
     networks:
-      - olimp_net
+      - olimp-erp_olimp_net
 
 volumes:
   content_data:
@@ -172,5 +172,5 @@ volumes:
   postiz_uploads:
 
 networks:
-  olimp_net:
-    external: true  # сеть существующего olimp-erp docker-compose
+  olimp-erp_olimp_net:
+    external: true  # сеть существующего olimp-erp docker-compose (создаётся как ${COMPOSE_PROJECT_NAME}_olimp_net)
