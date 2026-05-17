@@ -290,15 +290,37 @@ export default function BOQsPage() {
   );
 }
 
+interface AIPreview {
+  title: string;
+  summary: string;
+  sections: Array<{section_code: string; section_name: string}>;
+  positions: Array<{section_code: string; position_code: string; description: string;
+                     unit: string; quantity: number; unit_rate: number;
+                     assembly_code: string | null}>;
+  direct_cost: number;
+  matched_assemblies: number;
+  total_positions: number;
+  ai_model: string;
+  tokens_used: { input: number; output: number };
+}
+
 function CreateFromEstimateDialog({ estimates, onClose, onCreated }: {
   estimates: Estimate[];
   onClose: () => void;
   onCreated: () => void;
 }) {
   const toast = useToast();
+  const [tab, setTab] = useState<"estimate" | "ai">("estimate");
+
+  // Tab "estimate"
   const [estimateName, setEstimateName] = useState("");
   const [title, setTitle] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Tab "ai"
+  const [description, setDescription] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [aiPreview, setAiPreview] = useState<AIPreview | null>(null);
 
   async function create() {
     if (!estimateName) { toast.warn("Выберите смету"); return; }
@@ -306,9 +328,45 @@ function CreateFromEstimateDialog({ estimates, onClose, onCreated }: {
     try {
       const r = await fetch("/api/boqs", {
         method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "create_from_estimate", estimate: estimateName, title }),
+      });
+      const d = await r.json();
+      if (d.error) { toast.error(d.error); return; }
+      toast.success(`Создана ${d.name}: ${d.positions} позиций, итог ${fmtMoney(d.grand_total)}`, 8000);
+      onCreated();
+    } finally { setSaving(false); }
+  }
+
+  async function generateAI() {
+    if (description.trim().length < 20) {
+      toast.warn("Опишите работы подробнее (минимум 20 символов)"); return;
+    }
+    setGenerating(true);
+    setAiPreview(null);
+    try {
+      const r = await fetch("/api/boqs/ai", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "generate", description }),
+      });
+      const d = await r.json();
+      if (d.error) { toast.error(d.error); return; }
+      setAiPreview(d);
+      toast.success(`AI сгенерировал ${d.total_positions} позиций · ${d.matched_assemblies}/${d.total_positions} сборок найдено`, 7000);
+    } finally { setGenerating(false); }
+  }
+
+  async function saveAI() {
+    if (!aiPreview) return;
+    setSaving(true);
+    try {
+      const r = await fetch("/api/boqs/ai", {
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "create_from_estimate",
-          estimate: estimateName, title,
+          action: "save",
+          title: title || aiPreview.title,
+          summary: aiPreview.summary,
+          sections: aiPreview.sections,
+          positions: aiPreview.positions,
         }),
       });
       const d = await r.json();
@@ -321,55 +379,210 @@ function CreateFromEstimateDialog({ estimates, onClose, onCreated }: {
   return (
     <div onClick={onClose} style={{
       position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100,
-      display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "60px 20px",
+      display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 20px",
     }}>
       <div onClick={(e) => e.stopPropagation()} style={{
-        width: "100%", maxWidth: 540, background: "var(--bg-base)",
-        borderRadius: 12, border: "1px solid var(--border-subtle)", padding: 24,
+        width: "100%", maxWidth: 680, maxHeight: "90vh", overflowY: "auto",
+        background: "var(--bg-base)",
+        borderRadius: 12, border: "1px solid var(--border-subtle)", padding: 22,
       }}>
-        <h2 style={{ fontSize: 17, fontWeight: 500, margin: "0 0 16px" }}>
-          Создать BOQ из существующей сметы
+        <h2 style={{ fontSize: 17, fontWeight: 500, margin: "0 0 14px" }}>
+          Создать BOQ
         </h2>
 
-        <div style={{ marginBottom: 12 }}>
-          <label style={lbl}>Исходная Estimate *</label>
-          <select value={estimateName} onChange={(e) => setEstimateName(e.target.value)} style={inp}>
-            <option value="">— выберите смету —</option>
-            {estimates.map((e) => <option key={e.name} value={e.name}>{e.title || e.name}</option>)}
-          </select>
+        {/* Tabs */}
+        <div style={{ display: "flex", gap: 4, marginBottom: 16, borderBottom: "1px solid var(--border-subtle)" }}>
+          <button onClick={() => setTab("estimate")} style={tabBtn(tab === "estimate")}>
+            📋 Из существующей сметы
+          </button>
+          <button onClick={() => setTab("ai")} style={tabBtn(tab === "ai")}>
+            🤖 AI из описания работ
+          </button>
         </div>
 
-        <div style={{ marginBottom: 16 }}>
-          <label style={lbl}>Название BOQ (если пусто — авто)</label>
-          <input value={title} onChange={(e) => setTitle(e.target.value)}
-                 placeholder="BOQ: АКЗ резервуаров — НТМК"
-                 style={inp} />
-        </div>
+        {tab === "estimate" && (
+          <>
+            <div style={{ marginBottom: 12 }}>
+              <label style={lbl}>Исходная Estimate *</label>
+              <select value={estimateName} onChange={(e) => setEstimateName(e.target.value)} style={inp}>
+                <option value="">— выберите смету —</option>
+                {estimates.map((e) => <option key={e.name} value={e.name}>{e.title || e.name}</option>)}
+              </select>
+            </div>
 
-        <div style={{ padding: 10, marginBottom: 16, borderRadius: 7,
-                      background: "rgba(96,165,250,0.05)", border: "1px solid rgba(96,165,250,0.3)",
-                      fontSize: 12, color: "var(--text-secondary)" }}>
-          📋 Все позиции и разделы сметы перенесутся в BOQ. Накладные 8%, прибыль 15%,
-          резерв 5%, НДС 20% применятся по умолчанию (можно изменить в Frappe-админке).
-        </div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={lbl}>Название BOQ (если пусто — авто)</label>
+              <input value={title} onChange={(e) => setTitle(e.target.value)}
+                     placeholder="BOQ: АКЗ резервуаров — НТМК" style={inp} />
+            </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-          <button onClick={onClose} style={{
-            padding: "10px 18px", fontSize: 13,
-            background: "transparent", color: "var(--text-secondary)",
-            border: "1px solid var(--border-subtle)", borderRadius: 8, cursor: "pointer",
-          }}>Отмена</button>
-          <button onClick={create} disabled={saving || !estimateName} style={{
-            padding: "10px 22px", fontSize: 13, fontWeight: 500,
-            background: "var(--accent)", color: "white",
-            border: "none", borderRadius: 8, cursor: "pointer",
-            opacity: saving || !estimateName ? 0.6 : 1,
-          }}>{saving ? "Создание..." : "✓ Создать BOQ"}</button>
-        </div>
+            <div style={{ padding: 10, marginBottom: 16, borderRadius: 7,
+                          background: "rgba(96,165,250,0.05)", border: "1px solid rgba(96,165,250,0.3)",
+                          fontSize: 12, color: "var(--text-secondary)" }}>
+              📋 Все позиции и разделы сметы перенесутся в BOQ. Накладные 8%, прибыль 15%,
+              резерв 5%, НДС 20% применятся по умолчанию.
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <button onClick={onClose} style={btnGhost}>Отмена</button>
+              <button onClick={create} disabled={saving || !estimateName} style={{
+                ...btnPrimary, opacity: saving || !estimateName ? 0.6 : 1,
+              }}>{saving ? "Создание..." : "✓ Создать BOQ"}</button>
+            </div>
+          </>
+        )}
+
+        {tab === "ai" && (
+          <>
+            {!aiPreview && (
+              <>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={lbl}>Описание работ *</label>
+                  <textarea value={description} onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Фундаментная плита 7×7×2 м из бетона В25 F150 W6 с двойным армированием 30 кг/м³ и 32 анкерными группами М30 длиной 600мм..."
+                            style={{ ...inp, minHeight: 110, fontFamily: "inherit", resize: "vertical" }}
+                            disabled={generating} />
+                  <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 4 }}>
+                    {description.length} символов · минимум 20. Опиши объёмы, материалы, особенности.
+                  </div>
+                </div>
+
+                <div style={{ padding: 10, marginBottom: 16, borderRadius: 7,
+                              background: "rgba(167,139,250,0.05)", border: "1px solid rgba(167,139,250,0.3)",
+                              fontSize: 12, color: "var(--text-secondary)" }}>
+                  🤖 Claude (claude-haiku-4-5) проанализирует описание, разложит на разделы и позиции
+                  со средними ценами по Уралу, привяжет к нашим Construction Assemblies где сможет.
+                  Стоимость 1 запроса ≈ 2-5 ₽.
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                  <button onClick={onClose} style={btnGhost}>Отмена</button>
+                  <button onClick={generateAI} disabled={generating || description.length < 20}
+                          style={{
+                            ...btnPrimary, background: "#7c3aed",
+                            opacity: generating || description.length < 20 ? 0.6 : 1,
+                          }}>
+                    {generating ? "🤖 Claude думает..." : "🤖 Сгенерировать"}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {aiPreview && (
+              <>
+                <div style={{
+                  padding: 12, marginBottom: 14, borderRadius: 8,
+                  background: "rgba(74,222,128,0.05)", border: "1px solid rgba(74,222,128,0.3)",
+                  fontSize: 12,
+                }}>
+                  <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>
+                    ✓ {aiPreview.title}
+                  </div>
+                  <div style={{ color: "var(--text-tertiary)", marginBottom: 6 }}>
+                    {aiPreview.summary}
+                  </div>
+                  <div style={{ display: "flex", gap: 12, marginTop: 8, fontFamily: "monospace" }}>
+                    <span>📋 {aiPreview.sections.length} разделов</span>
+                    <span>📦 {aiPreview.total_positions} позиций</span>
+                    <span>⊞ {aiPreview.matched_assemblies} сборок</span>
+                    <span style={{ marginLeft: "auto", color: "var(--success)", fontWeight: 600 }}>
+                      {fmtMoney(aiPreview.direct_cost)}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 10, maxHeight: 280, overflowY: "auto",
+                              border: "1px solid var(--border-subtle)", borderRadius: 7 }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11.5 }}>
+                    <thead>
+                      <tr style={{ background: "var(--bg-elevated)" }}>
+                        <th style={th}>Раздел</th>
+                        <th style={th}>Описание</th>
+                        <th style={{ ...th, textAlign: "right" }}>Кол-во</th>
+                        <th style={{ ...th, textAlign: "right" }}>Цена</th>
+                        <th style={{ ...th, textAlign: "right" }}>Сумма</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {aiPreview.positions.map((p, i) => (
+                        <tr key={i} style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+                          <td style={{ ...td, fontFamily: "monospace", color: "var(--text-tertiary)" }}>
+                            {p.position_code}
+                          </td>
+                          <td style={td}>
+                            {p.description}
+                            {p.assembly_code && (
+                              <span style={{ marginLeft: 5, padding: "1px 5px", fontSize: 10,
+                                              background: "rgba(167,139,250,0.15)", color: "#7c3aed",
+                                              borderRadius: 3, fontFamily: "monospace" }}>
+                                ⊞ {p.assembly_code}
+                              </span>
+                            )}
+                          </td>
+                          <td style={{ ...td, textAlign: "right", fontFamily: "monospace" }}>
+                            {p.quantity} {p.unit}
+                          </td>
+                          <td style={{ ...td, textAlign: "right", fontFamily: "monospace" }}>
+                            {fmtMoney(p.unit_rate)}
+                          </td>
+                          <td style={{ ...td, textAlign: "right", fontFamily: "monospace", fontWeight: 500 }}>
+                            {fmtMoney(p.quantity * p.unit_rate)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div style={{ marginBottom: 14 }}>
+                  <label style={lbl}>Название BOQ (можно изменить)</label>
+                  <input value={title} onChange={(e) => setTitle(e.target.value)}
+                         placeholder={aiPreview.title} style={inp} />
+                </div>
+
+                <div style={{ fontSize: 10.5, color: "var(--text-tertiary)", marginBottom: 12, fontFamily: "monospace" }}>
+                  AI: {aiPreview.ai_model} · IN: {aiPreview.tokens_used.input}t · OUT: {aiPreview.tokens_used.output}t
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                  <button onClick={() => setAiPreview(null)} style={btnGhost}>← Изменить описание</button>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={onClose} style={btnGhost}>Отмена</button>
+                    <button onClick={saveAI} disabled={saving} style={{
+                      ...btnPrimary, opacity: saving ? 0.6 : 1,
+                    }}>{saving ? "Создание..." : "✓ Создать BOQ"}</button>
+                  </div>
+                </div>
+              </>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
 }
+
+function tabBtn(active: boolean): React.CSSProperties {
+  return {
+    padding: "9px 14px", fontSize: 13, fontWeight: 500,
+    background: "transparent",
+    color: active ? "var(--text-primary)" : "var(--text-tertiary)",
+    border: "none",
+    borderBottom: `2px solid ${active ? "var(--accent)" : "transparent"}`,
+    cursor: "pointer",
+  };
+}
+
+const btnGhost: React.CSSProperties = {
+  padding: "10px 18px", fontSize: 13,
+  background: "transparent", color: "var(--text-secondary)",
+  border: "1px solid var(--border-subtle)", borderRadius: 8, cursor: "pointer",
+};
+const btnPrimary: React.CSSProperties = {
+  padding: "10px 22px", fontSize: 13, fontWeight: 500,
+  background: "var(--accent)", color: "white",
+  border: "none", borderRadius: 8, cursor: "pointer",
+};
 
 const lbl: React.CSSProperties = {
   display: "block", fontSize: 10.5, color: "var(--text-tertiary)",
