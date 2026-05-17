@@ -12,6 +12,7 @@ const EstimateGrid = dynamic(
 );
 import { ApplyAssemblyModal } from "@/components/estimate/ApplyAssemblyModal";
 import { MeasurementSheet } from "@/components/estimate/MeasurementSheet";
+import { ResourcePlan } from "@/components/estimate/ResourcePlan";
 
 interface GridRow {
   name?: string;
@@ -223,10 +224,7 @@ export default function EstimateGridPage() {
       ) : tab === "measurements" ? (
         <MeasurementSheet estimate={name} onApplied={() => { reload(); setTab("works"); }} />
       ) : (
-        <div style={{ padding: 30, textAlign: "center", color: "var(--text-tertiary)", border: "1px dashed var(--border-subtle)", borderRadius: 10 }}>
-          📦 Ресурсный план — в разработке (v6.2.2).<br/>
-          <div style={{ fontSize: 11, marginTop: 6 }}>Здесь будет: материалы/трудозатраты/механизмы из CWICR с авто-расчётом.</div>
-        </div>
+        <ResourcePlan estimate={name} />
       )}
 
       {showAssembly && (

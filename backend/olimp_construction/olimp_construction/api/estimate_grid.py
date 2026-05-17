@@ -145,6 +145,106 @@ def bulk_apply_markup(estimate: str, markup_pct: float = 15) -> dict:
 
 
 @frappe.whitelist()
+def get_resource_breakdown(estimate: str) -> dict:
+    """Агрегация ресурсов по смете через Construction Assembly.
+
+    Для каждой позиции сметы:
+    - Если item_code совпадает с Construction Assembly.assembly_code →
+      берём её Assembly Item × qty позиции
+    - Иначе позиция считается «свободной» (без разбивки)
+
+    Возвращает: { material: [...], labor: [...], equipment: [...],
+                  subcontract: [...], unmapped: [...], totals, counts }
+    """
+    frappe.has_permission("Estimate", "read", doc=estimate, throw=True)
+    doc = frappe.get_doc("Estimate", estimate)
+
+    # Все assembly_code → name map
+    asm_codes = {a["assembly_code"]: a["name"]
+                 for a in frappe.get_all("Construction Assembly",
+                                          fields=["assembly_code", "name"])}
+
+    by_type: dict[str, dict[str, dict]] = {
+        "material": {}, "labor": {}, "equipment": {}, "subcontract": {},
+    }
+    unmapped: list[dict] = []
+
+    for item in (doc.items or []):
+        if int(item.is_section or 0):
+            continue
+        item_qty = float(item.qty or 0)
+        if item_qty <= 0:
+            continue
+        item_code = (item.item_code or "").strip()
+
+        if item_code and item_code in asm_codes:
+            asm = frappe.get_doc("Construction Assembly", asm_codes[item_code])
+            for ai in (asm.items or []):
+                qty_total = float(ai.qty_per_unit or 0) * item_qty
+                rate = float(ai.rate or 0)
+                amount = qty_total * rate
+                rtype = ai.resource_type or "material"
+                key = (ai.description or "").strip().lower() or "_unknown"
+                if key not in by_type[rtype]:
+                    by_type[rtype][key] = {
+                        "description": ai.description or "—",
+                        "unit": ai.unit or "",
+                        "qty": 0,
+                        "rate": rate,
+                        "amount": 0,
+                        "from_items": [],
+                    }
+                by_type[rtype][key]["qty"] += qty_total
+                by_type[rtype][key]["amount"] += amount
+                by_type[rtype][key]["from_items"].append(item.item_name or "")
+        else:
+            unmapped.append({
+                "item_name": item.item_name or "",
+                "qty": item_qty, "unit": item.unit or "",
+                "amount": float(item.our_amount or item.base_amount or 0),
+            })
+
+    def to_list(d: dict) -> list[dict]:
+        out: list[dict] = []
+        for v in d.values():
+            v["from_items"] = list(set(v["from_items"]))[:3]
+            out.append(v)
+        out.sort(key=lambda x: -float(x["amount"] or 0))
+        return out
+
+    materials = to_list(by_type["material"])
+    labor = to_list(by_type["labor"])
+    equipment = to_list(by_type["equipment"])
+    subcontract = to_list(by_type["subcontract"])
+
+    total_material = sum(r["amount"] for r in materials)
+    total_labor = sum(r["amount"] for r in labor)
+    total_equipment = sum(r["amount"] for r in equipment)
+    total_subcontract = sum(r["amount"] for r in subcontract)
+    total_unmapped = sum(r["amount"] for r in unmapped)
+    total_all = total_material + total_labor + total_equipment + total_subcontract + total_unmapped
+
+    return {
+        "estimate": estimate,
+        "material": materials,
+        "labor": labor,
+        "equipment": equipment,
+        "subcontract": subcontract,
+        "unmapped": unmapped,
+        "totals": {
+            "material": total_material, "labor": total_labor,
+            "equipment": total_equipment, "subcontract": total_subcontract,
+            "unmapped": total_unmapped, "all": total_all,
+        },
+        "counts": {
+            "material": len(materials), "labor": len(labor),
+            "equipment": len(equipment), "subcontract": len(subcontract),
+            "unmapped": len(unmapped),
+        },
+    }
+
+
+@frappe.whitelist()
 def apply_measurements(estimate: str, rows: list | str) -> dict:
     """Применить обмерный лист в смету.
 
