@@ -14,6 +14,7 @@ build/
 storage/articles/
 storage/cache/
 storage/media/
+storage/test_runs/
 *.log
 
 # IG session

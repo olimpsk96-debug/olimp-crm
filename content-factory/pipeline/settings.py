@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -80,6 +80,17 @@ class Settings(BaseSettings):
 
     # AI Visibility
     ai_vis_brands: str = "ОЛИМП,olimp,promalp-ural,промальп Екатеринбург"
+
+    @field_validator(
+        "wp_default_category_id",
+        "wp_default_author_id",
+        mode="before",
+    )
+    @classmethod
+    def _empty_str_to_none(cls, v):
+        if isinstance(v, str) and v.strip() == "":
+            return None
+        return v
 
 
 settings = Settings()

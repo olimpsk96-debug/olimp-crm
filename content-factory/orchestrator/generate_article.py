@@ -24,7 +24,6 @@ import markdown as md_lib
 from loguru import logger
 
 from pipeline.settings import settings, CONFIG_DIR, ARTICLES_DIR
-from pipeline.writer.crew import build_crew
 
 
 def _load_topic(topic_id: Optional[str], topic_title: Optional[str]) -> dict[str, Any]:
@@ -63,13 +62,19 @@ def _load_topic(topic_id: Optional[str], topic_title: Optional[str]) -> dict[str
     raise ValueError("Either --topic or --topic-id must be provided")
 
 
+_TRANSLIT = {
+    "а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e", "ё": "e",
+    "ж": "zh", "з": "z", "и": "i", "й": "y", "к": "k", "л": "l", "м": "m",
+    "н": "n", "о": "o", "п": "p", "р": "r", "с": "s", "т": "t", "у": "u",
+    "ф": "f", "х": "h", "ц": "c", "ч": "ch", "ш": "sh", "щ": "sch",
+    "ъ": "", "ы": "y", "ь": "", "э": "e", "ю": "yu", "я": "ya",
+}
+
+
 def _slugify(text: str) -> str:
     """Простой транслит-slugifier (для папок storage). На WP slug формирует outliner."""
-    cyr_map = str.maketrans(
-        "абвгдеёжзийклмнопрстуфхцчшщъыьэюя ",
-        "abvgdeezhziyklmnoprstufhcchshshyyeyuya-",
-    )
-    s = text.lower().translate(cyr_map)
+    s = text.lower()
+    s = "".join(_TRANSLIT.get(ch, ch) for ch in s)
     s = re.sub(r"[^a-z0-9-]+", "-", s)
     s = re.sub(r"-+", "-", s).strip("-")
     return s[:80]
@@ -171,6 +176,9 @@ def main() -> int:
     if not settings.anthropic_api_key:
         logger.error("ANTHROPIC_API_KEY не настроен в .env.content")
         return 3
+
+    # Lazy import CrewAI: тяжёлая зависимость, нужна только когда реально генерируем
+    from pipeline.writer.crew import build_crew
 
     crew = build_crew()
     try:

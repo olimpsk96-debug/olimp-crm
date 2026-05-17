@@ -1,26 +1,24 @@
 # Content Factory — стек контейнеров
-# Подключается ПОВЕРХ существующего docker-compose.dev.yml в olimp-erp
-# Запуск:
-#   docker compose -f docker-compose.dev.yml -f content-factory/docker-compose.content.yml --env-file content-factory/.env.content up -d
+# Self-contained: все пути относительные от content-factory/
+#
+# Запуск (из директории olimp-erp/):
+#   docker compose -f content-factory/docker-compose.content.yml --env-file content-factory/.env.content up -d
+#
+# Сеть olimp-erp_olimp_net создаётся автоматически основным docker-compose.dev.yml.
 
 services:
 
   # Основной воркер: CrewAI + GPT Researcher + LangGraph
   content-pipeline:
     build:
-      context: ./content-factory
+      context: .
       dockerfile: Dockerfile.pipeline
     container_name: content-pipeline
     restart: unless-stopped
     env_file:
-      - ./content-factory/.env.content
-    environment:
-      - QDRANT_URL=http://qdrant:6333
-      - MINIO_ENDPOINT=minio:9000
-      - REDIS_URL=redis://redis:6379/3
-      - POSTGRES_URL=postgresql://content:${CONTENT_PG_PASSWORD:-content_pwd}@content-pg:5432/content
+      - .env.content
     volumes:
-      - ./content-factory:/app
+      - .:/app
       - content_data:/data
     ports:
       - "8100:8100"
@@ -32,18 +30,14 @@ services:
   # Discovery-агент: cron на сбор трендов
   content-discovery:
     build:
-      context: ./content-factory
+      context: .
       dockerfile: Dockerfile.discovery
     container_name: content-discovery
     restart: unless-stopped
     env_file:
-      - ./content-factory/.env.content
-    environment:
-      - QDRANT_URL=http://qdrant:6333
-      - POSTGRES_URL=postgresql://content:${CONTENT_PG_PASSWORD:-content_pwd}@content-pg:5432/content
-      - REDIS_URL=redis://redis:6379/3
+      - .env.content
     volumes:
-      - ./content-factory:/app
+      - .:/app
       - content_data:/data
     ports:
       - "8101:8101"
@@ -64,7 +58,7 @@ services:
       - comfyui_models:/root/ComfyUI/models
       - comfyui_input:/root/ComfyUI/input
       - comfyui_output:/root/ComfyUI/output
-      - ./content-factory/comfyui_workflows:/workflows
+      - ./comfyui_workflows:/workflows
     ports:
       - "8188:8188"
     networks:
@@ -81,17 +75,14 @@ services:
   # Faceless-video pipeline (reelsmaker)
   content-reelsmaker:
     build:
-      context: ./content-factory
+      context: .
       dockerfile: Dockerfile.reelsmaker
     container_name: content-reelsmaker
     restart: unless-stopped
     env_file:
-      - ./content-factory/.env.content
-    environment:
-      - MINIO_ENDPOINT=minio:9000
-      - COMFYUI_URL=http://content-comfyui:8188
+      - .env.content
     volumes:
-      - ./content-factory:/app
+      - .:/app
       - content_data:/data
       - reels_cache:/cache
     ports:
@@ -106,7 +97,7 @@ services:
     restart: unless-stopped
     environment:
       - DATABASE_URL=postgresql://postiz:${POSTIZ_PG_PASSWORD:-postiz_pwd}@content-pg:5432/postiz
-      - REDIS_URL=redis://redis:6379/4
+      - REDIS_URL=redis://olimp_redis_queue:6379/4
       - JWT_SECRET=${POSTIZ_JWT_SECRET}
       - MAIN_URL=${POSTIZ_MAIN_URL:-http://localhost:5000}
       - FRONTEND_URL=${POSTIZ_MAIN_URL:-http://localhost:5000}
@@ -125,17 +116,14 @@ services:
   # Analytics worker (GSC, GA4, Метрика, AI-visibility)
   content-analytics:
     build:
-      context: ./content-factory
+      context: .
       dockerfile: Dockerfile.analytics
     container_name: content-analytics
     restart: unless-stopped
     env_file:
-      - ./content-factory/.env.content
-    environment:
-      - POSTGRES_URL=postgresql://content:${CONTENT_PG_PASSWORD:-content_pwd}@content-pg:5432/content
-      - REDIS_URL=redis://redis:6379/3
+      - .env.content
     volumes:
-      - ./content-factory:/app
+      - .:/app
       - content_data:/data
     ports:
       - "8103:8103"
@@ -151,12 +139,13 @@ services:
     restart: unless-stopped
     environment:
       - POSTGRES_USER=content
+      - POSTGRES_DB=content
       - POSTGRES_PASSWORD=${CONTENT_PG_PASSWORD:-content_pwd}
       - POSTGRES_MULTIPLE_DATABASES=content,postiz
     volumes:
       - content_pg_data:/var/lib/postgresql/data
-      - ./content-factory/storage/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh
-      - ./content-factory/storage/schemas.sql:/docker-entrypoint-initdb.d/01-content-schema.sql
+      - ./storage/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/00-init-multiple-dbs.sh
+      - ./storage/schemas.sql:/docker-entrypoint-initdb.d/01-content-schema.sql
     ports:
       - "5433:5432"
     networks:
