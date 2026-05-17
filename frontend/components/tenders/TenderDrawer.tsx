@@ -40,6 +40,197 @@ function formatMln(v?: number | null) {
   return `${(v / 1_000_000).toFixed(2)} млн ₽`;
 }
 
+type BoqPreview = {
+  title: string;
+  summary: string;
+  sections: { section_code: string; section_name: string }[];
+  positions: {
+    section_code: string; position_code: string; description: string;
+    unit: string; quantity: number; unit_rate: number;
+    assembly_code: string | null; resource_type: string;
+  }[];
+  direct_cost: number;
+  matched_assemblies: number;
+  total_positions: number;
+  ai_model?: string;
+  tokens_used?: { input: number; output: number };
+};
+
+function AiBoqBlock({ tender }: { tender: Tender }) {
+  const defaultDesc = [
+    tender.title,
+    tender.work_type ? `Вид работ: ${tender.work_type}` : "",
+    tender.region ? `Регион: ${tender.region}` : "",
+    tender.notes || "",
+  ].filter(Boolean).join("\n");
+
+  const [open, setOpen] = useState(false);
+  const [description, setDescription] = useState(defaultDesc);
+  const [generating, setGenerating] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [preview, setPreview] = useState<BoqPreview | null>(null);
+  const [savedBoqName, setSavedBoqName] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function generate() {
+    if (description.trim().length < 20) {
+      setError("Описание должно быть длиннее 20 символов");
+      return;
+    }
+    setGenerating(true);
+    setError(null);
+    setPreview(null);
+    try {
+      const res = await fetch("/api/boqs/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "generate",
+          description,
+          customer: tender.customer || undefined,
+          region: tender.region || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) { setError(data.error || `HTTP ${res.status}`); return; }
+      setPreview(data);
+    } catch {
+      setError("Ошибка соединения");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function save() {
+    if (!preview) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/boqs/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "save",
+          title: preview.title,
+          summary: preview.summary,
+          sections: preview.sections,
+          positions: preview.positions,
+          customer: tender.customer || undefined,
+          project: tender.project_link || undefined,
+          tender: tender.name,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) { setError(data.error || `HTTP ${res.status}`); return; }
+      setSavedBoqName(data.name);
+    } catch {
+      setError("Ошибка сохранения");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div style={{ marginTop: 20, padding: 14, borderRadius: 12, background: "rgba(168,85,247,0.05)", border: "1px solid rgba(168,85,247,0.2)" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <span style={{ fontSize: 11, color: "#C084FC", textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: "monospace" }}>🤖 AI-смета (BOQ)</span>
+        {!open && (
+          <button
+            onClick={() => setOpen(true)}
+            style={{ fontSize: 11, padding: "3px 10px", borderRadius: 7, border: "1px solid rgba(168,85,247,0.4)", background: "transparent", color: "#C084FC", cursor: "pointer" }}
+          >
+            Сгенерировать смету
+          </button>
+        )}
+      </div>
+
+      {!open && (
+        <p style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
+          Claude разложит работы по разделам и подберёт расценки. ~30 сек.
+        </p>
+      )}
+
+      {open && !savedBoqName && (
+        <>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            disabled={generating || saving}
+            rows={4}
+            placeholder="Опишите работы: например «Огнезащита 350 м² R90, состав СГК-1»"
+            style={{
+              width: "100%", padding: 10, fontSize: 12.5, fontFamily: "inherit",
+              borderRadius: 8, border: "1px solid var(--border-subtle)",
+              background: "var(--bg-base)", color: "var(--text-primary)",
+              outline: "none", resize: "vertical", lineHeight: 1.5,
+            }}
+          />
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            <button
+              onClick={generate}
+              disabled={generating || saving || description.trim().length < 20}
+              style={{
+                flex: 1, fontSize: 12, padding: "7px 12px", borderRadius: 8,
+                border: "none", background: "#A855F7", color: "white",
+                cursor: generating ? "wait" : "pointer",
+                opacity: generating || description.trim().length < 20 ? 0.5 : 1,
+              }}
+            >
+              {generating ? "Генерирую (~30 сек)..." : preview ? "🔄 Перегенерировать" : "🤖 Сгенерировать"}
+            </button>
+          </div>
+        </>
+      )}
+
+      {preview && !savedBoqName && (
+        <div style={{ marginTop: 12, padding: 10, borderRadius: 8, background: "var(--bg-base)", border: "1px solid var(--border-subtle)" }}>
+          <p style={{ fontSize: 13, fontWeight: 500, marginBottom: 6, lineHeight: 1.35 }}>{preview.title}</p>
+          {preview.summary && (
+            <p style={{ fontSize: 11.5, color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: 8 }}>{preview.summary}</p>
+          )}
+          <div style={{ display: "flex", gap: 12, fontSize: 11, color: "var(--text-tertiary)", marginBottom: 10 }}>
+            <span>📂 {preview.sections.length} разделов</span>
+            <span>📋 {preview.total_positions} позиций</span>
+            <span>🔗 {preview.matched_assemblies} сборок</span>
+          </div>
+          <p style={{ fontSize: 16, fontWeight: 500, fontFamily: "monospace", color: "var(--success)" }}>
+            {(preview.direct_cost / 1_000_000).toFixed(2)} млн ₽ <span style={{ fontSize: 10, color: "var(--text-tertiary)", fontWeight: 400 }}>прямых затрат</span>
+          </p>
+          <button
+            onClick={save}
+            disabled={saving}
+            style={{
+              width: "100%", marginTop: 10, fontSize: 12, padding: "8px 12px", borderRadius: 8,
+              border: "none", background: "var(--success)", color: "white",
+              cursor: saving ? "wait" : "pointer", opacity: saving ? 0.5 : 1, fontWeight: 500,
+            }}
+          >
+            {saving ? "Сохраняю..." : "✓ Сохранить как BOQ"}
+          </button>
+        </div>
+      )}
+
+      {savedBoqName && (
+        <div style={{ marginTop: 12, padding: 12, borderRadius: 8, background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.3)" }}>
+          <p style={{ fontSize: 12.5, color: "var(--success)", marginBottom: 6 }}>
+            ✓ BOQ создан: <span style={{ fontFamily: "monospace" }}>{savedBoqName}</span>
+          </p>
+          <a
+            href={`/boqs`}
+            style={{ fontSize: 12, color: "var(--accent)", textDecoration: "none" }}
+          >
+            Открыть список BOQ →
+          </a>
+        </div>
+      )}
+
+      {error && (
+        <p style={{ fontSize: 11.5, color: "var(--danger)", marginTop: 8 }}>{error}</p>
+      )}
+    </div>
+  );
+}
+
 function AiBlock({ tender, onScored }: { tender: Tender; onScored: (score: number, rec: string, analysis: string) => void }) {
   const [scoring, setScoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -273,6 +464,9 @@ export function TenderDrawer({ name, onClose, onStatusChange }: Props) {
                 setTender((t) => t ? { ...t, ai_match_score: score, ai_recommendation: rec as Tender["ai_recommendation"], ai_analysis: analysis } : t)
               }
             />
+
+            {/* AI-смета (BOQ) */}
+            <AiBoqBlock tender={tender} />
 
             {/* Activity Timeline */}
             <div style={{ marginTop: 28, paddingTop: 20, borderTop: "1px solid var(--border-subtle)" }}>

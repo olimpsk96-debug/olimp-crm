@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     if (body.customer) p.set("customer", body.customer);
     if (body.region) p.set("region", body.region);
   } else if (action === "save") {
-    for (const k of ["title", "summary", "project", "customer",
+    for (const k of ["title", "summary", "project", "customer", "tender",
                       "overhead_percent", "profit_percent",
                       "contingency_percent", "vat_percent"]) {
       if (body[k] !== undefined && body[k] !== null) p.set(k, String(body[k]));

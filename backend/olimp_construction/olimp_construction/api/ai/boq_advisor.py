@@ -217,6 +217,7 @@ def generate_boq(description: str, project: str | None = None,
 def save_generated_boq(title: str, sections: list | str, positions: list | str,
                       summary: str = "", project: str | None = None,
                       customer: str | None = None,
+                      tender: str | None = None,
                       overhead_percent: float = 8,
                       profit_percent: float = 15,
                       contingency_percent: float = 5,
@@ -242,7 +243,12 @@ def save_generated_boq(title: str, sections: list | str, positions: list | str,
     doc.profit_percent = float(profit_percent or 0)
     doc.contingency_percent = float(contingency_percent or 0)
     doc.vat_percent = float(vat_percent or 0)
-    doc.notes = f"Сгенерировано AI Cost Advisor.\n\n{summary}"
+    notes_parts = ["Сгенерировано AI Cost Advisor."]
+    if tender:
+        notes_parts.append(f"Источник: тендер {tender}")
+    if summary:
+        notes_parts.append(summary)
+    doc.notes = "\n\n".join(notes_parts)
 
     # Секции
     for s in sections:
