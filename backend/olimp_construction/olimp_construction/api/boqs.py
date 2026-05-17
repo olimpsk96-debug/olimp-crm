@@ -6,7 +6,7 @@ list/create/summary/clone-from-estimate.
 from __future__ import annotations
 
 import frappe
-from frappe.utils import add_days, nowdate
+from frappe.utils import add_days, getdate, nowdate
 
 
 VALID_STATUSES = ("Draft", "Submitted", "Won", "Lost", "Archived")
@@ -230,6 +230,134 @@ def change_status(name: str, status: str) -> dict:
         except Exception:
             pass
     return {"ok": True, "status": status}
+
+
+@frappe.whitelist()
+def create_project_from_boq(name: str, start_date: str | None = None,
+                             planned_end_date: str | None = None,
+                             foreman: str = "") -> dict:
+    """Создаёт Construction Project + Schedule Tasks из выигранной BOQ.
+
+    Workflow «BOQ Won → Project» из docs/01-architecture.md (без n8n,
+    напрямую в Frappe).
+
+    Маппинг:
+    - title         ← BOQ.title
+    - customer      ← BOQ.customer
+    - contract_amount ← BOQ.grand_total
+    - planned_cost  ← BOQ.direct_cost
+    - planned_margin_pct ← (grand_total - direct_cost) / grand_total × 100
+    - oce_boq_id    ← BOQ.name (для двусторонней связи)
+    - Schedule Tasks ← BOQ Section (по одной задаче на раздел)
+    """
+    frappe.has_permission("BOQ", "read", doc=name, throw=True)
+    frappe.has_permission("Construction Project", "create", throw=True)
+
+    boq = frappe.get_doc("BOQ", name)
+
+    if boq.status != "Won":
+        frappe.throw("Создавать проект можно только из выигранной BOQ (status=Won)")
+    if not boq.customer:
+        frappe.throw("В BOQ не указан заказчик. Заполните поле customer перед созданием проекта.")
+
+    # Проверим что project ещё не создан (по oce_boq_id)
+    existing = frappe.db.get_value(
+        "Construction Project", {"oce_boq_id": boq.name}, "name",
+    )
+    if existing:
+        return {"ok": True, "name": existing, "skipped": "already_exists"}
+
+    # Расчёт маржи
+    grand_total = float(boq.grand_total or 0)
+    direct_cost = float(boq.direct_cost or 0)
+    margin_amount = grand_total - direct_cost
+    margin_pct = (margin_amount / grand_total * 100) if grand_total > 0 else 0
+
+    # Даты
+    sd = start_date or nowdate()
+    ed = planned_end_date or frappe.utils.add_days(sd, 90)
+
+    # Создание проекта
+    proj = frappe.new_doc("Construction Project")
+    proj.title = boq.title or f"Проект из {boq.name}"
+    proj.status = "В работе"
+    proj.customer = boq.customer or None
+    proj.contract_amount = grand_total
+    proj.planned_cost = direct_cost
+    proj.planned_margin_pct = round(margin_pct, 2)
+    proj.start_date = sd
+    proj.planned_end_date = ed
+    proj.foreman = (foreman or "")[:140]
+    proj.description = (f"Создан из BOQ {boq.name} (v{boq.version or 1}). "
+                        f"Сумма {grand_total:,.0f} ₽".replace(",", " "))
+    proj.oce_boq_id = boq.name
+    proj.oce_boq_version = boq.version or 1
+    proj.insert(ignore_permissions=False)
+
+    # Schedule Tasks из секций (если DocType Schedule Task существует)
+    tasks_created = 0
+    if frappe.db.exists("DocType", "Schedule Task"):
+        try:
+            current_date = getdate(sd)
+            sections = list(boq.sections or [])
+            total_sections = max(len(sections), 1)
+            duration_days = max((getdate(ed) - getdate(sd)).days, 1)
+            days_per_section = duration_days // total_sections
+
+            for i, section in enumerate(sections, start=1):
+                task_start = current_date
+                from datetime import timedelta
+                task_end = current_date + timedelta(days=days_per_section - 1) if i < total_sections else getdate(ed)
+                # Подсчёт позиций для cost
+                section_positions = [p for p in (boq.positions or [])
+                                     if p.section_code == section.section_code]
+                section_cost = sum(float(p.total or 0) for p in section_positions)
+
+                task = frappe.new_doc("Schedule Task")
+                task.title = f"{section.section_code}. {section.section_name}"
+                task.project = proj.name
+                task.start_date = task_start
+                task.end_date = task_end
+                task.status = "Запланирована"
+                task.progress = 0
+                task.is_section = 0
+                task.duration_days = (task_end - task_start).days + 1
+                task.order_idx = i
+                task.notes = f"Из BOQ {boq.name} раздел {section.section_code}. " \
+                              f"Позиций: {len(section_positions)}, сумма: {section_cost:,.0f} ₽".replace(",", " ")
+                task.insert(ignore_permissions=True)
+                tasks_created += 1
+                current_date = task_end + timedelta(days=1)
+        except Exception as e:
+            frappe.log_error(f"create_tasks failed: {e}", "create_project_from_boq")
+
+    frappe.db.commit()
+
+    # Telegram уведомление
+    try:
+        from olimp_construction.telegram_utils import send_message
+        send_message(
+            f"🏗 <b>Проект создан из BOQ</b>\n\n"
+            f"<b>{proj.title}</b>\n"
+            f"Проект: {proj.name}\n"
+            f"BOQ: {boq.name} (v{boq.version})\n"
+            f"Сумма: {grand_total:,.0f} ₽\n".replace(",", " ") +
+            f"Маржа: {margin_pct:.1f}%\n"
+            f"Срок: {sd} — {ed}\n"
+            f"Задач графика: {tasks_created}"
+        )
+    except Exception:
+        pass
+
+    return {
+        "ok": True,
+        "name": proj.name,
+        "boq": boq.name,
+        "grand_total": grand_total,
+        "margin_pct": margin_pct,
+        "tasks_created": tasks_created,
+        "start_date": sd, "planned_end_date": ed,
+    }
 
 
 @frappe.whitelist()

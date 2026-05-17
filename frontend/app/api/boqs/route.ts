@@ -32,12 +32,14 @@ export async function POST(request: Request) {
     create_from_estimate: "create_from_estimate",
     recalculate: "recalculate_totals",
     change_status: "change_status",
+    create_project: "create_project_from_boq",
   };
   const method = methodMap[action];
   if (!method) return NextResponse.json({ error: `Unknown action ${action}` }, { status: 400 });
 
   const p = new URLSearchParams();
-  for (const k of ["estimate", "title", "name", "status"]) {
+  for (const k of ["estimate", "title", "name", "status",
+                    "start_date", "planned_end_date", "foreman"]) {
     if (body[k] !== undefined && body[k] !== null) p.set(k, String(body[k]));
   }
   const r = await fetch(

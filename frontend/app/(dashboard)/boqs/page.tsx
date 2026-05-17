@@ -92,6 +92,33 @@ export default function BOQsPage() {
     else { toast.success(`Статус: ${status}`); reload(); }
   }
 
+  async function createProject(boq: BOQ) {
+    if (boq.status !== "Won") {
+      if (!window.confirm("BOQ ещё не в статусе Won. Сменить и создать проект?")) return;
+      await changeStatus(boq.name, "Won");
+    }
+    if (!window.confirm(
+      `Создать Construction Project из BOQ ${boq.name}?\n\n` +
+      `Будет создан проект с suммой ${fmtMoney(boq.grand_total)} ` +
+      `и Schedule Tasks из секций сметы.`
+    )) return;
+    const r = await fetch("/api/boqs", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "create_project", name: boq.name }),
+    });
+    const d = await r.json();
+    if (d.error) toast.error(d.error);
+    else if (d.skipped === "already_exists") {
+      toast.warn(`Проект ${d.name} уже создан из этой BOQ`);
+    } else {
+      toast.success(
+        `🏗 Проект ${d.name} создан · маржа ${d.margin_pct?.toFixed(1)}% · задач: ${d.tasks_created}`,
+        9000
+      );
+      reload();
+    }
+  }
+
   async function deleteItem(name: string) {
     if (!window.confirm(`Удалить BOQ ${name}?`)) return;
     const r = await fetch(`/api/boqs?name=${encodeURIComponent(name)}`, { method: "DELETE" });
@@ -228,8 +255,12 @@ export default function BOQsPage() {
                     <a href={`${FRAPPE_URL}/app/boq/${encodeURIComponent(it.name)}`}
                        target="_blank" rel="noopener"
                        style={{ ...btnIcon("var(--accent)"), textDecoration: "none", display: "inline-block" }}>
-                      ✎ Открыть
+                      ✎
                     </a>
+                    {(it.status === "Won" || it.status === "Submitted") && (
+                      <button onClick={() => createProject(it)} title="Создать проект"
+                              style={btnIcon("#7c3aed")}>🏗</button>
+                    )}
                     <button onClick={() => deleteItem(it.name)} title="Удалить" style={btnIcon("var(--danger)")}>🗑</button>
                   </td>
                 </tr>
