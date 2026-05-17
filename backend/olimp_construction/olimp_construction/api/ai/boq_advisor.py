@@ -139,18 +139,26 @@ def generate_boq(description: str, project: str | None = None,
     client = Anthropic(api_key=api_key)
     assemblies_ctx = _load_assemblies_context()
 
+    # System: статичный prompt + ассемблеи (меняются раз в неделю) → кэшируются вместе.
+    # User: только описание + регион — варьируются от вызова к вызову.
+    system_blocks: list[dict] = [{"type": "text", "text": SYSTEM_PROMPT}]
+    if assemblies_ctx:
+        system_blocks.append({"type": "text", "text": assemblies_ctx})
+    # cache_control на последнем блоке кэширует ВСЁ предыдущее (SYSTEM_PROMPT + assemblies).
+    # Экономит ~90% input-токенов на повторных вызовах в течение 5 мин (TTL Anthropic).
+    system_blocks[-1]["cache_control"] = {"type": "ephemeral"}
+
     user_message = (
         f"Регион: {region}.\n\n"
         f"Описание работ:\n{description.strip()}\n\n"
-        + (f"\n{assemblies_ctx}\n" if assemblies_ctx else "")
-        + "\nСгенерируй BOQ. Только JSON, без объяснений."
+        "Сгенерируй BOQ. Только JSON, без объяснений."
     )
 
     try:
         response = client.messages.create(
             model="claude-haiku-4-5",  # быстро + дёшево для structured output
             max_tokens=4000,
-            system=SYSTEM_PROMPT,
+            system=system_blocks,
             messages=[{"role": "user", "content": user_message}],
         )
     except Exception as e:
@@ -198,6 +206,8 @@ def generate_boq(description: str, project: str | None = None,
         "tokens_used": {
             "input": response.usage.input_tokens if response.usage else 0,
             "output": response.usage.output_tokens if response.usage else 0,
+            "cache_read": getattr(response.usage, "cache_read_input_tokens", 0) if response.usage else 0,
+            "cache_write": getattr(response.usage, "cache_creation_input_tokens", 0) if response.usage else 0,
         },
         "project": project, "customer": customer,
     }
